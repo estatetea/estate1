@@ -47,16 +47,23 @@ const EntryForm = ({ onSubmit }) => {
 
   return (
     <div className="w-full">
-      {/* Hero Section - Just Logo */}
+      {/* Hero Section - Evaporating Logo */}
       <section 
         className="h-screen w-full bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden" 
         data-testid="hero-section"
         style={{
-          opacity: 1 - scrollProgress * 0.8,
-          transform: `scale(${1 - scrollProgress * 0.2})`
+          opacity: Math.pow(1 - scrollProgress, 2),
+          filter: `blur(${scrollProgress * 20}px)`,
+          transform: `scale(${1 + scrollProgress * 0.3}) translateY(${-scrollProgress * 100}px)`,
+          pointerEvents: scrollProgress > 0.5 ? 'none' : 'auto'
         }}
       >
-        <div className="fade-up">
+        <div 
+          className="fade-up"
+          style={{
+            opacity: 1 - scrollProgress * 1.5
+          }}
+        >
           <img 
             src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
             alt="Estate Tea Logo" 
@@ -69,19 +76,23 @@ const EntryForm = ({ onSubmit }) => {
           onClick={scrollToForm}
           className="absolute bottom-12 animate-bounce cursor-pointer"
           data-testid="scroll-hint"
-          style={{ opacity: 1 - scrollProgress * 2 }}
+          style={{ 
+            opacity: Math.max(0, 1 - scrollProgress * 3),
+            transform: `translateY(${scrollProgress * 50}px)`
+          }}
         >
           <ChevronDown className="w-8 h-8 text-[#D4AF37]" />
         </button>
       </section>
 
-      {/* Entry Form Section */}
+      {/* Entry Form Section - Materializing */}
       <section 
         className="hero-bg min-h-screen w-full flex items-center justify-center p-4 relative" 
         data-testid="form-section"
         style={{
-          opacity: scrollProgress * 1.5,
-          transform: `translateY(${(1 - scrollProgress) * 50}px)`
+          opacity: Math.pow(scrollProgress, 1.5) * 1.2,
+          transform: `translateY(${Math.max(0, (1 - scrollProgress) * 100)}px) scale(${0.9 + scrollProgress * 0.1})`,
+          filter: `blur(${Math.max(0, (1 - scrollProgress) * 15)}px)`
         }}
       >
         <div className="glass-surface rounded-2xl p-12 max-w-lg w-full">
