@@ -9,15 +9,14 @@ const EntryForm = ({ onSubmit }) => {
     age: "",
     place: ""
   });
-  const [showScrollHint, setShowScrollHint] = useState(true);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowScrollHint(false);
-      } else {
-        setShowScrollHint(true);
-      }
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const progress = Math.min(scrollY / viewportHeight, 1);
+      setScrollProgress(progress);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -49,36 +48,48 @@ const EntryForm = ({ onSubmit }) => {
   return (
     <div className="w-full">
       {/* Hero Section - Just Logo */}
-      <section className="h-screen w-full bg-[#0a0a0a] flex flex-col items-center justify-center relative" data-testid="hero-section">
+      <section 
+        className="h-screen w-full bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden" 
+        data-testid="hero-section"
+        style={{
+          opacity: 1 - scrollProgress * 0.8,
+          transform: `scale(${1 - scrollProgress * 0.2})`
+        }}
+      >
         <div className="fade-up">
           <img 
             src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
             alt="Estate Tea Logo" 
-            className="w-48 h-48 md:w-64 md:h-64 mb-8 opacity-90"
+            className="w-72 h-72 md:w-96 md:h-96 logo-sharp"
           />
-          <h1 className="text-6xl md:text-7xl font-light tracking-tight gold-text text-center">Estate Tea</h1>
         </div>
         
         {/* Scroll Indicator */}
-        {showScrollHint && (
-          <button
-            onClick={scrollToForm}
-            className="absolute bottom-12 animate-bounce cursor-pointer"
-            data-testid="scroll-hint"
-          >
-            <ChevronDown className="w-8 h-8 text-[#D4AF37]" />
-          </button>
-        )}
+        <button
+          onClick={scrollToForm}
+          className="absolute bottom-12 animate-bounce cursor-pointer"
+          data-testid="scroll-hint"
+          style={{ opacity: 1 - scrollProgress * 2 }}
+        >
+          <ChevronDown className="w-8 h-8 text-[#D4AF37]" />
+        </button>
       </section>
 
       {/* Entry Form Section */}
-      <section className="hero-bg min-h-screen w-full flex items-center justify-center p-4" data-testid="form-section">
-        <div className="glass-surface rounded-2xl p-12 max-w-lg w-full fade-up">
+      <section 
+        className="hero-bg min-h-screen w-full flex items-center justify-center p-4 relative" 
+        data-testid="form-section"
+        style={{
+          opacity: scrollProgress * 1.5,
+          transform: `translateY(${(1 - scrollProgress) * 50}px)`
+        }}
+      >
+        <div className="glass-surface rounded-2xl p-12 max-w-lg w-full">
           <div className="flex flex-col items-center mb-12">
             <img 
               src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
               alt="Estate Tea Logo" 
-              className="w-24 h-24 mb-6"
+              className="w-24 h-24 mb-6 logo-sharp"
             />
             <h2 className="text-4xl font-light tracking-tight gold-text">Welcome</h2>
             <p className="text-sm uppercase tracking-[0.2em] text-gray-400 mt-4">Premium Tea Experience</p>
