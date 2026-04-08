@@ -58,25 +58,25 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
       <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <img 
               src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
               alt="Estate Tea" 
-              className="w-12 h-12"
+              className="w-10 h-10 sm:w-12 sm:h-12"
             />
             <div>
-              <h2 className="text-2xl font-light gold-text">Estate Tea</h2>
+              <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <p className="text-sm text-gray-400">Welcome, {userInfo.name}</p>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Welcome, {userInfo.name}</p>
             <button 
               onClick={() => navigate("/cart")}
-              className="relative hover:scale-110 transition-transform" 
+              className="relative hover:scale-110 active:scale-95 transition-transform touch-manipulation" 
               data-testid="cart-icon-button"
             >
-              <ShoppingCart className="w-6 h-6 text-[#D4AF37]" />
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#D4AF37]" />
               {cart.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                   {cart.length}
@@ -87,25 +87,25 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         {/* Weather Recommendation Section */}
         {weatherData && (
-          <div className="card-surface rounded-2xl p-8 mb-12 fade-up" data-testid="weather-card">
-            <div className="flex items-start gap-6">
-              <div className="bg-[#D4AF37]/10 p-4 rounded-xl">
-                <Thermometer className="w-8 h-8 text-[#D4AF37]" />
+          <div className="card-surface rounded-2xl p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 fade-up" data-testid="weather-card">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <div className="bg-[#D4AF37]/10 p-3 sm:p-4 rounded-xl">
+                <Thermometer className="w-6 h-6 sm:w-8 sm:h-8 text-[#D4AF37]" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-4 mb-3">
-                  <h3 className="text-3xl font-light">{weatherData.place}</h3>
-                  <span className="text-5xl font-light gold-text" data-testid="temperature-display">
+              <div className="flex-1 w-full">
+                <div className="flex flex-wrap items-baseline gap-2 sm:gap-4 mb-3">
+                  <h3 className="text-2xl sm:text-3xl font-light">{weatherData.place}</h3>
+                  <span className="text-4xl sm:text-5xl font-light gold-text" data-testid="temperature-display">
                     {weatherData.temperature}°C
                   </span>
-                  <span className="text-gray-400 uppercase tracking-widest text-sm">{weatherData.condition}</span>
+                  <span className="text-gray-400 uppercase tracking-widest text-xs sm:text-sm">{weatherData.condition}</span>
                 </div>
-                <div className="bg-[#D4AF37]/5 p-4 rounded-lg border border-[#D4AF37]/20">
-                  <p className="text-sm uppercase tracking-[0.15em] text-[#D4AF37] mb-2">Recommended for you</p>
-                  <p className="text-base leading-relaxed text-gray-300" data-testid="tea-recommendation">
+                <div className="bg-[#D4AF37]/5 p-3 sm:p-4 rounded-lg border border-[#D4AF37]/20">
+                  <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] mb-2">Recommended for you</p>
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-300" data-testid="tea-recommendation">
                     {weatherData.tea_recommendation}
                   </p>
                 </div>
@@ -115,10 +115,10 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         )}
 
         {/* Product Section - Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 mb-12 sm:mb-16">
           {/* Product Image */}
           <div className="md:col-span-7 fade-up">
-            <div className="card-surface rounded-2xl overflow-hidden h-[500px]">
+            <div className="card-surface rounded-2xl overflow-hidden h-[300px] sm:h-[400px] md:h-[500px]">
               <img 
                 src="https://images.unsplash.com/photo-1760074057726-e94ee8ff1eb4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxwcmVtaXVtJTIwdGVhJTIwbGVhdmVzfGVufDB8fHx8MTc3NTY2MTM1NHww&ixlib=rb-4.1.0&q=85" 
                 alt="Estate Premium Tea"
@@ -129,58 +129,58 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
 
           {/* Product Details */}
           <div className="md:col-span-5 fade-up" style={{ animationDelay: '0.2s' }}>
-            <div className="card-surface rounded-2xl p-8">
-              <div className="mb-8">
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-3">Premium Collection</p>
-                <h1 className="text-4xl font-light tracking-tight mb-4" data-testid="product-name">Estate Premium Tea</h1>
-                <p className="text-base leading-relaxed text-gray-400">
+            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
+              <div className="mb-6 sm:mb-8">
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2 sm:mb-3">Premium Collection</p>
+                <h1 className="text-3xl sm:text-4xl font-light tracking-tight mb-3 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>
+                <p className="text-sm sm:text-base leading-relaxed text-gray-400">
                   Carefully selected tea leaves from the finest estates, offering a rich and aromatic experience.
                 </p>
               </div>
 
               {/* Variant Selection */}
-              <div className="mb-8">
-                <p className="text-sm uppercase tracking-[0.15em] text-gray-300 mb-4">Select Size</p>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="mb-6 sm:mb-8">
+                <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4">Select Size</p>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {variants.map((variant) => (
                     <button
                       key={variant.id}
                       data-testid={`variant-${variant.id}`}
                       onClick={() => setSelectedVariant(variant.id)}
-                      className={`p-6 rounded-lg border-2 transition-all ${
+                      className={`p-4 sm:p-6 rounded-lg border-2 transition-all touch-manipulation active:scale-95 ${
                         selectedVariant === variant.id
                           ? 'border-[#D4AF37] bg-[#D4AF37]/5'
                           : 'border-white/10 hover:border-white/30'
                       }`}
                     >
-                      <p className="text-2xl font-light mb-2">{variant.weight}</p>
-                      <p className="text-xl gold-text">₹{variant.price}</p>
+                      <p className="text-xl sm:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
+                      <p className="text-lg sm:text-xl gold-text">₹{variant.price}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Quantity Selector */}
-              <div className="mb-8">
-                <p className="text-sm uppercase tracking-[0.15em] text-gray-300 mb-4">Quantity</p>
-                <div className="flex items-center gap-4">
+              <div className="mb-6 sm:mb-8">
+                <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4">Quantity</p>
+                <div className="flex items-center gap-3 sm:gap-4">
                   <button
                     data-testid="decrease-quantity-button"
                     onClick={decrementQuantity}
                     disabled={quantity <= 1}
-                    className="border-2 border-white/20 hover:border-[#D4AF37] disabled:opacity-30 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
+                    className="border-2 border-white/20 hover:border-[#D4AF37] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed p-3 rounded-lg transition-all touch-manipulation"
                   >
-                    <Minus className="w-5 h-5 text-white" />
+                    <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </button>
                   <div className="flex-1 text-center">
-                    <span data-testid="quantity-display" className="text-3xl font-light">{quantity}</span>
+                    <span data-testid="quantity-display" className="text-2xl sm:text-3xl font-light">{quantity}</span>
                   </div>
                   <button
                     data-testid="increase-quantity-button"
                     onClick={incrementQuantity}
-                    className="border-2 border-white/20 hover:border-[#D4AF37] p-3 rounded-lg transition-colors"
+                    className="border-2 border-white/20 hover:border-[#D4AF37] active:scale-95 p-3 rounded-lg transition-all touch-manipulation"
                   >
-                    <Plus className="w-5 h-5 text-white" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </button>
                 </div>
               </div>
@@ -190,7 +190,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
                 data-testid="add-to-cart-button"
                 onClick={handleAddToCart}
                 disabled={!selectedVariant}
-                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors"
+                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
               >
                 Add to Cart
               </button>

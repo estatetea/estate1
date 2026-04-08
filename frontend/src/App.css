@@ -9,6 +9,18 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -24,6 +36,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .glass-surface {
   backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -53,6 +66,11 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.3s ease;
 }
 
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .fade-up {
   animation: fadeUp 0.8s ease-out forwards;
 }
@@ -65,5 +83,17 @@ h1, h2, h3, h4, h5, h6 {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .glass-surface {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 }
