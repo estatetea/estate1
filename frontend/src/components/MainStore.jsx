@@ -91,24 +91,34 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         {/* Weather Recommendation Section */}
         {weatherData && (
           <div className="card-surface rounded-2xl p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 fade-up" data-testid="weather-card">
-            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-              <div className="bg-[#D4AF37]/10 p-3 sm:p-4 rounded-xl">
-                <Thermometer className="w-6 h-6 sm:w-8 sm:h-8 text-[#D4AF37]" />
-              </div>
-              <div className="flex-1 w-full">
-                <div className="flex flex-wrap items-baseline gap-2 sm:gap-4 mb-3">
-                  <h3 className="text-2xl sm:text-3xl font-light">{weatherData.place}</h3>
-                  <span className="text-4xl sm:text-5xl font-light gold-text" data-testid="temperature-display">
-                    {weatherData.temperature}°C
+            <div className="flex flex-col gap-4 sm:gap-6">
+              {/* Temperature Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="bg-[#D4AF37]/10 p-3 rounded-xl">
+                    <Thermometer className="w-6 h-6 text-[#D4AF37]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-light text-white">{weatherData.place}</h3>
+                    <span className="text-xs uppercase tracking-widest text-gray-400">{weatherData.condition}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-4xl sm:text-5xl md:text-6xl font-light gold-text block" data-testid="temperature-display">
+                    {weatherData.temperature}°
                   </span>
-                  <span className="text-gray-400 uppercase tracking-widest text-xs sm:text-sm">{weatherData.condition}</span>
                 </div>
-                <div className="bg-[#D4AF37]/5 p-3 sm:p-4 rounded-lg border border-[#D4AF37]/20">
-                  <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] mb-2">Recommended for you</p>
-                  <p className="text-sm sm:text-base leading-relaxed text-gray-300" data-testid="tea-recommendation">
-                    {weatherData.tea_recommendation}
-                  </p>
+              </div>
+              
+              {/* Recommendation Box */}
+              <div className="bg-[#D4AF37]/10 p-4 sm:p-5 rounded-xl border border-[#D4AF37]/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
+                  <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] font-medium">Recommended for you</p>
                 </div>
+                <p className="text-base sm:text-lg leading-relaxed text-white font-light" data-testid="tea-recommendation">
+                  {weatherData.tea_recommendation}
+                </p>
               </div>
             </div>
           </div>
