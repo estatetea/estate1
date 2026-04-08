@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus } from "lucide-react";
@@ -6,11 +7,10 @@ import { ShoppingCart, Thermometer, Plus, Minus } from "lucide-react";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const MainStore = ({ userInfo, weatherData }) => {
+const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
+  const navigate = useNavigate();
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [cart, setCart] = useState([]);
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
 
   const variants = [
     { id: "250g", weight: "250 grams", price: 200 },
@@ -37,8 +37,9 @@ const MainStore = ({ userInfo, weatherData }) => {
     try {
       await axios.post(`${API}/orders`, orderData);
       setCart([orderData]);
-      setShowOrderSummary(true);
       toast.success(`Added ${quantity} item(s) to cart!`);
+      // Navigate to cart page
+      navigate("/cart");
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");
@@ -70,14 +71,18 @@ const MainStore = ({ userInfo, weatherData }) => {
           </div>
           <div className="flex items-center gap-6">
             <p className="text-sm text-gray-400">Welcome, {userInfo.name}</p>
-            <div className="relative" data-testid="cart-icon">
+            <button 
+              onClick={() => navigate("/cart")}
+              className="relative hover:scale-110 transition-transform" 
+              data-testid="cart-icon-button"
+            >
               <ShoppingCart className="w-6 h-6 text-[#D4AF37]" />
               {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                   {cart.length}
                 </span>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -110,7 +115,7 @@ const MainStore = ({ userInfo, weatherData }) => {
         )}
 
         {/* Product Section - Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-16">
           {/* Product Image */}
           <div className="md:col-span-7 fade-up">
             <div className="card-surface rounded-2xl overflow-hidden h-[500px]">
@@ -193,53 +198,21 @@ const MainStore = ({ userInfo, weatherData }) => {
           </div>
         </div>
 
-        {/* Order Summary */}
-        {showOrderSummary && cart.length > 0 && (
-          <div className="mt-12 card-surface rounded-2xl p-8 fade-up" data-testid="order-summary">
-            <h2 className="text-3xl font-light mb-6">Order Summary</h2>
-            <div className="space-y-4">
-              {cart.map((item, index) => (
-                <div key={index} className="flex justify-between items-center border-b border-white/10 pb-4">
-                  <div>
-                    <p className="text-lg">{item.product_name}</p>
-                    <p className="text-sm text-gray-400">{item.variant} × {item.quantity}</p>
-                  </div>
-                  <p className="text-xl gold-text">₹{item.price * item.quantity}</p>
-                </div>
-              ))}
-              <div className="flex justify-between items-center pt-4 border-b border-white/10 pb-6">
-                <p className="text-2xl font-light">Total</p>
-                <p className="text-3xl gold-text">₹{cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)}</p>
-              </div>
-              
-              {/* Payment Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
-                <a
-                  href="https://rzp.io/l/estatetea"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="buy-now-button"
-                  className="bg-[#D4AF37] hover:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors text-center"
-                >
-                  Buy Now
-                </a>
-                <button
-                  onClick={() => {
-                    setCart([]);
-                    setShowOrderSummary(false);
-                    setSelectedVariant(null);
-                    setQuantity(1);
-                    toast.info("Continue shopping");
-                  }}
-                  data-testid="buy-later-button"
-                  className="border-2 border-white/20 hover:border-[#D4AF37] text-white font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors"
-                >
-                  Buy Later
-                </button>
-              </div>
+        {/* About Section */}
+        <div className="card-surface rounded-2xl p-12 fade-up" data-testid="about-section">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-4xl font-light mb-6 gold-text">Our Story</h2>
+            <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mb-8"></div>
+            <p className="text-lg leading-relaxed text-gray-300">
+              We're excited to share that our family-run venture, Estate Tea, is now open for orders! Our teas are hand-picked from the misty hills of Kotagiri, bringing fresh, flavourful, feel-good cups straight to your home. Every cup carries a little love from our family to yours.
+            </p>
+            <div className="mt-8 flex items-center justify-center gap-2 text-sm text-gray-400">
+              <span className="w-12 h-px bg-[#D4AF37]"></span>
+              <span className="uppercase tracking-[0.2em]">Kotagiri, India</span>
+              <span className="w-12 h-px bg-[#D4AF37]"></span>
             </div>
           </div>
-        )}
+        </div>
       </main>
     </div>
   );
