@@ -116,9 +116,12 @@ async def create_order(order_data: OrderCreate):
     return order_obj
 
 @api_router.get("/orders", response_model=List[Order])
-async def get_orders():
-    """Get all orders"""
-    orders = await db.orders.find({}, {"_id": 0}).to_list(1000)
+async def get_orders(skip: int = 0, limit: int = 50):
+    """Get orders with pagination"""
+    # Enforce maximum limit to prevent excessive data fetching
+    limit = min(limit, 100)
+    
+    orders = await db.orders.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     
     for order in orders:
         if isinstance(order['timestamp'], str):
