@@ -172,9 +172,34 @@ const MainStore = ({ userInfo, weatherData }) => {
                   <p className="text-xl gold-text">₹{item.price}</p>
                 </div>
               ))}
-              <div className="flex justify-between items-center pt-4">
+              <div className="flex justify-between items-center pt-4 border-b border-white/10 pb-6">
                 <p className="text-2xl font-light">Total</p>
                 <p className="text-3xl gold-text">₹{cart.reduce((sum, item) => sum + item.price, 0)}</p>
+              </div>
+              
+              {/* Payment Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
+                <a
+                  href="https://rzp.io/l/estatetea"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="buy-now-button"
+                  className="bg-[#D4AF37] hover:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors text-center"
+                >
+                  Buy Now
+                </a>
+                <button
+                  onClick={() => {
+                    setCart([]);
+                    setShowOrderSummary(false);
+                    setSelectedVariant(null);
+                    toast.info("Continue shopping");
+                  }}
+                  data-testid="buy-later-button"
+                  className="border-2 border-white/20 hover:border-[#D4AF37] text-white font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors"
+                >
+                  Buy Later
+                </button>
               </div>
             </div>
           </div>
