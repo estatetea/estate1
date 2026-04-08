@@ -39,6 +39,7 @@ class Order(BaseModel):
     product_name: str
     variant: str
     price: int
+    quantity: int = 1
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class OrderCreate(BaseModel):
@@ -48,6 +49,7 @@ class OrderCreate(BaseModel):
     product_name: str
     variant: str
     price: int
+    quantity: int = 1
 
 @api_router.get("/")
 async def root():

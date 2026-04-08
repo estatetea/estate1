@@ -1,13 +1,14 @@
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { ShoppingCart, Thermometer } from "lucide-react";
+import { ShoppingCart, Thermometer, Plus, Minus } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const MainStore = ({ userInfo, weatherData }) => {
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [cart, setCart] = useState([]);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
 
@@ -29,18 +30,27 @@ const MainStore = ({ userInfo, weatherData }) => {
       customer_place: userInfo.place,
       product_name: "Estate Premium Tea",
       variant: variant.weight,
-      price: variant.price
+      price: variant.price,
+      quantity: quantity
     };
 
     try {
       await axios.post(`${API}/orders`, orderData);
       setCart([orderData]);
       setShowOrderSummary(true);
-      toast.success("Added to cart!");
+      toast.success(`Added ${quantity} item(s) to cart!`);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");
     }
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const decrementQuantity = () => {
+    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
   };
 
   return (
@@ -145,6 +155,31 @@ const MainStore = ({ userInfo, weatherData }) => {
                 </div>
               </div>
 
+              {/* Quantity Selector */}
+              <div className="mb-8">
+                <p className="text-sm uppercase tracking-[0.15em] text-gray-300 mb-4">Quantity</p>
+                <div className="flex items-center gap-4">
+                  <button
+                    data-testid="decrease-quantity-button"
+                    onClick={decrementQuantity}
+                    disabled={quantity <= 1}
+                    className="border-2 border-white/20 hover:border-[#D4AF37] disabled:opacity-30 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
+                  >
+                    <Minus className="w-5 h-5 text-white" />
+                  </button>
+                  <div className="flex-1 text-center">
+                    <span data-testid="quantity-display" className="text-3xl font-light">{quantity}</span>
+                  </div>
+                  <button
+                    data-testid="increase-quantity-button"
+                    onClick={incrementQuantity}
+                    className="border-2 border-white/20 hover:border-[#D4AF37] p-3 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
               {/* Add to Cart Button */}
               <button
                 data-testid="add-to-cart-button"
@@ -167,14 +202,14 @@ const MainStore = ({ userInfo, weatherData }) => {
                 <div key={index} className="flex justify-between items-center border-b border-white/10 pb-4">
                   <div>
                     <p className="text-lg">{item.product_name}</p>
-                    <p className="text-sm text-gray-400">{item.variant}</p>
+                    <p className="text-sm text-gray-400">{item.variant} × {item.quantity}</p>
                   </div>
-                  <p className="text-xl gold-text">₹{item.price}</p>
+                  <p className="text-xl gold-text">₹{item.price * item.quantity}</p>
                 </div>
               ))}
               <div className="flex justify-between items-center pt-4 border-b border-white/10 pb-6">
                 <p className="text-2xl font-light">Total</p>
-                <p className="text-3xl gold-text">₹{cart.reduce((sum, item) => sum + item.price, 0)}</p>
+                <p className="text-3xl gold-text">₹{cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)}</p>
               </div>
               
               {/* Payment Actions */}
@@ -193,6 +228,7 @@ const MainStore = ({ userInfo, weatherData }) => {
                     setCart([]);
                     setShowOrderSummary(false);
                     setSelectedVariant(null);
+                    setQuantity(1);
                     toast.info("Continue shopping");
                   }}
                   data-testid="buy-later-button"
