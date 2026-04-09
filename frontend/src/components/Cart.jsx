@@ -101,22 +101,18 @@ const Cart = ({ cart, setCart, userInfo }) => {
                 <p className="text-3xl sm:text-4xl gold-text" data-testid="cart-total">₹{getTotalPrice()}</p>
               </div>
               
-              {/* Payment Actions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-6 sm:pt-8">
-                <button
-                  onClick={handleBuyNow}
-                  data-testid="buy-now-button"
-                  className="bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-center text-sm sm:text-base touch-manipulation"
-                >
-                  Buy Now
-                </button>
+              {/* Payment Actions - Only Buy Later */}
+              <div className="pt-6 sm:pt-8">
                 <button
                   onClick={handleBuyLater}
                   data-testid="buy-later-button"
-                  className="border-2 border-white/20 hover:border-[#D4AF37] active:border-[#D4AF37] text-white font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
+                  className="w-full border-2 border-white/20 hover:border-[#D4AF37] active:border-[#D4AF37] text-white font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
                 >
-                  Buy Later
+                  Continue Shopping
                 </button>
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  To complete payment, click "Continue Shopping" and proceed to checkout
+                </p>
               </div>
             </div>
           </div>

@@ -38,8 +38,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       await axios.post(`${API}/orders`, orderData);
       setCart([orderData]);
       toast.success(`Added ${quantity} item(s) to cart!`);
-      // Navigate to cart page
-      navigate("/cart");
+      // Go directly to checkout
+      navigate("/checkout");
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");

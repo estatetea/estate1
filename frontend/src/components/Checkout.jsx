@@ -77,32 +77,24 @@ const Checkout = ({ cart, userInfo }) => {
             </div>
 
             {/* Payment Section */}
-            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-light gold-text mb-6">Complete Payment</h2>
+            <div className="card-surface rounded-2xl p-4 sm:p-5 md:p-8">
+              <h2 className="text-xl sm:text-2xl font-light gold-text mb-4 sm:mb-6">Complete Payment</h2>
               
               {/* 250g Payment Button */}
               {has250g && PAYMENT_BUTTONS["250g"] && (
                 <div className="mb-6">
-                  <p className="text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 250g Estate Premium Tea:</p>
-                  <div data-testid="razorpay-250g-button">
+                  <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 250g Estate Premium Tea</p>
+                  <div data-testid="razorpay-250g-button" className="razorpay-button-container">
                     <RazorpayButton buttonId={PAYMENT_BUTTONS["250g"]} />
                   </div>
                 </div>
               )}
 
-              {/* 500g Payment Button Placeholder */}
-              {has500g && !PAYMENT_BUTTONS["500g"] && (
-                <div className="bg-[#D4AF37]/10 p-4 sm:p-5 rounded-lg border border-[#D4AF37]/30">
-                  <p className="text-sm sm:text-base text-gray-300 mb-2">Payment for 500g variant</p>
-                  <p className="text-xs text-gray-500">Payment button coming soon. Please contact us to complete your order.</p>
-                </div>
-              )}
-
-              {/* 500g Payment Button (when added) */}
+              {/* 500g Payment Button */}
               {has500g && PAYMENT_BUTTONS["500g"] && (
                 <div className="mb-6">
-                  <p className="text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 500g Estate Premium Tea:</p>
-                  <div data-testid="razorpay-500g-button">
+                  <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 500g Estate Premium Tea</p>
+                  <div data-testid="razorpay-500g-button" className="razorpay-button-container">
                     <RazorpayButton buttonId={PAYMENT_BUTTONS["500g"]} />
                   </div>
                 </div>

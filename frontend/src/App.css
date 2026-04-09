@@ -86,6 +86,21 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Razorpay button mobile styles */
+.razorpay-button-container {
+  width: 100%;
+}
+
+.razorpay-button-container form {
+  width: 100%;
+}
+
+.razorpay-button-container button,
+.razorpay-payment-button {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 /* Mobile optimizations */
 @media (max-width: 640px) {
   html {
@@ -95,5 +110,9 @@ h1, h2, h3, h4, h5, h6 {
   .glass-surface {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+  }
+  
+  .razorpay-button-container iframe {
+    width: 100% !important;
   }
 }
