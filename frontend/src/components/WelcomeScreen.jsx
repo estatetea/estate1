@@ -4,27 +4,32 @@ const WelcomeScreen = ({ userName, onComplete }) => {
   const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
-    // Fade in
-    setTimeout(() => setOpacity(1), 100);
+    // Fade in - slower and smoother
+    const fadeIn = setTimeout(() => setOpacity(1), 200);
     
-    // Start fade out after 2 seconds
-    setTimeout(() => setOpacity(0), 2000);
+    // Keep visible for 2.5 seconds after fade in completes
+    const startFadeOut = setTimeout(() => setOpacity(0), 2700);
     
-    // Complete transition after fade out
-    setTimeout(() => onComplete(), 2800);
+    // Complete transition and move to store
+    const complete = setTimeout(() => onComplete(), 3800);
+    
+    return () => {
+      clearTimeout(fadeIn);
+      clearTimeout(startFadeOut);
+      clearTimeout(complete);
+    };
   }, [onComplete]);
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center z-50">
       <div 
-        className="text-center"
+        className="text-center px-6"
         style={{
           opacity: opacity,
-          transform: `scale(${opacity})`,
-          transition: 'opacity 0.8s ease-out, transform 0.8s ease-out'
+          transition: 'opacity 1s ease-in-out',
         }}
       >
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-light tracking-tight gold-text mb-4">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-light tracking-tight gold-text mb-6 fade-up">
           Welcome
         </h1>
         <p 
