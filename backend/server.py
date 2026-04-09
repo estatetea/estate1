@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
-import random
+import httpx
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -57,33 +57,110 @@ async def root():
 
 @api_router.post("/weather", response_model=WeatherResponse)
 async def get_weather(request: WeatherRequest):
-    """Mock weather endpoint that simulates temperature based on location"""
-    place = request.place.lower()
+    """Fetch real weather data from OpenWeatherMap API with fallback to consistent mock data"""
+    place = request.place
+    api_key = os.environ.get('OPENWEATHER_API_KEY')
     
-    # Simulate temperatures based on common city patterns
-    temp_ranges = {
-        'mumbai': (25, 35),
-        'delhi': (15, 40),
-        'bangalore': (18, 28),
-        'chennai': (25, 38),
-        'kolkata': (20, 35),
-        'hyderabad': (20, 35),
-        'pune': (18, 32),
-        'jaipur': (15, 40),
-        'shimla': (5, 20),
-        'goa': (25, 33)
+    # Try to fetch real weather data
+    if api_key:
+        try:
+            async with httpx.AsyncClient() as http_client:
+                # Get coordinates for the place using Geocoding API
+                geo_url = f"http://api.openweathermap.org/geo/1.0/direct"
+                geo_params = {
+                    "q": place,
+                    "limit": 1,
+                    "appid": api_key
+                }
+                geo_response = await http_client.get(geo_url, params=geo_params, timeout=10)
+                geo_response.raise_for_status()
+                geo_data = geo_response.json()
+                
+                if not geo_data:
+                    # Location not found, fall back to mock data
+                    pass
+                else:
+                    lat = geo_data[0]['lat']
+                    lon = geo_data[0]['lon']
+                    
+                    # Get weather data using coordinates
+                    weather_url = f"https://api.openweathermap.org/data/2.5/weather"
+                    weather_params = {
+                        "lat": lat,
+                        "lon": lon,
+                        "appid": api_key,
+                        "units": "metric"
+                    }
+                    weather_response = await http_client.get(weather_url, params=weather_params, timeout=10)
+                    weather_response.raise_for_status()
+                    weather_data = weather_response.json()
+                    
+                    temperature = round(weather_data['main']['temp'], 1)
+                    
+                    # Determine condition and tea recommendation based on temperature
+                    if temperature < 15:
+                        condition = "Cold"
+                        tea_recommendation = "Hot Estate Classic with ginger and honey - perfect for cold weather warmth"
+                    elif temperature < 25:
+                        condition = "Pleasant"
+                        tea_recommendation = "Hot Estate Premium with cardamom - ideal for pleasant temperatures"
+                    elif temperature < 30:
+                        condition = "Warm"
+                        tea_recommendation = "Iced Estate Tea with mint and lemon - refreshing for warm weather"
+                    else:
+                        condition = "Hot"
+                        tea_recommendation = "Cold Brew Estate Tea with ice and a hint of lime - stay cool in the heat"
+                    
+                    return WeatherResponse(
+                        place=place,
+                        temperature=temperature,
+                        condition=condition,
+                        tea_recommendation=tea_recommendation
+                    )
+        except Exception as e:
+            # Log error and fall back to consistent mock data
+            logging.warning(f"Weather API error: {str(e)}. Using fallback data.")
+    
+    # Fallback to consistent mock data (based on city hash for consistency)
+    place_lower = place.lower()
+    
+    # Use hash to generate consistent temperature for each city
+    city_hash = sum(ord(c) for c in place_lower) % 100
+    
+    # Predefined consistent temperatures for common cities
+    city_temps = {
+        'mumbai': 31.0,
+        'delhi': 28.5,
+        'bangalore': 24.0,
+        'chennai': 32.0,
+        'kolkata': 29.5,
+        'hyderabad': 30.0,
+        'pune': 26.5,
+        'jaipur': 27.0,
+        'shimla': 12.0,
+        'goa': 30.5,
+        'ahmedabad': 31.5,
+        'surat': 30.0,
+        'lucknow': 26.0,
+        'kanpur': 27.5,
+        'nagpur': 28.0,
+        'indore': 27.0,
+        'thane': 30.5,
+        'bhopal': 26.5,
+        'visakhapatnam': 29.0,
+        'patna': 28.0
     }
     
-    # Default temperature range
-    temp_min, temp_max = 15, 35
-    
-    # Check if place matches known cities
-    for city, (min_t, max_t) in temp_ranges.items():
-        if city in place:
-            temp_min, temp_max = min_t, max_t
+    # Check for known cities
+    temperature = None
+    for city, temp in city_temps.items():
+        if city in place_lower:
+            temperature = temp
             break
     
-    temperature = round(random.uniform(temp_min, temp_max), 1)
+    # If not found, generate consistent temp based on hash
+    if temperature is None:
+        temperature = round(15 + (city_hash / 100) * 20, 1)  # Range: 15-35°C
     
     # Determine condition and tea recommendation
     if temperature < 15:
@@ -100,7 +177,7 @@ async def get_weather(request: WeatherRequest):
         tea_recommendation = "Cold Brew Estate Tea with ice and a hint of lime - stay cool in the heat"
     
     return WeatherResponse(
-        place=request.place,
+        place=place,
         temperature=temperature,
         condition=condition,
         tea_recommendation=tea_recommendation
