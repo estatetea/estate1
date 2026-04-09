@@ -1,47 +1,66 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const RazorpayButton = ({ buttonId }) => {
-  const formRef = useRef(null);
-  const scriptRef = useRef(null);
+  const containerRef = useRef(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Clear any existing content first
-    if (formRef.current) {
-      formRef.current.innerHTML = '';
+    if (!buttonId || !containerRef.current) {
+      return;
     }
 
-    // Create script element
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
-    script.setAttribute('data-payment_button_id', buttonId);
-    script.async = true;
-    scriptRef.current = script;
+    try {
+      // Clear any existing content
+      containerRef.current.innerHTML = '';
 
-    // Append to form
-    if (formRef.current) {
-      formRef.current.appendChild(script);
-    }
+      // Create a unique form for this button
+      const form = document.createElement('form');
+      form.className = 'razorpay-payment-button-form';
+      
+      // Create and configure script
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
+      script.setAttribute('data-payment_button_id', buttonId);
+      script.async = true;
+      
+      // Handle script load errors
+      script.onerror = () => {
+        setError('Failed to load payment button');
+      };
 
-    // Cleanup on unmount
-    return () => {
-      if (formRef.current && scriptRef.current) {
+      // Append script to form
+      form.appendChild(script);
+      
+      // Append form to container
+      containerRef.current.appendChild(form);
+
+      // Cleanup function
+      return () => {
         try {
-          formRef.current.removeChild(scriptRef.current);
+          if (containerRef.current) {
+            containerRef.current.innerHTML = '';
+          }
         } catch (e) {
-          // Script already removed
+          console.error('Cleanup error:', e);
         }
-      }
-      if (formRef.current) {
-        formRef.current.innerHTML = '';
-      }
-    };
+      };
+    } catch (err) {
+      console.error('RazorpayButton error:', err);
+      setError('Error loading payment button');
+    }
   }, [buttonId]);
 
+  if (error) {
+    return (
+      <div className="text-red-400 text-sm p-4 border border-red-400/20 rounded">
+        {error}. Please refresh the page.
+      </div>
+    );
+  }
+
   return (
-    <div className="razorpay-button-wrapper">
-      <form ref={formRef} className="razorpay-payment-button">
-        {/* Script will be inserted here */}
-      </form>
+    <div ref={containerRef} className="razorpay-button-wrapper">
+      {/* Razorpay button will be injected here */}
     </div>
   );
 };
