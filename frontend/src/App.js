@@ -6,6 +6,7 @@ import { Toaster, toast } from "sonner";
 import EntryForm from "./components/EntryForm";
 import MainStore from "./components/MainStore";
 import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
 import WelcomeScreen from "./components/WelcomeScreen";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -73,6 +74,19 @@ function App() {
                 <Cart 
                   cart={cart} 
                   setCart={setCart}
+                  userInfo={userInfo}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } 
+          />
+          <Route 
+            path="/checkout" 
+            element={
+              userInfo ? (
+                <Checkout 
+                  cart={cart}
                   userInfo={userInfo}
                 />
               ) : (

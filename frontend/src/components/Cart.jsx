@@ -1,18 +1,31 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Cart = ({ cart, setCart, userInfo }) => {
   const navigate = useNavigate();
 
   const handleBuyLater = () => {
-    setCart([]);
-    toast.info("Cart cleared. Continue shopping!");
+    toast.info("Continue shopping");
     navigate("/store");
+  };
+
+  const handleRemoveItem = (index) => {
+    const newCart = cart.filter((_, i) => i !== index);
+    setCart(newCart);
+    toast.success("Item removed from cart");
   };
 
   const getTotalPrice = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  const handleBuyNow = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    navigate("/checkout");
   };
 
   return (
@@ -65,11 +78,21 @@ const Cart = ({ cart, setCart, userInfo }) => {
             <div className="space-y-4">
               {cart.map((item, index) => (
                 <div key={index} className="flex justify-between items-center border-b border-white/10 pb-4">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-lg sm:text-xl mb-1">{item.product_name}</p>
                     <p className="text-xs sm:text-sm text-gray-400">{item.variant} × {item.quantity}</p>
                   </div>
-                  <p className="text-xl sm:text-2xl gold-text">₹{item.price * item.quantity}</p>
+                  <div className="flex items-center gap-4">
+                    <p className="text-xl sm:text-2xl gold-text">₹{item.price * item.quantity}</p>
+                    <button
+                      onClick={() => handleRemoveItem(index)}
+                      data-testid={`remove-item-${index}`}
+                      className="text-red-400 hover:text-red-300 active:scale-95 transition-all touch-manipulation p-2"
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               ))}
               
@@ -80,15 +103,13 @@ const Cart = ({ cart, setCart, userInfo }) => {
               
               {/* Payment Actions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-6 sm:pt-8">
-                <a
-                  href="https://rzp.io/l/estatetea"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleBuyNow}
                   data-testid="buy-now-button"
                   className="bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-center text-sm sm:text-base touch-manipulation"
                 >
                   Buy Now
-                </a>
+                </button>
                 <button
                   onClick={handleBuyLater}
                   data-testid="buy-later-button"
