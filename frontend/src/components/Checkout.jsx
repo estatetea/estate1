@@ -4,6 +4,10 @@ import { ArrowLeft, CreditCard, Smartphone } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
+import axios from "axios";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();

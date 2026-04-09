@@ -10,6 +10,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 import httpx
+import razorpay
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -17,6 +18,11 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# Initialize Razorpay client
+razorpay_client = razorpay.Client(
+    auth=(os.environ['RAZORPAY_KEY_ID'], os.environ['RAZORPAY_KEY_SECRET'])
+)
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -50,6 +56,18 @@ class OrderCreate(BaseModel):
     variant: str
     price: int
     quantity: int = 1
+
+class RazorpayOrderRequest(BaseModel):
+    amount: int
+    customer_name: str
+    customer_phone: str
+    customer_address: str
+
+class RazorpayOrderResponse(BaseModel):
+    order_id: str
+    amount: int
+    currency: str
+    key_id: str
 
 @api_router.get("/")
 async def root():
@@ -207,6 +225,34 @@ async def get_orders(skip: int = 0, limit: int = 50):
             order['timestamp'] = datetime.fromisoformat(order['timestamp'])
     
     return orders
+
+@api_router.post("/create-razorpay-order", response_model=RazorpayOrderResponse)
+async def create_razorpay_order(request: RazorpayOrderRequest):
+    """Create a Razorpay order"""
+    try:
+        # Create Razorpay order
+        order_data = {
+            "amount": request.amount * 100,  # Convert to paise
+            "currency": "INR",
+            "payment_capture": 1,
+            "notes": {
+                "customer_name": request.customer_name,
+                "customer_phone": request.customer_phone,
+                "customer_address": request.customer_address
+            }
+        }
+        
+        razorpay_order = razorpay_client.order.create(data=order_data)
+        
+        return RazorpayOrderResponse(
+            order_id=razorpay_order['id'],
+            amount=request.amount,
+            currency="INR",
+            key_id=os.environ['RAZORPAY_KEY_ID']
+        )
+    except Exception as e:
+        logging.error(f"Razorpay order creation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create payment order: {str(e)}")
 
 app.include_router(api_router)
 
