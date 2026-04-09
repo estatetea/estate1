@@ -11,8 +11,8 @@ const Checkout = ({ cart, userInfo }) => {
   
   // Razorpay Payment Button IDs
   const PAYMENT_BUTTONS = {
-    "250g": "pl_SbQDHN8ay4wmFh",
-    "500g": null // Add your 500g button ID here when ready
+    "250g": "pl_SbQMIgFUp1d0QU",
+    "500g": "pl_SbQNxw8mVG2fr4"
   };
 
   const getTotalPrice = () => {
