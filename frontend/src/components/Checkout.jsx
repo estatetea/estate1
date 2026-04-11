@@ -1,15 +1,16 @@
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import RazorpayButton from "./RazorpayButton";
+import PaymentSuccessModal from "./PaymentSuccessModal";
 
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Check if cart has 250g or 500g variants
   const has250g = cart.some(item => item.variant === "250 grams");
   const has500g = cart.some(item => item.variant === "500 grams");
   
-  // Razorpay Payment Button IDs
   const PAYMENT_BUTTONS = {
     "250g": "pl_SbQMIgFUp1d0QU",
     "500g": "pl_SbQNxw8mVG2fr4"
@@ -19,15 +20,34 @@ const Checkout = ({ cart, userInfo }) => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  if (cart.length === 0) {
+  const handlePaymentSuccess = useCallback(() => {
+    setPaymentSuccess(true);
+  }, []);
+
+  const handleContinueShopping = () => {
+    navigate("/store");
+  };
+
+  if (cart.length === 0 && !paymentSuccess) {
     navigate("/cart");
     return null;
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Payment Success Modal */}
+      {paymentSuccess && (
+        <PaymentSuccessModal
+          orderDetails={{
+            items: cart,
+            total: getTotalPrice()
+          }}
+          onContinue={handleContinueShopping}
+        />
+      )}
+
       {/* Header */}
-      <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
+      <header className="glass-surface sticky top-0 z-40 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
             <img 
@@ -43,7 +63,6 @@ const Checkout = ({ cart, userInfo }) => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        {/* Back Button */}
         <button
           onClick={() => navigate("/cart")}
           className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] transition-colors mb-6 sm:mb-8 touch-manipulation"
@@ -53,7 +72,6 @@ const Checkout = ({ cart, userInfo }) => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
-          {/* Order Summary & Payment */}
           <div className="lg:col-span-3 space-y-6">
             {/* Order Summary */}
             <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
@@ -64,7 +82,7 @@ const Checkout = ({ cart, userInfo }) => {
                   <div key={index} className="flex justify-between text-sm sm:text-base pb-3 border-b border-white/10">
                     <div>
                       <p className="text-gray-300">{item.product_name}</p>
-                      <p className="text-xs text-gray-500">{item.variant} × {item.quantity}</p>
+                      <p className="text-xs text-gray-500">{item.variant} x {item.quantity}</p>
                     </div>
                     <p className="gold-text">₹{item.price * item.quantity}</p>
                   </div>
@@ -80,22 +98,20 @@ const Checkout = ({ cart, userInfo }) => {
             <div className="card-surface rounded-2xl p-4 sm:p-5 md:p-8">
               <h2 className="text-xl sm:text-2xl font-light gold-text mb-4 sm:mb-6">Complete Payment</h2>
               
-              {/* 250g Payment Button */}
               {has250g && PAYMENT_BUTTONS["250g"] && (
                 <div className="mb-6">
                   <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 250g Estate Premium Tea</p>
                   <div data-testid="razorpay-250g-button" className="razorpay-button-container">
-                    <RazorpayButton buttonId={PAYMENT_BUTTONS["250g"]} />
+                    <RazorpayButton buttonId={PAYMENT_BUTTONS["250g"]} onPaymentSuccess={handlePaymentSuccess} />
                   </div>
                 </div>
               )}
 
-              {/* 500g Payment Button */}
               {has500g && PAYMENT_BUTTONS["500g"] && (
                 <div className="mb-6">
                   <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 500g Estate Premium Tea</p>
                   <div data-testid="razorpay-500g-button" className="razorpay-button-container">
-                    <RazorpayButton buttonId={PAYMENT_BUTTONS["500g"]} />
+                    <RazorpayButton buttonId={PAYMENT_BUTTONS["500g"]} onPaymentSuccess={handlePaymentSuccess} />
                   </div>
                 </div>
               )}
@@ -123,11 +139,7 @@ const Checkout = ({ cart, userInfo }) => {
               </div>
               <div>
                 <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Location</p>
-                <p className="text-white">{userInfo?.customer_place || userInfo?.place || "Bangalore"}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Age</p>
-                <p className="text-white">{userInfo?.age}</p>
+                <p className="text-white">{userInfo?.place || "Bangalore"}</p>
               </div>
             </div>
           </div>

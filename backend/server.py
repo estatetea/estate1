@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,6 +11,10 @@ import uuid
 from datetime import datetime, timezone
 import httpx
 import razorpay
+import hmac
+import hashlib
+import asyncio
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -23,6 +27,24 @@ db = client[os.environ['DB_NAME']]
 razorpay_client = razorpay.Client(
     auth=(os.environ['RAZORPAY_KEY_ID'], os.environ['RAZORPAY_KEY_SECRET'])
 )
+
+# Optional integrations (graceful if missing)
+resend_available = False
+twilio_available = False
+
+resend_api_key = os.environ.get('RESEND_API_KEY')
+if resend_api_key:
+    import resend
+    resend.api_key = resend_api_key
+    resend_available = True
+
+twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
+twilio_phone = os.environ.get('TWILIO_PHONE_NUMBER')
+if twilio_sid and twilio_token and twilio_phone:
+    from twilio.rest import Client as TwilioClient
+    twilio_client = TwilioClient(twilio_sid, twilio_token)
+    twilio_available = True
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -230,9 +252,8 @@ async def get_orders(skip: int = 0, limit: int = 50):
 async def create_razorpay_order(request: RazorpayOrderRequest):
     """Create a Razorpay order"""
     try:
-        # Create Razorpay order
         order_data = {
-            "amount": request.amount * 100,  # Convert to paise
+            "amount": request.amount * 100,
             "currency": "INR",
             "payment_capture": 1,
             "notes": {
@@ -253,6 +274,182 @@ async def create_razorpay_order(request: RazorpayOrderRequest):
     except Exception as e:
         logging.error(f"Razorpay order creation failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create payment order: {str(e)}")
+
+
+# --- Invoice Helpers ---
+
+def generate_invoice_html(payment_data: dict) -> str:
+    """Generate HTML invoice email"""
+    amount = payment_data.get('amount', 0) / 100  # paise to rupees
+    payment_id = payment_data.get('id', 'N/A')
+    email = payment_data.get('email', 'N/A')
+    contact = payment_data.get('contact', 'N/A')
+    method = payment_data.get('method', 'N/A')
+    created_at = datetime.now(timezone.utc).strftime('%d %b %Y, %I:%M %p')
+
+    return f"""
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px 30px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #D4AF37; font-weight: 300; font-size: 28px; margin: 0;">Estate Tea</h1>
+        <p style="color: #888; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-top: 8px;">Order Confirmation</p>
+      </div>
+      <div style="border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 25px 0; margin-bottom: 25px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #888; font-size: 13px;">Payment ID</td>
+            <td style="padding: 8px 0; text-align: right; color: #D4AF37; font-size: 13px;">{payment_id}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #888; font-size: 13px;">Amount Paid</td>
+            <td style="padding: 8px 0; text-align: right; color: #fff; font-size: 18px; font-weight: 300;">₹{amount:.0f}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #888; font-size: 13px;">Payment Method</td>
+            <td style="padding: 8px 0; text-align: right; color: #ccc; font-size: 13px;">{method.upper()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #888; font-size: 13px;">Date</td>
+            <td style="padding: 8px 0; text-align: right; color: #ccc; font-size: 13px;">{created_at}</td>
+          </tr>
+        </table>
+      </div>
+      <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+        <p style="color: #D4AF37; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 12px 0;">Estate Premium Tea</p>
+        <p style="color: #ccc; font-size: 14px; margin: 0; line-height: 1.6;">Your order has been confirmed. Delivery within 3-5 business days to Bangalore addresses.</p>
+      </div>
+      <p style="color: #666; font-size: 12px; text-align: center; margin-top: 30px;">
+        Thank you for choosing Estate Tea.<br/>For queries, reach out to us directly.
+      </p>
+    </div>
+    """
+
+
+def generate_invoice_sms(payment_data: dict) -> str:
+    """Generate SMS invoice text"""
+    amount = payment_data.get('amount', 0) / 100
+    payment_id = payment_data.get('id', 'N/A')
+    return (
+        f"Estate Tea - Payment Confirmed!\n"
+        f"Amount: Rs.{amount:.0f}\n"
+        f"Payment ID: {payment_id}\n"
+        f"Delivery: 3-5 days (Bangalore)\n"
+        f"Thank you for your purchase!"
+    )
+
+
+async def send_invoice_email(email: str, payment_data: dict):
+    """Send invoice email via Resend"""
+    if not resend_available:
+        logging.warning("Resend not configured - skipping email invoice")
+        return False
+    try:
+        sender = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+        params = {
+            "from": sender,
+            "to": [email],
+            "subject": "Estate Tea - Order Confirmation & Invoice",
+            "html": generate_invoice_html(payment_data)
+        }
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        logging.info(f"Invoice email sent to {email}: {result}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send invoice email: {e}")
+        return False
+
+
+async def send_invoice_sms(phone: str, payment_data: dict):
+    """Send invoice SMS via Twilio"""
+    if not twilio_available:
+        logging.warning("Twilio not configured - skipping SMS invoice")
+        return False
+    try:
+        # Ensure Indian number format
+        if not phone.startswith('+'):
+            phone = '+91' + phone.lstrip('0')
+        message = await asyncio.to_thread(
+            twilio_client.messages.create,
+            body=generate_invoice_sms(payment_data),
+            from_=twilio_phone,
+            to=phone
+        )
+        logging.info(f"Invoice SMS sent to {phone}: {message.sid}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send invoice SMS: {e}")
+        return False
+
+
+# --- Razorpay Webhook ---
+
+@api_router.post("/razorpay/webhook")
+async def razorpay_webhook(request: Request):
+    """Handle Razorpay payment webhooks - sends invoice on successful payment"""
+    body = await request.body()
+    
+    # Verify webhook signature if secret is configured
+    webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET')
+    if webhook_secret:
+        signature = request.headers.get('x-razorpay-signature', '')
+        expected = hmac.new(
+            webhook_secret.encode(),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    event = payload.get('event', '')
+    logging.info(f"Razorpay webhook received: {event}")
+
+    if event in ('payment.captured', 'payment_link.paid'):
+        payment = payload.get('payload', {}).get('payment', {}).get('entity', {})
+        
+        if not payment:
+            return {"status": "ignored", "reason": "no payment entity"}
+
+        email = payment.get('email')
+        contact = payment.get('contact')
+
+        # Store payment record
+        payment_record = {
+            "payment_id": payment.get('id'),
+            "amount": payment.get('amount', 0) / 100,
+            "currency": payment.get('currency', 'INR'),
+            "email": email,
+            "contact": contact,
+            "method": payment.get('method'),
+            "status": payment.get('status'),
+            "event": event,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.payments.insert_one(payment_record)
+
+        # Send invoices (non-blocking, don't fail webhook)
+        if email:
+            asyncio.create_task(send_invoice_email(email, payment))
+        if contact:
+            asyncio.create_task(send_invoice_sms(contact, payment))
+
+        return {"status": "ok", "event": event}
+
+    return {"status": "ignored", "event": event}
+
+
+@api_router.get("/invoice/status")
+async def invoice_status():
+    """Check which invoice services are configured"""
+    return {
+        "email_configured": resend_available,
+        "sms_configured": twilio_available,
+        "email_provider": "Resend" if resend_available else None,
+        "sms_provider": "Twilio" if twilio_available else None
+    }
 
 app.include_router(api_router)
 
