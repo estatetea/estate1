@@ -22,9 +22,10 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 │   ├── requirements.txt
 │   └── .env
 └── frontend/
+    ├── public/index.html (viewport meta, Razorpay script)
     ├── src/
     │   ├── App.js (Routing, state management)
-    │   ├── App.css (Theme, animations)
+    │   ├── App.css (Theme, animations, mobile fixes)
     │   ├── components/
     │   │   ├── EntryForm.jsx (Name-only form, silent auto-locate)
     │   │   ├── WelcomeScreen.jsx (Fade transition)
@@ -39,13 +40,13 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 ```
 
 ## Completed Features (as of Apr 11, 2026)
-- [x] Black & gold theme, mobile-responsive
+- [x] Black & gold theme, mobile-responsive (tested 320px-1920px)
 - [x] Scroll-based evaporation transition on landing page
-- [x] Entry form - Name only (location input removed)
+- [x] Entry form - Name only (location removed)
 - [x] Silent auto-location via browser Geolocation API
 - [x] Welcome screen fade-in transition (2s)
-- [x] Weather-based single recommendation (when location granted) with Recipe button
-- [x] Dual Hot/Cold tea options (when location denied) with Recipe buttons
+- [x] Weather-based recommendation with Recipe button (location granted)
+- [x] Dual Hot/Cold tea options with Recipe buttons (location denied)
 - [x] Recipe modal with step-by-step instructions and Pro Tip
 - [x] Product variants: 250g (Rs.200) / 500g (Rs.400)
 - [x] Cart with quantity controls
@@ -54,11 +55,12 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 - [x] Razorpay webhook endpoint (stores payments in MongoDB)
 - [x] Invoice email infrastructure via Resend (needs API key)
 - [x] Invoice SMS infrastructure via Twilio (needs API keys)
+- [x] Mobile UI optimization (overflow-x fix, responsive text/padding, viewport meta)
 - [x] Specific T&Cs (Bangalore only, no refunds)
-- [x] Mock weather fallback (real API key broken)
+- [x] Mock weather fallback
 
 ## API Endpoints
-- `POST /api/weather` - Returns weather data (mocked fallback)
+- `POST /api/weather` - Weather data (mocked fallback)
 - `POST /api/orders` - Create order
 - `GET /api/orders` - List orders
 - `POST /api/create-razorpay-order` - Create Razorpay order
@@ -70,17 +72,16 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 - 500g: `pl_SbQNxw8mVG2fr4`
 
 ## Required API Keys (Not Yet Configured)
-- **Resend** (Email): Sign up at https://resend.com → API Keys → Create (starts with `re_...`). Add to backend .env as `RESEND_API_KEY`
-- **Twilio** (SMS): Sign up at https://www.twilio.com → Get Account SID, Auth Token, Phone Number. Add to backend .env as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- **Razorpay Webhook**: In Razorpay Dashboard → Settings → Webhooks → Add webhook URL: `{your-domain}/api/razorpay/webhook`. Add secret to backend .env as `RAZORPAY_WEBHOOK_SECRET`
+- **Resend** (Email): https://resend.com → API Keys → `RESEND_API_KEY`
+- **Twilio** (SMS): https://www.twilio.com → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- **Razorpay Webhook**: Dashboard → Settings → Webhooks → `RAZORPAY_WEBHOOK_SECRET`
 
 ## Known Mocks
 - Weather API: Mock data based on city hash (real key returns 401)
-- Email/SMS: Infrastructure ready but not configured (graceful degradation)
+- Email/SMS: Infrastructure ready but not configured
 
 ## Upcoming Tasks (P1)
-- [ ] Configure Resend API key for email invoices
-- [ ] Configure Twilio for SMS invoices
+- [ ] Configure Resend + Twilio API keys for live invoice sending
 - [ ] Set up Razorpay webhook URL in dashboard
 
 ## Future Tasks (P2)

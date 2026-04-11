@@ -75,8 +75,8 @@ const Checkout = ({ cart, userInfo }) => {
           <div className="lg:col-span-3 space-y-6">
             {/* Order Summary */}
             <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
-              <h1 className="text-3xl sm:text-4xl font-light mb-6">Checkout</h1>
-              <h2 className="text-xl sm:text-2xl font-light gold-text mb-4">Order Summary</h2>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 sm:mb-6">Checkout</h1>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-light gold-text mb-4">Order Summary</h2>
               <div className="space-y-3">
                 {cart.map((item, index) => (
                   <div key={index} className="flex justify-between text-sm sm:text-base pb-3 border-b border-white/10">

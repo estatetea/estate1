@@ -97,8 +97,8 @@ const Cart = ({ cart, setCart, userInfo }) => {
               ))}
               
               <div className="flex justify-between items-center pt-4 sm:pt-6 border-b border-white/10 pb-4 sm:pb-6">
-                <p className="text-2xl sm:text-3xl font-light">Total</p>
-                <p className="text-3xl sm:text-4xl gold-text" data-testid="cart-total">₹{getTotalPrice()}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-light">Total</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl gold-text" data-testid="cart-total">₹{getTotalPrice()}</p>
               </div>
               
               {/* Payment Actions - Only Buy Later */}

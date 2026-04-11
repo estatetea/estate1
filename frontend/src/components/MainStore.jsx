@@ -228,14 +228,14 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
                       key={variant.id}
                       data-testid={`variant-${variant.id}`}
                       onClick={() => setSelectedVariant(variant.id)}
-                      className={`p-4 sm:p-6 rounded-lg border-2 transition-all touch-manipulation active:scale-95 ${
+                      className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 transition-all touch-manipulation active:scale-95 ${
                         selectedVariant === variant.id
                           ? 'border-[#D4AF37] bg-[#D4AF37]/5'
                           : 'border-white/10 hover:border-white/30'
                       }`}
                     >
-                      <p className="text-xl sm:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
-                      <p className="text-lg sm:text-xl gold-text">₹{variant.price}</p>
+                      <p className="text-base sm:text-xl md:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
+                      <p className="text-base sm:text-lg md:text-xl gold-text">₹{variant.price}</p>
                     </button>
                   ))}
                 </div>
@@ -280,17 +280,17 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         </div>
 
         {/* About Section */}
-        <div className="card-surface rounded-2xl p-12 fade-up" data-testid="about-section">
+        <div className="card-surface rounded-2xl p-6 sm:p-8 md:p-12 fade-up" data-testid="about-section">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl font-light mb-6 gold-text">Our Story</h2>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mb-8"></div>
-            <p className="text-lg leading-relaxed text-gray-300">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 sm:mb-6 gold-text">Our Story</h2>
+            <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mb-6 sm:mb-8"></div>
+            <p className="text-sm sm:text-base md:text-lg leading-relaxed text-gray-300">
               We're excited to share that our family-run venture, Estate Tea, is now open for orders! Our teas are hand-picked from the misty hills of Kotagiri, bringing fresh, flavourful, feel-good cups straight to your home. Every cup carries a little love from our family to yours.
             </p>
-            <div className="mt-8 flex items-center justify-center gap-2 text-sm text-gray-400">
-              <span className="w-12 h-px bg-[#D4AF37]"></span>
+            <div className="mt-6 sm:mt-8 flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400">
+              <span className="w-8 sm:w-12 h-px bg-[#D4AF37]"></span>
               <span className="uppercase tracking-[0.2em]">Kotagiri, India</span>
-              <span className="w-12 h-px bg-[#D4AF37]"></span>
+              <span className="w-8 sm:w-12 h-px bg-[#D4AF37]"></span>
             </div>
           </div>
         </div>
