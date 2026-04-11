@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MapPin, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import axios from "axios";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const EntryForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
     name: "",
-    age: "",
-    place: ""
+    location: ""
   });
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,14 +28,57 @@ const EntryForm = ({ onSubmit }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Reverse geocode to get city name
+          const response = await axios.get(
+            `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=REDACTED_KEY`
+          );
+          
+          if (response.data && response.data.length > 0) {
+            const city = response.data[0].name;
+            setFormData(prev => ({ ...prev, location: city }));
+            toast.success(`Location detected: ${city}`);
+          } else {
+            toast.error("Could not determine your city");
+          }
+        } catch (error) {
+          console.error("Geocoding error:", error);
+          toast.error("Failed to get location name");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error("Location permission denied. Please enter manually.");
+        } else {
+          toast.error("Unable to retrieve your location");
+        }
+      }
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.name && formData.age && formData.place) {
+    if (formData.name && formData.location) {
       onSubmit({
         name: formData.name,
-        age: parseInt(formData.age),
-        place: formData.place
+        place: formData.location
       });
+    } else {
+      toast.error("Please fill in all fields");
     }
   };
 
@@ -123,33 +171,37 @@ const EntryForm = ({ onSubmit }) => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="age" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
-                Age
+              <Label htmlFor="location" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
+                Location
               </Label>
-              <Input
-                id="age"
-                data-testid="age-input"
-                type="number"
-                value={formData.age}
-                onChange={(e) => handleChange("age", e.target.value)}
-                className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="place" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
-                Place
-              </Label>
-              <Input
-                id="place"
-                data-testid="place-input"
-                type="text"
-                value={formData.place}
-                onChange={(e) => handleChange("place", e.target.value)}
-                className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
-                required
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="location"
+                  data-testid="location-input"
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => handleChange("location", e.target.value)}
+                  placeholder="Enter city or use auto-detect"
+                  className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation flex-1"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  disabled={isLocating}
+                  data-testid="auto-locate-button"
+                  className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 text-[#D4AF37] px-4 rounded-lg transition-colors disabled:opacity-50 touch-manipulation flex items-center gap-2"
+                  title="Auto-detect location"
+                >
+                  {isLocating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <MapPin className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline text-sm">Auto</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">We'll use your location for personalized tea recommendations</p>
             </div>
             
             <button
