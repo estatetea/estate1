@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { ShoppingCart, Thermometer, Plus, Minus } from "lucide-react";
+import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen } from "lucide-react";
+import RecipeModal from "./RecipeModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -11,11 +12,15 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
   const navigate = useNavigate();
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [recipeType, setRecipeType] = useState(null);
 
   const variants = [
     { id: "250g", weight: "250 grams", price: 200 },
     { id: "500g", weight: "500 grams", price: 400 }
   ];
+
+  const hotRecommendation = "Hot Estate Classic with ginger and honey — perfect for warming up on chilly days";
+  const coldRecommendation = "Iced Estate Tea with mint and lime — a refreshing cooler for sunny weather";
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
@@ -26,8 +31,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
     const variant = variants.find(v => v.id === selectedVariant);
     const orderData = {
       customer_name: userInfo.name,
-      customer_age: userInfo.age,
-      customer_place: userInfo.place,
+      customer_age: 0,
+      customer_place: userInfo.place || "Unknown",
       product_name: "Estate Premium Tea",
       variant: variant.weight,
       price: variant.price,
@@ -38,7 +43,6 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       await axios.post(`${API}/orders`, orderData);
       setCart([orderData]);
       toast.success(`Added ${quantity} item(s) to cart!`);
-      // Go directly to checkout
       navigate("/checkout");
     } catch (error) {
       console.error("Error creating order:", error);
@@ -46,13 +50,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
     }
   };
 
-  const incrementQuantity = () => {
-    setQuantity(prev => prev + 1);
-  };
-
-  const decrementQuantity = () => {
-    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
-  };
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -88,11 +87,10 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        {/* Weather Recommendation Section */}
+        {/* Weather-based Recommendation (location granted) */}
         {weatherData && (
           <div className="card-surface rounded-2xl p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 fade-up" data-testid="weather-card">
             <div className="flex flex-col gap-4 sm:gap-6">
-              {/* Temperature Header */}
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="bg-[#D4AF37]/10 p-3 rounded-xl">
@@ -110,11 +108,20 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
                 </div>
               </div>
               
-              {/* Recommendation Box */}
               <div className="bg-[#D4AF37]/10 p-4 sm:p-5 rounded-xl border border-[#D4AF37]/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                  <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] font-medium">Recommended for you</p>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
+                    <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] font-medium">Recommended for you</p>
+                  </div>
+                  <button
+                    onClick={() => setRecipeType(weatherData.temperature < 25 ? "hot" : "cold")}
+                    data-testid="recipe-button-weather"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 text-[#D4AF37] text-xs sm:text-sm transition-colors touch-manipulation"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Recipe
+                  </button>
                 </div>
                 <p className="text-base sm:text-lg leading-relaxed text-white font-light" data-testid="tea-recommendation">
                   {weatherData.tea_recommendation}
@@ -122,6 +129,70 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Both options (location denied) */}
+        {!weatherData && (
+          <div className="mb-8 sm:mb-12 fade-up" data-testid="tea-options-section">
+            <div className="text-center mb-6 sm:mb-8">
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2">What are you in the mood for?</p>
+              <h3 className="text-2xl sm:text-3xl font-light gold-text">Choose Your Preparation</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {/* Hot Tea Option */}
+              <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="hot-tea-option">
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                  <div className="bg-orange-500/10 p-3 rounded-xl">
+                    <Flame className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg sm:text-xl font-light text-white">Hot Tea</h4>
+                    <span className="text-xs uppercase tracking-widest text-gray-400">For cold weather</span>
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed mb-4" data-testid="hot-tea-recommendation">
+                  {hotRecommendation}
+                </p>
+                <button
+                  onClick={() => setRecipeType("hot")}
+                  data-testid="recipe-button-hot"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 text-[#D4AF37] text-sm transition-colors touch-manipulation w-full justify-center"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  View Recipe
+                </button>
+              </div>
+
+              {/* Cold Tea Option */}
+              <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="cold-tea-option">
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                  <div className="bg-cyan-500/10 p-3 rounded-xl">
+                    <Snowflake className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg sm:text-xl font-light text-white">Iced Tea</h4>
+                    <span className="text-xs uppercase tracking-widest text-gray-400">For warm weather</span>
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed mb-4" data-testid="cold-tea-recommendation">
+                  {coldRecommendation}
+                </p>
+                <button
+                  onClick={() => setRecipeType("cold")}
+                  data-testid="recipe-button-cold"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 text-[#D4AF37] text-sm transition-colors touch-manipulation w-full justify-center"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  View Recipe
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recipe Modal */}
+        {recipeType && (
+          <RecipeModal type={recipeType} onClose={() => setRecipeType(null)} />
         )}
 
         {/* Product Section - Bento Grid */}

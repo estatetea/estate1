@@ -1,20 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { ChevronDown, MapPin, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const EntryForm = ({ onSubmit }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    location: ""
-  });
+  const [name, setName] = useState("");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState(null);
+  const locationAttempted = useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,62 +23,54 @@ const EntryForm = ({ onSubmit }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
+  // Auto-trigger location detection when form becomes visible
+  useEffect(() => {
+    if (scrollProgress > 0.8 && !locationAttempted.current) {
+      locationAttempted.current = true;
+      handleGetLocation();
     }
+  }, [scrollProgress]);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) return;
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
         try {
-          // Reverse geocode to get city name
-          const response = await axios.get(
+          const response = await fetch(
             `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=REDACTED_KEY`
           );
-          
-          if (response.data && response.data.length > 0) {
-            const city = response.data[0].name;
-            setFormData(prev => ({ ...prev, location: city }));
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const city = data[0].name;
+            setDetectedLocation(city);
             toast.success(`Location detected: ${city}`);
-          } else {
-            toast.error("Could not determine your city");
           }
         } catch (error) {
           console.error("Geocoding error:", error);
-          toast.error("Failed to get location name");
         } finally {
           setIsLocating(false);
         }
       },
-      (error) => {
+      () => {
         setIsLocating(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error("Location permission denied. Please enter manually.");
-        } else {
-          toast.error("Unable to retrieve your location");
-        }
-      }
+      },
+      { timeout: 10000, enableHighAccuracy: false }
     );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.name && formData.location) {
-      onSubmit({
-        name: formData.name,
-        place: formData.location
-      });
-    } else {
-      toast.error("Please fill in all fields");
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      return;
     }
-  };
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    onSubmit({
+      name: name.trim(),
+      place: detectedLocation || null
+    });
   };
 
   const scrollToForm = () => {
@@ -157,52 +144,33 @@ const EntryForm = ({ onSubmit }) => {
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
-                Name
+                Your Name
               </Label>
               <Input
                 id="name"
                 data-testid="name-input"
                 type="text"
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
                 className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
-                Location
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="location"
-                  data-testid="location-input"
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleChange("location", e.target.value)}
-                  placeholder="Enter city or use auto-detect"
-                  className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation flex-1"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={handleGetLocation}
-                  disabled={isLocating}
-                  data-testid="auto-locate-button"
-                  className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 text-[#D4AF37] px-4 rounded-lg transition-colors disabled:opacity-50 touch-manipulation flex items-center gap-2"
-                  title="Auto-detect location"
-                >
-                  {isLocating ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <MapPin className="w-5 h-5" />
-                  )}
-                  <span className="hidden sm:inline text-sm">Auto</span>
-                </button>
+
+            {/* Location status indicator */}
+            {isLocating && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-black/30 border border-white/10 rounded-lg" data-testid="location-detecting">
+                <Loader2 className="w-4 h-4 text-[#D4AF37] animate-spin" />
+                <span className="text-sm text-gray-400">Detecting your location...</span>
               </div>
-              <p className="text-xs text-gray-500">We'll use your location for personalized tea recommendations</p>
-            </div>
+            )}
+            {detectedLocation && !isLocating && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg" data-testid="location-detected">
+                <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
+                <span className="text-sm text-[#D4AF37]">{detectedLocation}</span>
+              </div>
+            )}
             
             <button
               type="submit"

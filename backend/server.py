@@ -50,7 +50,7 @@ class Order(BaseModel):
 
 class OrderCreate(BaseModel):
     customer_name: str
-    customer_age: int
+    customer_age: int = 0
     customer_place: str
     product_name: str
     variant: str

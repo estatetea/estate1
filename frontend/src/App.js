@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "@/App.css";
 import axios from "axios";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import EntryForm from "./components/EntryForm";
 import MainStore from "./components/MainStore";
 import Cart from "./components/Cart";
@@ -19,14 +19,21 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   const handleEntrySubmit = async (data) => {
-    try {
-      const response = await axios.post(`${API}/weather`, { place: data.place });
-      setWeatherData(response.data);
-      setUserInfo(data);
-      setShowWelcome(true);
-    } catch (error) {
-      console.error("Error fetching weather:", error);
-      toast.error("Could not fetch weather data");
+    setUserInfo(data);
+    setShowWelcome(true);
+
+    // Only fetch weather if location was detected
+    if (data.place) {
+      try {
+        const response = await axios.post(`${API}/weather`, { place: data.place });
+        setWeatherData(response.data);
+      } catch (error) {
+        console.error("Error fetching weather:", error);
+        // Proceed without weather data — store will show both options
+        setWeatherData(null);
+      }
+    } else {
+      setWeatherData(null);
     }
   };
 
