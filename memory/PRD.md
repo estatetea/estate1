@@ -7,7 +7,8 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 - **Frontend**: React + Tailwind CSS + Shadcn UI
 - **Backend**: FastAPI + MongoDB (Motor)
 - **Payments**: Razorpay Payment Buttons (embedded HTML)
-- **Weather**: OpenWeatherMap API (MOCKED - API key returns 401)
+- **Weather**: Open-Meteo API (FREE, no key needed, real-time data)
+- **Geocoding**: Nominatim/OpenStreetMap (FREE, no key needed)
 - **Email**: Resend (infrastructure ready, needs API key)
 - **SMS**: Twilio (infrastructure ready, needs API keys)
 
@@ -15,70 +16,62 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 ```
 /app/
 ├── backend/
-│   ├── server.py (FastAPI - weather, orders, razorpay, webhook, invoices)
+│   ├── server.py (FastAPI - Open-Meteo weather, orders, razorpay, webhook, invoices)
 │   ├── tests/
 │   │   ├── test_api.py
+│   │   ├── test_weather_openmeteo.py
 │   │   └── test_webhook_invoice.py
 │   ├── requirements.txt
 │   └── .env
 └── frontend/
     ├── public/index.html (viewport meta, Razorpay script)
     ├── src/
-    │   ├── App.js (Routing, state management)
+    │   ├── App.js (Routing, state, passes lat/lon to weather API)
     │   ├── App.css (Theme, animations, mobile fixes)
     │   ├── components/
-    │   │   ├── EntryForm.jsx (Name-only form, silent auto-locate)
+    │   │   ├── EntryForm.jsx (Name-only, silent auto-locate via Nominatim)
     │   │   ├── WelcomeScreen.jsx (Fade transition)
-    │   │   ├── MainStore.jsx (Products, weather/dual suggestions, recipe buttons)
+    │   │   ├── MainStore.jsx (Products, real weather/dual suggestions, recipes)
     │   │   ├── RecipeModal.jsx (Step-by-step tea recipes)
     │   │   ├── Cart.jsx (Cart management)
-    │   │   ├── Checkout.jsx (Order summary, Razorpay buttons, payment success)
-    │   │   ├── RazorpayButton.jsx (Embeds payment script, detects success)
-    │   │   └── PaymentSuccessModal.jsx (Post-payment confirmation popup)
+    │   │   ├── Checkout.jsx (Order summary, Razorpay, payment success)
+    │   │   ├── RazorpayButton.jsx (Embeds payment, detects success)
+    │   │   └── PaymentSuccessModal.jsx (Confirmation + invoice email notice)
     │   └── index.css (Tailwind base)
     └── package.json
 ```
 
-## Completed Features (as of Apr 11, 2026)
-- [x] Black & gold theme, mobile-responsive (tested 320px-1920px)
-- [x] Scroll-based evaporation transition on landing page
-- [x] Entry form - Name only (location removed)
-- [x] Silent auto-location via browser Geolocation API
-- [x] Welcome screen fade-in transition (2s)
+## Completed Features (as of Apr 14, 2026)
+- [x] Black & gold theme, mobile-responsive (320px-1920px)
+- [x] Scroll-based evaporation transition
+- [x] Entry form - Name only
+- [x] Silent auto-location (Nominatim reverse geocoding)
+- [x] Welcome screen fade-in (2s)
+- [x] **REAL weather data** via Open-Meteo (Bangalore 32.5°C, Shimla 16.5°C)
 - [x] Weather-based recommendation with Recipe button (location granted)
 - [x] Dual Hot/Cold tea options with Recipe buttons (location denied)
-- [x] Recipe modal with step-by-step instructions and Pro Tip
+- [x] Recipe modal with step-by-step instructions + Pro Tip
 - [x] Product variants: 250g (Rs.200) / 500g (Rs.400)
 - [x] Cart with quantity controls
-- [x] Checkout page with Razorpay Payment Buttons
-- [x] Payment success popup (MutationObserver + postMessage detection)
+- [x] Checkout with Razorpay Payment Buttons
+- [x] Payment success popup with "Invoice sent to your email" notice
 - [x] Razorpay webhook endpoint (stores payments in MongoDB)
-- [x] Invoice email infrastructure via Resend (needs API key)
-- [x] Invoice SMS infrastructure via Twilio (needs API keys)
-- [x] Mobile UI optimization (overflow-x fix, responsive text/padding, viewport meta)
-- [x] Specific T&Cs (Bangalore only, no refunds)
-- [x] Mock weather fallback
+- [x] Invoice email/SMS infrastructure (needs API keys)
+- [x] Mobile UI optimization (overflow-x fix, viewport meta)
+- [x] T&Cs (Bangalore only, no refunds)
 
 ## API Endpoints
-- `POST /api/weather` - Weather data (mocked fallback)
+- `POST /api/weather` - Real weather via Open-Meteo (accepts place, optional lat/lon)
 - `POST /api/orders` - Create order
 - `GET /api/orders` - List orders
-- `POST /api/create-razorpay-order` - Create Razorpay order
-- `POST /api/razorpay/webhook` - Razorpay payment webhook
-- `GET /api/invoice/status` - Check email/SMS configuration
-
-## Razorpay Button IDs
-- 250g: `pl_SbQMIgFUp1d0QU`
-- 500g: `pl_SbQNxw8mVG2fr4`
+- `POST /api/create-razorpay-order` - Razorpay order
+- `POST /api/razorpay/webhook` - Payment webhook
+- `GET /api/invoice/status` - Email/SMS config status
 
 ## Required API Keys (Not Yet Configured)
-- **Resend** (Email): https://resend.com → API Keys → `RESEND_API_KEY`
+- **Resend** (Email): https://resend.com → `RESEND_API_KEY`
 - **Twilio** (SMS): https://www.twilio.com → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- **Razorpay Webhook**: Dashboard → Settings → Webhooks → `RAZORPAY_WEBHOOK_SECRET`
-
-## Known Mocks
-- Weather API: Mock data based on city hash (real key returns 401)
-- Email/SMS: Infrastructure ready but not configured
+- **Razorpay Webhook**: Dashboard → Webhooks → `RAZORPAY_WEBHOOK_SECRET`
 
 ## Upcoming Tasks (P1)
 - [ ] Configure Resend + Twilio API keys for live invoice sending
@@ -86,4 +79,3 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 
 ## Future Tasks (P2)
 - [ ] Order status tracking / admin dashboard
-- [ ] Email notifications for order updates
