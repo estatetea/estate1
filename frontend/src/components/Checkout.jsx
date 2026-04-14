@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import RazorpayButton from "./RazorpayButton";
 
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
-  const [paymentAttempted, setPaymentAttempted] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const has250g = cart.some(item => item.variant === "250 grams");
   const has500g = cart.some(item => item.variant === "500 grams");
@@ -19,7 +19,7 @@ const Checkout = ({ cart, userInfo }) => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const handlePaymentSuccess = useCallback(() => {
+  const handleGoToSuccess = () => {
     navigate("/payment-success", {
       state: {
         orderDetails: {
@@ -28,10 +28,15 @@ const Checkout = ({ cart, userInfo }) => {
         }
       }
     });
-  }, [cart, navigate]);
+  };
 
+  const handleGoToFailed = () => {
+    navigate("/payment-failed");
+  };
+
+  // Auto-detect that user interacted with Razorpay
   const handlePaymentAttempted = useCallback(() => {
-    setPaymentAttempted(true);
+    setShowConfirmation(true);
   }, []);
 
   if (cart.length === 0) {
@@ -99,7 +104,7 @@ const Checkout = ({ cart, userInfo }) => {
                   <div data-testid="razorpay-250g-button" className="razorpay-button-container">
                     <RazorpayButton
                       buttonId={PAYMENT_BUTTONS["250g"]}
-                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentSuccess={handleGoToSuccess}
                       onPaymentAttempted={handlePaymentAttempted}
                     />
                   </div>
@@ -112,25 +117,35 @@ const Checkout = ({ cart, userInfo }) => {
                   <div data-testid="razorpay-500g-button" className="razorpay-button-container">
                     <RazorpayButton
                       buttonId={PAYMENT_BUTTONS["500g"]}
-                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentSuccess={handleGoToSuccess}
                       onPaymentAttempted={handlePaymentAttempted}
                     />
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Payment trouble link - shows after Razorpay modal interaction */}
-              {paymentAttempted && (
-                <div className="mt-4 pt-4 border-t border-white/10 text-center fade-up">
-                  <button
-                    onClick={() => navigate("/payment-failed")}
-                    data-testid="payment-trouble-link"
-                    className="text-sm text-gray-500 hover:text-red-400 transition-colors touch-manipulation underline underline-offset-4"
-                  >
-                    Payment didn't go through? Click here
-                  </button>
-                </div>
-              )}
+            {/* Post-Payment Confirmation — always visible */}
+            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8" data-testid="post-payment-section">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-400 mb-4 sm:mb-5">After completing your payment</p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleGoToSuccess}
+                  data-testid="confirm-payment-success-button"
+                  className="w-full bg-[#D4AF37] hover:bg-[#FDE047] text-black font-light uppercase tracking-[0.15em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm touch-manipulation flex items-center justify-center gap-2.5"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  I've Completed My Payment
+                </button>
+                <button
+                  onClick={handleGoToFailed}
+                  data-testid="confirm-payment-failed-button"
+                  className="w-full border border-white/15 hover:border-red-400/40 text-gray-400 hover:text-red-400 font-light uppercase tracking-[0.15em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm touch-manipulation flex items-center justify-center gap-2.5"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Payment Didn't Go Through
+                </button>
+              </div>
             </div>
 
             {/* Terms & Conditions */}
