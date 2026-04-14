@@ -8,6 +8,8 @@ import MainStore from "./components/MainStore";
 import Cart from "./components/Cart";
 import Checkout from "./components/Checkout";
 import WelcomeScreen from "./components/WelcomeScreen";
+import PaymentSuccess from "./components/PaymentSuccess";
+import PaymentFailed from "./components/PaymentFailed";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -104,6 +106,14 @@ function App() {
                 <Navigate to="/" replace />
               )
             } 
+          />
+          <Route 
+            path="/payment-success" 
+            element={<PaymentSuccess />} 
+          />
+          <Route 
+            path="/payment-failed" 
+            element={<PaymentFailed />} 
           />
         </Routes>
       </BrowserRouter>

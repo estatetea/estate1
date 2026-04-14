@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
-const RazorpayButton = ({ buttonId, onPaymentSuccess }) => {
+const RazorpayButton = ({ buttonId, onPaymentSuccess, onPaymentAttempted }) => {
   const containerRef = useRef(null);
   const [error, setError] = useState(null);
+  const successFired = useRef(false);
 
   useEffect(() => {
     if (!buttonId || !containerRef.current) return;
+    successFired.current = false;
 
     try {
       containerRef.current.innerHTML = '';
@@ -23,20 +25,26 @@ const RazorpayButton = ({ buttonId, onPaymentSuccess }) => {
       containerRef.current.appendChild(form);
 
       // Detect payment success via MutationObserver
-      const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          const container = containerRef.current;
-          if (!container) return;
-          const text = container.innerText || '';
-          if (
-            text.toLowerCase().includes('payment successful') ||
-            text.toLowerCase().includes('payment id') ||
-            text.toLowerCase().includes('thank you')
-          ) {
-            observer.disconnect();
-            if (onPaymentSuccess) onPaymentSuccess();
-            break;
-          }
+      const observer = new MutationObserver(() => {
+        if (successFired.current) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const text = (container.innerText || '').toLowerCase();
+
+        // Detect Razorpay modal opened (button was clicked)
+        if (text.includes('razorpay') || container.querySelector('iframe')) {
+          if (onPaymentAttempted) onPaymentAttempted();
+        }
+
+        // Detect payment success
+        if (
+          text.includes('payment successful') ||
+          text.includes('payment id') ||
+          text.includes('thank you')
+        ) {
+          successFired.current = true;
+          observer.disconnect();
+          if (onPaymentSuccess) onPaymentSuccess();
         }
       });
 
@@ -48,7 +56,7 @@ const RazorpayButton = ({ buttonId, onPaymentSuccess }) => {
 
       // Detect payment success via postMessage from Razorpay iframe
       const messageHandler = (event) => {
-        if (!event.data) return;
+        if (successFired.current || !event.data) return;
         try {
           const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
           if (
@@ -56,12 +64,19 @@ const RazorpayButton = ({ buttonId, onPaymentSuccess }) => {
             data?.event === 'payment.success' ||
             data?.event === 'payment_success'
           ) {
+            successFired.current = true;
             if (onPaymentSuccess) onPaymentSuccess();
           }
+          // Detect modal interaction (attempted payment)
+          if (data?.event === 'checkout.opened' || data?.event === 'modal.opened') {
+            if (onPaymentAttempted) onPaymentAttempted();
+          }
         } catch {
-          // Not JSON - check string content
-          if (typeof event.data === 'string' && event.data.includes('payment_success')) {
-            if (onPaymentSuccess) onPaymentSuccess();
+          if (typeof event.data === 'string') {
+            if (event.data.includes('payment_success')) {
+              successFired.current = true;
+              if (onPaymentSuccess) onPaymentSuccess();
+            }
           }
         }
       };
@@ -80,7 +95,7 @@ const RazorpayButton = ({ buttonId, onPaymentSuccess }) => {
       console.error('RazorpayButton error:', err);
       setError('Error loading payment button');
     }
-  }, [buttonId, onPaymentSuccess]);
+  }, [buttonId, onPaymentSuccess, onPaymentAttempted]);
 
   if (error) {
     return (

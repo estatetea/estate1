@@ -2,11 +2,10 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import RazorpayButton from "./RazorpayButton";
-import PaymentSuccessModal from "./PaymentSuccessModal";
 
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentAttempted, setPaymentAttempted] = useState(false);
 
   const has250g = cart.some(item => item.variant === "250 grams");
   const has500g = cart.some(item => item.variant === "500 grams");
@@ -21,31 +20,27 @@ const Checkout = ({ cart, userInfo }) => {
   };
 
   const handlePaymentSuccess = useCallback(() => {
-    setPaymentSuccess(true);
+    navigate("/payment-success", {
+      state: {
+        orderDetails: {
+          items: cart,
+          total: getTotalPrice()
+        }
+      }
+    });
+  }, [cart, navigate]);
+
+  const handlePaymentAttempted = useCallback(() => {
+    setPaymentAttempted(true);
   }, []);
 
-  const handleContinueShopping = () => {
-    navigate("/store");
-  };
-
-  if (cart.length === 0 && !paymentSuccess) {
+  if (cart.length === 0) {
     navigate("/cart");
     return null;
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Payment Success Modal */}
-      {paymentSuccess && (
-        <PaymentSuccessModal
-          orderDetails={{
-            items: cart,
-            total: getTotalPrice()
-          }}
-          onContinue={handleContinueShopping}
-        />
-      )}
-
       {/* Header */}
       <header className="glass-surface sticky top-0 z-40 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -102,7 +97,11 @@ const Checkout = ({ cart, userInfo }) => {
                 <div className="mb-6">
                   <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 250g Estate Premium Tea</p>
                   <div data-testid="razorpay-250g-button" className="razorpay-button-container">
-                    <RazorpayButton buttonId={PAYMENT_BUTTONS["250g"]} onPaymentSuccess={handlePaymentSuccess} />
+                    <RazorpayButton
+                      buttonId={PAYMENT_BUTTONS["250g"]}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentAttempted={handlePaymentAttempted}
+                    />
                   </div>
                 </div>
               )}
@@ -111,8 +110,25 @@ const Checkout = ({ cart, userInfo }) => {
                 <div className="mb-6">
                   <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 500g Estate Premium Tea</p>
                   <div data-testid="razorpay-500g-button" className="razorpay-button-container">
-                    <RazorpayButton buttonId={PAYMENT_BUTTONS["500g"]} onPaymentSuccess={handlePaymentSuccess} />
+                    <RazorpayButton
+                      buttonId={PAYMENT_BUTTONS["500g"]}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentAttempted={handlePaymentAttempted}
+                    />
                   </div>
+                </div>
+              )}
+
+              {/* Payment trouble link - shows after Razorpay modal interaction */}
+              {paymentAttempted && (
+                <div className="mt-4 pt-4 border-t border-white/10 text-center fade-up">
+                  <button
+                    onClick={() => navigate("/payment-failed")}
+                    data-testid="payment-trouble-link"
+                    className="text-sm text-gray-500 hover:text-red-400 transition-colors touch-manipulation underline underline-offset-4"
+                  >
+                    Payment didn't go through? Click here
+                  </button>
                 </div>
               )}
             </div>
