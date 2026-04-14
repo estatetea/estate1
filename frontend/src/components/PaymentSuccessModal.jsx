@@ -1,4 +1,4 @@
-import { CheckCircle, ShoppingBag } from "lucide-react";
+import { CheckCircle, ShoppingBag, Mail } from "lucide-react";
 import { useEffect } from "react";
 
 const PaymentSuccessModal = ({ orderDetails, onContinue }) => {
@@ -23,13 +23,13 @@ const PaymentSuccessModal = ({ orderDetails, onContinue }) => {
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-light gold-text mb-2">Payment Successful</h2>
-        <p className="text-sm text-gray-400 mb-6">Thank you for your purchase!</p>
+        <p className="text-sm text-gray-400 mb-5">Thank you for your purchase!</p>
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent mb-5" />
 
         {/* Order Details */}
         {orderDetails && (
-          <div className="bg-black/40 rounded-xl p-4 mb-6 text-left space-y-3">
+          <div className="bg-black/40 rounded-xl p-4 mb-5 text-left space-y-3">
             {orderDetails.items && orderDetails.items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-gray-300">{item.product_name} ({item.variant}) x{item.quantity}</span>
@@ -44,10 +44,16 @@ const PaymentSuccessModal = ({ orderDetails, onContinue }) => {
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-          Your invoice will be sent to the email and phone number provided during payment.
-          Orders are delivered within 3-5 business days.
-        </p>
+        {/* Invoice Notice */}
+        <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/25 rounded-xl p-4 mb-6 flex items-start gap-3 text-left" data-testid="invoice-notice">
+          <Mail className="w-5 h-5 text-[#D4AF37] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-white font-medium mb-1">Invoice sent to your email</p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              A confirmation invoice has been sent to the email address you provided during payment. Delivery within 3-5 business days.
+            </p>
+          </div>
+        </div>
 
         <button
           onClick={onContinue}

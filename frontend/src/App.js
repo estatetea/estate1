@@ -25,11 +25,15 @@ function App() {
     // Only fetch weather if location was detected
     if (data.place) {
       try {
-        const response = await axios.post(`${API}/weather`, { place: data.place });
+        const weatherPayload = { place: data.place };
+        if (data.latitude && data.longitude) {
+          weatherPayload.latitude = data.latitude;
+          weatherPayload.longitude = data.longitude;
+        }
+        const response = await axios.post(`${API}/weather`, weatherPayload);
         setWeatherData(response.data);
       } catch (error) {
         console.error("Error fetching weather:", error);
-        // Proceed without weather data — store will show both options
         setWeatherData(null);
       }
     } else {

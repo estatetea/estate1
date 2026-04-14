@@ -51,6 +51,8 @@ api_router = APIRouter(prefix="/api")
 
 class WeatherRequest(BaseModel):
     place: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class WeatherResponse(BaseModel):
     place: str
@@ -97,130 +99,131 @@ async def root():
 
 @api_router.post("/weather", response_model=WeatherResponse)
 async def get_weather(request: WeatherRequest):
-    """Fetch real weather data from OpenWeatherMap API with fallback to consistent mock data"""
+    """Fetch real weather data using Open-Meteo (free, no API key needed)"""
     place = request.place
-    api_key = os.environ.get('OPENWEATHER_API_KEY')
-    
-    # Try to fetch real weather data
-    if api_key:
-        try:
-            async with httpx.AsyncClient() as http_client:
-                # Get coordinates for the place using Geocoding API
-                geo_url = f"http://api.openweathermap.org/geo/1.0/direct"
-                geo_params = {
-                    "q": place,
-                    "limit": 1,
-                    "appid": api_key
-                }
-                geo_response = await http_client.get(geo_url, params=geo_params, timeout=10)
-                geo_response.raise_for_status()
-                geo_data = geo_response.json()
-                
-                if not geo_data:
-                    # Location not found, fall back to mock data
-                    pass
-                else:
-                    lat = geo_data[0]['lat']
-                    lon = geo_data[0]['lon']
-                    
-                    # Get weather data using coordinates
-                    weather_url = f"https://api.openweathermap.org/data/2.5/weather"
-                    weather_params = {
-                        "lat": lat,
-                        "lon": lon,
-                        "appid": api_key,
-                        "units": "metric"
-                    }
-                    weather_response = await http_client.get(weather_url, params=weather_params, timeout=10)
-                    weather_response.raise_for_status()
-                    weather_data = weather_response.json()
-                    
-                    temperature = round(weather_data['main']['temp'], 1)
-                    
-                    # Determine condition and tea recommendation based on temperature
-                    if temperature < 15:
-                        condition = "Cold"
-                        tea_recommendation = "Hot Estate Classic with ginger and honey - perfect for cold weather warmth"
-                    elif temperature < 25:
-                        condition = "Pleasant"
-                        tea_recommendation = "Hot Estate Premium with cardamom - ideal for pleasant temperatures"
-                    elif temperature < 30:
-                        condition = "Warm"
-                        tea_recommendation = "Iced Estate Tea with mint and lemon - refreshing for warm weather"
-                    else:
-                        condition = "Hot"
-                        tea_recommendation = "Cold Brew Estate Tea with ice and a hint of lime - stay cool in the heat"
-                    
-                    return WeatherResponse(
-                        place=place,
-                        temperature=temperature,
-                        condition=condition,
-                        tea_recommendation=tea_recommendation
-                    )
-        except Exception as e:
-            # Log error and fall back to consistent mock data
-            logging.warning(f"Weather API error: {str(e)}. Using fallback data.")
-    
-    # Fallback to consistent mock data (based on city hash for consistency)
+    lat = request.latitude
+    lon = request.longitude
+
+    try:
+        async with httpx.AsyncClient() as http_client:
+            # Step 1: If no lat/lon, geocode the place name via Open-Meteo
+            if lat is None or lon is None:
+                geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+                geo_params = {"name": place, "count": 1, "language": "en"}
+                geo_resp = await http_client.get(geo_url, params=geo_params, timeout=10)
+                geo_resp.raise_for_status()
+                geo_data = geo_resp.json()
+
+                results = geo_data.get("results")
+                if not results:
+                    logging.warning(f"Open-Meteo geocoding found no results for '{place}', using fallback.")
+                    raise ValueError("City not found")
+
+                lat = results[0]["latitude"]
+                lon = results[0]["longitude"]
+                # Use the official name returned by geocoding for display
+                place = results[0].get("name", place)
+
+            # Step 2: Fetch current weather from Open-Meteo
+            weather_url = "https://api.open-meteo.com/v1/forecast"
+            weather_params = {
+                "latitude": lat,
+                "longitude": lon,
+                "current": "temperature_2m,weather_code",
+                "timezone": "auto"
+            }
+            weather_resp = await http_client.get(weather_url, params=weather_params, timeout=10)
+            weather_resp.raise_for_status()
+            weather_data = weather_resp.json()
+
+            current = weather_data.get("current", {})
+            temperature = round(current.get("temperature_2m", 25.0), 1)
+            weather_code = current.get("weather_code", 0)
+
+            # Map weather code to human-readable condition
+            condition = _weather_code_to_condition(weather_code, temperature)
+
+            # Tea recommendation based on real temperature
+            tea_recommendation = _get_tea_recommendation(temperature)
+
+            return WeatherResponse(
+                place=place,
+                temperature=temperature,
+                condition=condition,
+                tea_recommendation=tea_recommendation
+            )
+
+    except Exception as e:
+        logging.warning(f"Open-Meteo weather error: {str(e)}. Using fallback.")
+        # Fallback only if the real API completely fails
+        return _fallback_weather(place)
+
+
+def _weather_code_to_condition(code: int, temp: float) -> str:
+    """Convert WMO weather code to readable condition"""
+    if code == 0:
+        return "Clear Sky"
+    elif code in (1, 2, 3):
+        return "Partly Cloudy"
+    elif code in (45, 48):
+        return "Foggy"
+    elif code in (51, 53, 55, 56, 57):
+        return "Drizzle"
+    elif code in (61, 63, 65, 66, 67):
+        return "Rainy"
+    elif code in (71, 73, 75, 77):
+        return "Snowy"
+    elif code in (80, 81, 82):
+        return "Showers"
+    elif code in (85, 86):
+        return "Snow Showers"
+    elif code in (95, 96, 99):
+        return "Thunderstorm"
+    else:
+        if temp < 15:
+            return "Cold"
+        elif temp < 25:
+            return "Pleasant"
+        elif temp < 30:
+            return "Warm"
+        else:
+            return "Hot"
+
+
+def _get_tea_recommendation(temperature: float) -> str:
+    """Get tea recommendation based on temperature"""
+    if temperature < 15:
+        return "Hot Estate Classic with ginger and honey — perfect for cold weather warmth"
+    elif temperature < 25:
+        return "Hot Estate Premium with cardamom — ideal for this pleasant weather"
+    elif temperature < 30:
+        return "Iced Estate Tea with mint and lemon — refreshing for warm weather"
+    else:
+        return "Cold Brew Estate Tea with ice and a hint of lime — stay cool in the heat"
+
+
+def _fallback_weather(place: str) -> WeatherResponse:
+    """Fallback mock weather when API is unreachable"""
     place_lower = place.lower()
-    
-    # Use hash to generate consistent temperature for each city
-    city_hash = sum(ord(c) for c in place_lower) % 100
-    
-    # Predefined consistent temperatures for common cities
     city_temps = {
-        'mumbai': 31.0,
-        'delhi': 28.5,
-        'bangalore': 24.0,
-        'chennai': 32.0,
-        'kolkata': 29.5,
-        'hyderabad': 30.0,
-        'pune': 26.5,
-        'jaipur': 27.0,
-        'shimla': 12.0,
-        'goa': 30.5,
-        'ahmedabad': 31.5,
-        'surat': 30.0,
-        'lucknow': 26.0,
-        'kanpur': 27.5,
-        'nagpur': 28.0,
-        'indore': 27.0,
-        'thane': 30.5,
-        'bhopal': 26.5,
-        'visakhapatnam': 29.0,
-        'patna': 28.0
+        'mumbai': 31.0, 'delhi': 28.5, 'bangalore': 24.0,
+        'chennai': 32.0, 'kolkata': 29.5, 'hyderabad': 30.0,
+        'pune': 26.5, 'jaipur': 27.0, 'shimla': 12.0, 'goa': 30.5,
     }
-    
-    # Check for known cities
     temperature = None
     for city, temp in city_temps.items():
         if city in place_lower:
             temperature = temp
             break
-    
-    # If not found, generate consistent temp based on hash
     if temperature is None:
-        temperature = round(15 + (city_hash / 100) * 20, 1)  # Range: 15-35°C
-    
-    # Determine condition and tea recommendation
-    if temperature < 15:
-        condition = "Cold"
-        tea_recommendation = "Hot Estate Classic with ginger and honey - perfect for cold weather warmth"
-    elif temperature < 25:
-        condition = "Pleasant"
-        tea_recommendation = "Hot Estate Premium with cardamom - ideal for pleasant temperatures"
-    elif temperature < 30:
-        condition = "Warm"
-        tea_recommendation = "Iced Estate Tea with mint and lemon - refreshing for warm weather"
-    else:
-        condition = "Hot"
-        tea_recommendation = "Cold Brew Estate Tea with ice and a hint of lime - stay cool in the heat"
-    
+        city_hash = sum(ord(c) for c in place_lower) % 100
+        temperature = round(15 + (city_hash / 100) * 20, 1)
+
     return WeatherResponse(
         place=place,
         temperature=temperature,
-        condition=condition,
-        tea_recommendation=tea_recommendation
+        condition="Pleasant" if temperature < 25 else ("Warm" if temperature < 30 else "Hot"),
+        tea_recommendation=_get_tea_recommendation(temperature)
     )
 
 @api_router.post("/orders", response_model=Order)

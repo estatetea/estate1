@@ -39,17 +39,23 @@ const EntryForm = ({ onSubmit }) => {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
+          // Use Open-Meteo geocoding (free, no key needed)
           const response = await fetch(
-            `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=REDACTED_KEY`
+            `https://geocoding-api.open-meteo.com/v1/search?name=&latitude=${latitude}&longitude=${longitude}&count=1`
           );
-          const data = await response.json();
-          if (data && data.length > 0) {
-            const city = data[0].name;
-            setDetectedLocation(city);
-            toast.success(`Location detected: ${city}`);
-          }
+          // Open-Meteo doesn't support reverse geocoding directly, so use a fallback
+          // Use Nominatim (OpenStreetMap) for reverse geocoding - free, no key
+          const revResponse = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`
+          );
+          const revData = await revResponse.json();
+          const city = revData?.address?.city || revData?.address?.town || revData?.address?.village || revData?.address?.state_district || "Your Location";
+          setDetectedLocation({ name: city, latitude, longitude });
+          toast.success(`Location detected: ${city}`);
         } catch (error) {
           console.error("Geocoding error:", error);
+          // Still store lat/lon even if city name fails
+          setDetectedLocation({ name: "Your Location", latitude, longitude });
         } finally {
           setIsLocating(false);
         }
@@ -69,7 +75,9 @@ const EntryForm = ({ onSubmit }) => {
     }
     onSubmit({
       name: name.trim(),
-      place: detectedLocation || null
+      place: detectedLocation ? detectedLocation.name : null,
+      latitude: detectedLocation ? detectedLocation.latitude : null,
+      longitude: detectedLocation ? detectedLocation.longitude : null
     });
   };
 
@@ -168,7 +176,7 @@ const EntryForm = ({ onSubmit }) => {
             {detectedLocation && !isLocating && (
               <div className="flex items-center gap-2 px-4 py-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg" data-testid="location-detected">
                 <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                <span className="text-sm text-[#D4AF37]">{detectedLocation}</span>
+                <span className="text-sm text-[#D4AF37]">{detectedLocation.name}</span>
               </div>
             )}
             
