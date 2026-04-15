@@ -1,8 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { XCircle, RefreshCw, ArrowLeft } from "lucide-react";
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const reason = location.state?.reason;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
@@ -32,6 +34,13 @@ const PaymentFailed = () => {
           <p className="text-base sm:text-lg text-gray-400 mb-4 font-light max-w-md mx-auto leading-relaxed">
             We're sorry — it looks like the payment didn't go through this time.
           </p>
+
+          {reason && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4 max-w-sm mx-auto" data-testid="failure-reason">
+              <p className="text-sm text-red-300">{reason}</p>
+            </div>
+          )}
+
           <p className="text-sm text-gray-500 mb-8 sm:mb-10 max-w-sm mx-auto leading-relaxed">
             Don't worry, no amount has been deducted. These things happen sometimes — a network hiccup or a momentary glitch. Your tea is still waiting for you.
           </p>

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import axios from "axios";
@@ -9,10 +9,25 @@ import { toast } from "sonner";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [error, setError] = useState(null);
   const [details, setDetails] = useState({
     name: userInfo?.name || "",
     phone: "",
@@ -20,12 +35,17 @@ const Checkout = ({ cart, userInfo }) => {
     address: ""
   });
 
+  useEffect(() => {
+    loadRazorpayScript();
+  }, []);
+
   const getTotalPrice = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
   const updateField = (field, value) => {
     setDetails(prev => ({ ...prev, [field]: value }));
+    if (error) setError(null);
   };
 
   const isFormValid = () => {
@@ -39,7 +59,16 @@ const Checkout = ({ cart, userInfo }) => {
 
   const handlePay = async () => {
     if (paying || !isFormValid()) return;
+    setError(null);
     setPaying(true);
+
+    // Ensure Razorpay script is loaded
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      setError("Could not load payment gateway. Please check your internet connection and try again.");
+      setPaying(false);
+      return;
+    }
 
     try {
       const { data } = await axios.post(`${API}/create-razorpay-order`, {
@@ -79,14 +108,14 @@ const Checkout = ({ cart, userInfo }) => {
                 });
               }, 1500);
             } else {
-              setTimeout(() => {
-                navigate("/payment-failed");
-              }, 1000);
+              setRedirecting(false);
+              setPaying(false);
+              setError("Payment verification failed. If money was deducted, it will be refunded automatically. Please try again.");
             }
           } catch {
-            setTimeout(() => {
-              navigate("/payment-failed");
-            }, 1000);
+            setRedirecting(false);
+            setPaying(false);
+            setError("Could not verify payment. If money was deducted, it will be refunded automatically. Please try again.");
           }
         },
         modal: {
@@ -112,14 +141,16 @@ const Checkout = ({ cart, userInfo }) => {
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function () {
+      rzp.on("payment.failed", function (response) {
         setPaying(false);
-        navigate("/payment-failed");
+        const reason = response?.error?.description || "Payment was not completed.";
+        navigate("/payment-failed", { state: { reason } });
       });
       rzp.open();
-    } catch (error) {
-      console.error("Payment error:", error);
-      toast.error("Could not initiate payment. Please try again.");
+    } catch (err) {
+      console.error("Payment error:", err);
+      const msg = err?.response?.data?.detail || err?.message || "Something went wrong";
+      setError(`Could not initiate payment: ${msg}. Please try again.`);
       setPaying(false);
     }
   };
@@ -160,6 +191,16 @@ const Checkout = ({ cart, userInfo }) => {
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           <span className="uppercase tracking-widest text-xs sm:text-sm">Back to Cart</span>
         </button>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-start gap-3" data-testid="checkout-error">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
           <div className="lg:col-span-3 space-y-6">
@@ -275,7 +316,7 @@ const Checkout = ({ cart, userInfo }) => {
             </div>
           </div>
 
-          {/* Sidebar - Order at a glance */}
+          {/* Sidebar */}
           <div className="lg:col-span-2 space-y-6">
             <div className="card-surface rounded-2xl p-5 sm:p-6 h-fit">
               <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 gold-text">Order at a Glance</h2>
