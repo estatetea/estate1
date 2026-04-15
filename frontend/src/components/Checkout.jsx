@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -11,20 +13,38 @@ const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [details, setDetails] = useState({
+    name: userInfo?.name || "",
+    phone: "",
+    email: "",
+    address: ""
+  });
 
   const getTotalPrice = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
+  const updateField = (field, value) => {
+    setDetails(prev => ({ ...prev, [field]: value }));
+  };
+
+  const isFormValid = () => {
+    return (
+      details.name.trim() &&
+      details.phone.trim().length >= 10 &&
+      details.email.trim().includes("@") &&
+      details.address.trim()
+    );
+  };
+
   const handlePay = async () => {
-    if (paying) return;
+    if (paying || !isFormValid()) return;
     setPaying(true);
 
     try {
-      // Create Razorpay order on backend
       const { data } = await axios.post(`${API}/create-razorpay-order`, {
         amount: getTotalPrice(),
-        customer_name: userInfo?.name || "Customer",
+        customer_name: details.name,
         variant: cart.map(i => i.variant).join(", ")
       });
 
@@ -36,29 +56,26 @@ const Checkout = ({ cart, userInfo }) => {
         description: cart.map(i => `${i.product_name} (${i.variant}) x${i.quantity}`).join(", "),
         order_id: data.order_id,
         handler: async function (response) {
-          // Payment successful — show redirecting overlay
           setRedirecting(true);
 
           try {
-            // Verify payment on backend
             await axios.post(`${API}/verify-payment`, {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             });
           } catch {
-            // Verification failed silently — still redirect to success
-            // (webhook will handle it server-side)
+            // Webhook handles it
           }
 
-          // Brief pause so user sees "Redirecting..."
           setTimeout(() => {
             navigate("/payment-success", {
               state: {
                 orderDetails: {
                   items: cart,
                   total: getTotalPrice(),
-                  paymentId: response.razorpay_payment_id
+                  paymentId: response.razorpay_payment_id,
+                  customerEmail: details.email
                 }
               }
             });
@@ -71,13 +88,18 @@ const Checkout = ({ cart, userInfo }) => {
           }
         },
         prefill: {
-          name: userInfo?.name || ""
+          name: details.name,
+          email: details.email,
+          contact: details.phone
         },
         theme: {
           color: "#D4AF37"
         },
         notes: {
-          customer_name: userInfo?.name,
+          customer_name: details.name,
+          phone: details.phone,
+          email: details.email,
+          address: details.address,
           location: userInfo?.place || "Bangalore"
         }
       };
@@ -100,7 +122,6 @@ const Checkout = ({ cart, userInfo }) => {
     return null;
   }
 
-  // Redirecting overlay
   if (redirecting) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4" data-testid="redirecting-screen">
@@ -113,17 +134,14 @@ const Checkout = ({ cart, userInfo }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Header */}
       <header className="glass-surface sticky top-0 z-40 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <img
-              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png"
-              alt="Estate Tea"
-              className="w-10 h-10 sm:w-12 sm:h-12"
-            />
-            <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
+          <img
+            src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png"
+            alt="Estate Tea"
+            className="w-10 h-10 sm:w-12 sm:h-12"
+          />
+          <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
         </div>
       </header>
 
@@ -159,14 +177,67 @@ const Checkout = ({ cart, userInfo }) => {
               </div>
             </div>
 
+            {/* Delivery Details Form */}
+            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8" data-testid="delivery-details-form">
+              <h2 className="text-xl sm:text-2xl font-light gold-text mb-5 sm:mb-6">Delivery Details</h2>
+              <div className="space-y-4 sm:space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="checkout-name" className="text-xs uppercase tracking-widest text-gray-400">Full Name</Label>
+                  <Input
+                    id="checkout-name"
+                    data-testid="checkout-name"
+                    value={details.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    placeholder="Enter your full name"
+                    className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="checkout-phone" className="text-xs uppercase tracking-widest text-gray-400">Phone Number</Label>
+                  <Input
+                    id="checkout-phone"
+                    data-testid="checkout-phone"
+                    type="tel"
+                    value={details.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    placeholder="10-digit mobile number"
+                    className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="checkout-email" className="text-xs uppercase tracking-widest text-gray-400">Email Address</Label>
+                  <Input
+                    id="checkout-email"
+                    data-testid="checkout-email"
+                    type="email"
+                    value={details.email}
+                    onChange={(e) => updateField("email", e.target.value)}
+                    placeholder="your@email.com"
+                    className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="checkout-address" className="text-xs uppercase tracking-widest text-gray-400">Delivery Address</Label>
+                  <textarea
+                    id="checkout-address"
+                    data-testid="checkout-address"
+                    value={details.address}
+                    onChange={(e) => updateField("address", e.target.value)}
+                    placeholder="Full address with pincode"
+                    rows={3}
+                    className="w-full bg-black/40 border border-white/10 text-white focus:border-[#D4AF37] rounded-md px-3 py-2.5 text-base touch-manipulation resize-none outline-none focus:ring-1 focus:ring-[#D4AF37]/50 placeholder:text-gray-600"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Pay Now Button */}
             <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-light gold-text mb-4 sm:mb-6">Complete Payment</h2>
               <button
                 onClick={handlePay}
-                disabled={paying}
+                disabled={paying || !isFormValid()}
                 data-testid="pay-now-button"
-                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:opacity-50 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 sm:py-5 rounded-lg transition-colors text-base sm:text-lg touch-manipulation flex items-center justify-center gap-3"
+                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:opacity-40 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 sm:py-5 rounded-lg transition-colors text-base sm:text-lg touch-manipulation flex items-center justify-center gap-3"
               >
                 {paying ? (
                   <>
@@ -178,6 +249,11 @@ const Checkout = ({ cart, userInfo }) => {
                 )}
               </button>
               <p className="text-xs text-gray-500 text-center mt-3">Secured by Razorpay</p>
+              {!isFormValid() && (
+                <p className="text-xs text-gray-600 text-center mt-2" data-testid="form-incomplete-hint">
+                  Please fill in all delivery details to proceed
+                </p>
+              )}
             </div>
 
             {/* Terms & Conditions */}
@@ -192,17 +268,21 @@ const Checkout = ({ cart, userInfo }) => {
             </div>
           </div>
 
-          {/* Customer Info Sidebar */}
-          <div className="lg:col-span-2 card-surface rounded-2xl p-5 sm:p-6 h-fit">
-            <h2 className="text-2xl font-light mb-4 sm:mb-6">Customer Details</h2>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Name</p>
-                <p className="text-white">{userInfo?.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Location</p>
-                <p className="text-white">{userInfo?.place || "Bangalore"}</p>
+          {/* Sidebar - Order at a glance */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="card-surface rounded-2xl p-5 sm:p-6 h-fit">
+              <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 gold-text">Order at a Glance</h2>
+              <div className="space-y-3 text-sm">
+                {cart.map((item, i) => (
+                  <div key={i} className="flex justify-between pb-2 border-b border-white/10">
+                    <span className="text-gray-400">{item.variant}</span>
+                    <span className="text-white">₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between pt-1">
+                  <span className="text-gray-400">Total</span>
+                  <span className="text-xl gold-text">₹{getTotalPrice()}</span>
+                </div>
               </div>
             </div>
           </div>

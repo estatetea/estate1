@@ -5,6 +5,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const orderDetails = location.state?.orderDetails;
+  const customerEmail = orderDetails?.customerEmail;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
@@ -72,7 +73,11 @@ const PaymentSuccess = () => {
             <div>
               <p className="text-sm sm:text-base text-white font-medium mb-1">Invoice sent to your email</p>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-                A confirmation invoice has been sent to the email you provided during payment. Your order will be delivered within 3-5 business days.
+                {customerEmail
+                  ? `A confirmation invoice has been sent to ${customerEmail}. `
+                  : "A confirmation invoice has been sent to the email you provided. "
+                }
+                Your order will be delivered within 3-5 business days.
               </p>
             </div>
           </div>
