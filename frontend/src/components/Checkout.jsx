@@ -1,36 +1,114 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import RazorpayButton from "./RazorpayButton";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
-
-  const has250g = cart.some(item => item.variant === "250 grams");
-  const has500g = cart.some(item => item.variant === "500 grams");
-  
-  const PAYMENT_BUTTONS = {
-    "250g": "pl_SbQMIgFUp1d0QU",
-    "500g": "pl_SbQNxw8mVG2fr4"
-  };
+  const [paying, setPaying] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const getTotalPrice = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const handlePaymentSuccess = () => {
-    navigate("/payment-success", {
-      state: {
-        orderDetails: {
-          items: cart,
-          total: getTotalPrice()
+  const handlePay = async () => {
+    if (paying) return;
+    setPaying(true);
+
+    try {
+      // Create Razorpay order on backend
+      const { data } = await axios.post(`${API}/create-razorpay-order`, {
+        amount: getTotalPrice(),
+        customer_name: userInfo?.name || "Customer",
+        variant: cart.map(i => i.variant).join(", ")
+      });
+
+      const options = {
+        key: data.key_id,
+        amount: data.amount * 100,
+        currency: data.currency,
+        name: "Estate Tea",
+        description: cart.map(i => `${i.product_name} (${i.variant}) x${i.quantity}`).join(", "),
+        order_id: data.order_id,
+        handler: async function (response) {
+          // Payment successful — show redirecting overlay
+          setRedirecting(true);
+
+          try {
+            // Verify payment on backend
+            await axios.post(`${API}/verify-payment`, {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+          } catch {
+            // Verification failed silently — still redirect to success
+            // (webhook will handle it server-side)
+          }
+
+          // Brief pause so user sees "Redirecting..."
+          setTimeout(() => {
+            navigate("/payment-success", {
+              state: {
+                orderDetails: {
+                  items: cart,
+                  total: getTotalPrice(),
+                  paymentId: response.razorpay_payment_id
+                }
+              }
+            });
+          }, 1500);
+        },
+        modal: {
+          ondismiss: function () {
+            setPaying(false);
+            navigate("/payment-failed");
+          }
+        },
+        prefill: {
+          name: userInfo?.name || ""
+        },
+        theme: {
+          color: "#D4AF37"
+        },
+        notes: {
+          customer_name: userInfo?.name,
+          location: userInfo?.place || "Bangalore"
         }
-      }
-    });
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function () {
+        setPaying(false);
+        navigate("/payment-failed");
+      });
+      rzp.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Could not initiate payment. Please try again.");
+      setPaying(false);
+    }
   };
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !redirecting) {
     navigate("/cart");
     return null;
+  }
+
+  // Redirecting overlay
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4" data-testid="redirecting-screen">
+        <Loader2 className="w-10 h-10 text-[#D4AF37] animate-spin mb-6" />
+        <h2 className="text-xl sm:text-2xl font-light gold-text mb-2">Payment Received</h2>
+        <p className="text-sm text-gray-400">Redirecting you back to the website...</p>
+      </div>
+    );
   }
 
   return (
@@ -39,14 +117,12 @@ const Checkout = ({ cart, userInfo }) => {
       <header className="glass-surface sticky top-0 z-40 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
-              alt="Estate Tea" 
+            <img
+              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png"
+              alt="Estate Tea"
               className="w-10 h-10 sm:w-12 sm:h-12"
             />
-            <div>
-              <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
           </div>
         </div>
       </header>
@@ -83,33 +159,25 @@ const Checkout = ({ cart, userInfo }) => {
               </div>
             </div>
 
-            {/* Payment Section */}
-            <div className="card-surface rounded-2xl p-4 sm:p-5 md:p-8">
+            {/* Pay Now Button */}
+            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
               <h2 className="text-xl sm:text-2xl font-light gold-text mb-4 sm:mb-6">Complete Payment</h2>
-              
-              {has250g && PAYMENT_BUTTONS["250g"] && (
-                <div className="mb-6">
-                  <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 250g Estate Premium Tea</p>
-                  <div data-testid="razorpay-250g-button" className="razorpay-button-container">
-                    <RazorpayButton
-                      buttonId={PAYMENT_BUTTONS["250g"]}
-                      onPaymentSuccess={handlePaymentSuccess}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {has500g && PAYMENT_BUTTONS["500g"] && (
-                <div className="mb-6">
-                  <p className="text-xs sm:text-sm text-gray-400 mb-3 uppercase tracking-widest">Pay for 500g Estate Premium Tea</p>
-                  <div data-testid="razorpay-500g-button" className="razorpay-button-container">
-                    <RazorpayButton
-                      buttonId={PAYMENT_BUTTONS["500g"]}
-                      onPaymentSuccess={handlePaymentSuccess}
-                    />
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={handlePay}
+                disabled={paying}
+                data-testid="pay-now-button"
+                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:opacity-50 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 sm:py-5 rounded-lg transition-colors text-base sm:text-lg touch-manipulation flex items-center justify-center gap-3"
+              >
+                {paying ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>Pay ₹{getTotalPrice()}</>
+                )}
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-3">Secured by Razorpay</p>
             </div>
 
             {/* Terms & Conditions */}

@@ -84,8 +84,7 @@ class OrderCreate(BaseModel):
 class RazorpayOrderRequest(BaseModel):
     amount: int
     customer_name: str
-    customer_phone: str
-    customer_address: str
+    variant: str = ""
 
 class RazorpayOrderResponse(BaseModel):
     order_id: str
@@ -261,8 +260,7 @@ async def create_razorpay_order(request: RazorpayOrderRequest):
             "payment_capture": 1,
             "notes": {
                 "customer_name": request.customer_name,
-                "customer_phone": request.customer_phone,
-                "customer_address": request.customer_address
+                "variant": request.variant
             }
         }
         
@@ -277,6 +275,38 @@ async def create_razorpay_order(request: RazorpayOrderRequest):
     except Exception as e:
         logging.error(f"Razorpay order creation failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create payment order: {str(e)}")
+
+
+@api_router.post("/verify-payment")
+async def verify_payment(request: Request):
+    """Verify Razorpay payment after checkout"""
+    body = await request.json()
+    razorpay_payment_id = body.get("razorpay_payment_id")
+    razorpay_order_id = body.get("razorpay_order_id")
+    razorpay_signature = body.get("razorpay_signature")
+
+    if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
+        raise HTTPException(status_code=400, detail="Missing payment details")
+
+    try:
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        })
+
+        # Payment verified — store it
+        payment_record = {
+            "payment_id": razorpay_payment_id,
+            "order_id": razorpay_order_id,
+            "status": "verified",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.payments.insert_one(payment_record)
+
+        return {"verified": True, "payment_id": razorpay_payment_id}
+    except razorpay.errors.SignatureVerificationError:
+        return {"verified": False, "error": "Invalid payment signature"}
 
 
 # --- Invoice Helpers ---

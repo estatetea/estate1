@@ -53,6 +53,15 @@ const PaymentSuccess = () => {
                   <span className="text-sm text-gray-400">Total Paid</span>
                   <span className="text-xl sm:text-2xl gold-text font-light">₹{orderDetails.total}</span>
                 </div>
+                {orderDetails.paymentId && (
+                  <>
+                    <div className="h-px bg-white/10 my-2" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Payment ID</span>
+                      <span className="text-xs text-gray-400 font-mono">{orderDetails.paymentId}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
