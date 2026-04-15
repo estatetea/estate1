@@ -59,32 +59,39 @@ const Checkout = ({ cart, userInfo }) => {
           setRedirecting(true);
 
           try {
-            await axios.post(`${API}/verify-payment`, {
+            const verifyRes = await axios.post(`${API}/verify-payment`, {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             });
-          } catch {
-            // Webhook handles it
-          }
 
-          setTimeout(() => {
-            navigate("/payment-success", {
-              state: {
-                orderDetails: {
-                  items: cart,
-                  total: getTotalPrice(),
-                  paymentId: response.razorpay_payment_id,
-                  customerEmail: details.email
-                }
-              }
-            });
-          }, 1500);
+            if (verifyRes.data.verified) {
+              setTimeout(() => {
+                navigate("/payment-success", {
+                  state: {
+                    orderDetails: {
+                      items: cart,
+                      total: getTotalPrice(),
+                      paymentId: response.razorpay_payment_id,
+                      customerEmail: details.email
+                    }
+                  }
+                });
+              }, 1500);
+            } else {
+              setTimeout(() => {
+                navigate("/payment-failed");
+              }, 1000);
+            }
+          } catch {
+            setTimeout(() => {
+              navigate("/payment-failed");
+            }, 1000);
+          }
         },
         modal: {
           ondismiss: function () {
             setPaying(false);
-            navigate("/payment-failed");
           }
         },
         prefill: {
