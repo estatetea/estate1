@@ -336,6 +336,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
                 </button>
               ))}
             </div>
+            <p className="text-xs text-gray-500 text-center mt-2" data-testid="gst-note">Prices exclusive of 5% GST (CGST 2.5% + SGST 2.5%)</p>
           </div>
 
           {/* Quantity Selector */}
@@ -370,7 +371,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
           >
             {selectedVariant ? (
               <>
-                <span>Add to Cart — ₹{(variants.find(v => v.id === selectedVariant)?.price || 0) * quantity}</span>
+                <span>Add to Cart — ₹{Math.round((variants.find(v => v.id === selectedVariant)?.price || 0) * quantity * 1.05)}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             ) : "Select a size"}

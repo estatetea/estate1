@@ -51,6 +51,14 @@ const Checkout = ({ cart, userInfo }) => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
+  const getGstAmount = () => {
+    return Math.round(getTotalPrice() * 0.05);
+  };
+
+  const getGrandTotal = () => {
+    return getTotalPrice() + getGstAmount();
+  };
+
   const updateField = (field, value) => {
     setDetails(prev => ({ ...prev, [field]: value }));
     if (error) setError(null);
@@ -83,7 +91,7 @@ const Checkout = ({ cart, userInfo }) => {
 
     try {
       const { data } = await axios.post(`${API}/create-razorpay-order`, {
-        amount: getTotalPrice(),
+        amount: getGrandTotal(),
         customer_name: details.name,
         variant: cart.map(i => i.variant).join(", ")
       });
@@ -109,7 +117,7 @@ const Checkout = ({ cart, userInfo }) => {
                   state: {
                     orderDetails: {
                       items: cart,
-                      total: getTotalPrice(),
+                      total: getGrandTotal(),
                       paymentId: response.razorpay_payment_id,
                       customerEmail: details.email
                     }
@@ -223,9 +231,17 @@ const Checkout = ({ cart, userInfo }) => {
                     <p className="gold-text">₹{item.price * item.quantity}</p>
                   </div>
                 ))}
+                <div className="flex justify-between text-sm pb-2 border-b border-white/10" data-testid="cgst-line">
+                  <span className="text-gray-400">CGST (2.5%)</span>
+                  <span className="text-gray-300">₹{Math.round(getTotalPrice() * 0.025)}</span>
+                </div>
+                <div className="flex justify-between text-sm pb-3 border-b border-white/10" data-testid="sgst-line">
+                  <span className="text-gray-400">SGST (2.5%)</span>
+                  <span className="text-gray-300">₹{Math.round(getTotalPrice() * 0.025)}</span>
+                </div>
                 <div className="flex justify-between items-center pt-3">
                   <p className="text-lg sm:text-xl font-light">Total</p>
-                  <p className="text-2xl sm:text-3xl gold-text">₹{getTotalPrice()}</p>
+                  <p className="text-2xl sm:text-3xl gold-text" data-testid="checkout-grand-total">₹{getGrandTotal()}</p>
                 </div>
               </div>
             </div>
@@ -309,7 +325,7 @@ const Checkout = ({ cart, userInfo }) => {
                       Processing...
                     </>
                   ) : (
-                    <>Pay ₹{getTotalPrice()}</>
+                    <>Pay ₹{getGrandTotal()}</>
                   )}
                 </button>
               )}
@@ -346,9 +362,13 @@ const Checkout = ({ cart, userInfo }) => {
                     <span className="text-white">₹{item.price * item.quantity}</span>
                   </div>
                 ))}
+                <div className="flex justify-between pb-2 border-b border-white/10">
+                  <span className="text-gray-400">GST (5%)</span>
+                  <span className="text-white">₹{getGstAmount()}</span>
+                </div>
                 <div className="flex justify-between pt-1">
                   <span className="text-gray-400">Total</span>
-                  <span className="text-xl gold-text">₹{getTotalPrice()}</span>
+                  <span className="text-xl gold-text">₹{getGrandTotal()}</span>
                 </div>
               </div>
             </div>
