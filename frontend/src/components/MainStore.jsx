@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
@@ -7,6 +7,51 @@ import RecipeModal from "./RecipeModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+const SLIDE_IMAGES = [
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/83pa1dqc_You%E2%80%99ve%20sipped%20it%2C%20loved%20it%2C%20and%20missed%20it.%20Now%20it%E2%80%99s%20back.Estate%20Tea%20%E2%80%94%20our%20family-run%20brand%20brewe.jpg",
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/scqqgqhb_estate%202.jpg",
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/bn0sx1sc_estate%201.jpg"
+];
+
+const ImageSlideshow = () => {
+  const [current, setCurrent] = useState(0);
+  const timerRef = useRef(null);
+
+  const next = useCallback(() => {
+    setCurrent(prev => (prev + 1) % SLIDE_IMAGES.length);
+  }, []);
+
+  useEffect(() => {
+    timerRef.current = setInterval(next, 4500);
+    return () => clearInterval(timerRef.current);
+  }, [next]);
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden h-[240px] sm:h-[320px] md:h-[400px] fade-up" data-testid="image-slideshow">
+      {SLIDE_IMAGES.map((src, i) => (
+        <img
+          key={i}
+          src={src}
+          alt={`Estate Tea ${i + 1}`}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ease-in-out"
+          style={{ opacity: current === i ? 1 : 0 }}
+          loading={i === 0 ? "eager" : "lazy"}
+        />
+      ))}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10" data-testid="slideshow-dots">
+        {SLIDE_IMAGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => { setCurrent(i); clearInterval(timerRef.current); timerRef.current = setInterval(next, 4500); }}
+            className={`rounded-full transition-all duration-400 ${current === i ? "w-6 h-1.5 bg-[#D4AF37]" : "w-1.5 h-1.5 bg-white/40"}`}
+            data-testid={`slideshow-dot-${i}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
   const navigate = useNavigate();
@@ -87,6 +132,12 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+
+        {/* Image Slideshow */}
+        <div className="mb-8 sm:mb-12">
+          <ImageSlideshow />
+        </div>
+
         {/* Weather-based Recommendation (location granted) */}
         {weatherData && (
           <div className="card-surface rounded-2xl p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 fade-up" data-testid="weather-card">
@@ -139,7 +190,6 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
               <h3 className="text-2xl sm:text-3xl font-light gold-text">Choose Your Preparation</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Hot Tea Option */}
               <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="hot-tea-option">
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
                   <div className="bg-orange-500/10 p-3 rounded-xl">
@@ -163,7 +213,6 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
                 </button>
               </div>
 
-              {/* Cold Tea Option */}
               <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="cold-tea-option">
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
                   <div className="bg-cyan-500/10 p-3 rounded-xl">
@@ -195,15 +244,16 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
           <RecipeModal type={recipeType} onClose={() => setRecipeType(null)} />
         )}
 
-        {/* Product Section - Bento Grid */}
+        {/* Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 mb-12 sm:mb-16">
           {/* Product Image */}
           <div className="md:col-span-7 fade-up">
             <div className="card-surface rounded-2xl overflow-hidden h-[300px] sm:h-[400px] md:h-[500px]">
               <img 
-                src="https://images.unsplash.com/photo-1760074057726-e94ee8ff1eb4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxwcmVtaXVtJTIwdGVhJTIwbGVhdmVzfGVufDB8fHx8MTc3NTY2MTM1NHww&ixlib=rb-4.1.0&q=85" 
+                src="https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/scqqgqhb_estate%202.jpg"
                 alt="Estate Premium Tea"
                 className="w-full h-full object-cover"
+                data-testid="product-main-image"
               />
             </div>
           </div>
