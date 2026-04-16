@@ -69,7 +69,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
 
   const variants = [
     { id: "250g", weight: "250 grams", price: 200 },
-    { id: "500g", weight: "500 grams", price: 400 }
+    { id: "500g", weight: "500 grams", price: 390 }
   ];
 
   const hotRecommendation = "Hot Estate Classic with ginger and honey — perfect for warming up on chilly days";
