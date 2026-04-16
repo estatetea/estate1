@@ -43,6 +43,7 @@ const Checkout = ({ cart, userInfo }) => {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     loadRazorpayScript();
   }, []);
 

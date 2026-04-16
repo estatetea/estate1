@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Cart = ({ cart, setCart, userInfo }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleBuyLater = () => {
     toast.info("Continue shopping");
