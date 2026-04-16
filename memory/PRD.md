@@ -60,6 +60,8 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 
 ## Completed (Latest)
 - [x] Image slideshow on store page — smooth crossfade between 3 product images, auto-advance, dot indicators (Apr 2026)
+- [x] Clean minimal product layout — removed side product image, centered variant/quantity selection (Apr 2026)
+- [x] Page exit transition — smooth fade-to-black when navigating to checkout (Apr 2026)
 
 ## Upcoming Tasks (P1)
 - [ ] Configure Resend + Twilio API keys for live invoice sending
