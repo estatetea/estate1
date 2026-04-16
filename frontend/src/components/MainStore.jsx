@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight } from "lucide-react";
+import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
 import RecipeModal from "./RecipeModal";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "./ui/dropdown-menu";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -59,6 +65,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
+  const productRef = useRef(null);
 
   const variants = [
     { id: "250g", weight: "250 grams", price: 200 },
@@ -111,16 +118,63 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       {/* Header */}
       <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
-              alt="Estate Tea" 
-              className="w-10 h-10 sm:w-12 sm:h-12"
-            />
-            <div>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <img 
+                src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
+                alt="Estate Tea" 
+                className="w-10 h-10 sm:w-12 sm:h-12"
+              />
               <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
             </div>
+
+            {/* Nav Dropdowns */}
+            <nav className="flex items-center gap-1 sm:gap-2" data-testid="nav-dropdowns">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
+                    Categories
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[140px]">
+                  <DropdownMenuItem
+                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                    data-testid="nav-tea"
+                    onClick={() => productRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                  >
+                    Tea
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                    data-testid="nav-hampers"
+                    onClick={() => toast("Hampers — Coming Soon!", { description: "We're working on something special." })}
+                  >
+                    Hampers
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="services-dropdown">
+                    Services
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[160px]">
+                  <DropdownMenuItem
+                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                    data-testid="nav-wedding-favours"
+                    onClick={() => toast("Wedding Favours — Coming Soon!", { description: "Custom tea hampers for your special day." })}
+                  >
+                    Wedding Favours
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </nav>
           </div>
+
           <div className="flex items-center gap-3 sm:gap-6">
             <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Welcome, {userInfo.name}</p>
             <button 
@@ -253,7 +307,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         )}
 
         {/* Product Section */}
-        <div className="max-w-lg mx-auto mb-12 sm:mb-16 fade-up" data-testid="product-section">
+        <div ref={productRef} className="max-w-lg mx-auto mb-12 sm:mb-16 fade-up" data-testid="product-section">
           <div className="text-center mb-8 sm:mb-10">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2 sm:mb-3">Premium Collection</p>
             <h1 className="text-3xl sm:text-4xl font-light tracking-tight mb-3 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>

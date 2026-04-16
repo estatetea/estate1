@@ -62,8 +62,10 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 - [x] Image slideshow on store page — smooth crossfade between 3 product images, auto-advance, dot indicators (Apr 2026)
 - [x] Clean minimal product layout — removed side product image, centered variant/quantity selection (Apr 2026)
 - [x] Page exit transition — smooth fade-to-black when navigating to checkout (Apr 2026)
+- [x] Header nav dropdowns — "Categories" (Tea, Hampers) and "Services" (Wedding Favours) (Apr 2026)
 
 ## Upcoming Tasks (P1)
+- [ ] Build separate pages for Hampers and Wedding Favours (when ready)
 - [ ] Configure Resend + Twilio API keys for live invoice sending
 - [ ] Set up Razorpay webhook URL in dashboard
 
