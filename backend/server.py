@@ -17,7 +17,20 @@ import asyncio
 import json
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env', override=True)
+load_dotenv(ROOT_DIR / '.env')
+
+# Force Razorpay keys from .env file (prevents stale cached values in deployment)
+_dotenv_path = ROOT_DIR / '.env'
+if _dotenv_path.exists():
+    with open(_dotenv_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _key, _, _val = _line.partition('=')
+                _key = _key.strip()
+                _val = _val.strip().strip('"').strip("'")
+                if _key.startswith('RAZORPAY_'):
+                    os.environ[_key] = _val
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
