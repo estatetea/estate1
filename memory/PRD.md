@@ -58,6 +58,9 @@ E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive.
 - **Twilio** (SMS): https://www.twilio.com → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 - **Razorpay Webhook**: Dashboard → Webhooks → `RAZORPAY_WEBHOOK_SECRET`
 
+## Completed (Latest)
+- [x] Image slideshow on store page — smooth crossfade between 3 product images, auto-advance, dot indicators (Apr 2026)
+
 ## Upcoming Tasks (P1)
 - [ ] Configure Resend + Twilio API keys for live invoice sending
 - [ ] Set up Razorpay webhook URL in dashboard
