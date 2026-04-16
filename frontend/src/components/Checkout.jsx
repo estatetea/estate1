@@ -3,11 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import RazorpayButton from "./RazorpayButton";
 import axios from "axios";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+const PAYMENT_BUTTONS = {
+  "250 grams": "pl_SbQMIgFUp1d0QU",
+  "500 grams": "pl_SbQNxw8mVG2fr4"
+};
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -27,6 +33,7 @@ const Checkout = ({ cart, userInfo }) => {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
   const [error, setError] = useState(null);
   const [details, setDetails] = useState({
     name: userInfo?.name || "",
@@ -57,15 +64,18 @@ const Checkout = ({ cart, userInfo }) => {
     );
   };
 
+  const cartItem = cart[0];
+  const fallbackButtonId = cartItem ? PAYMENT_BUTTONS[cartItem.variant] : null;
+
   const handlePay = async () => {
     if (paying || !isFormValid()) return;
     setError(null);
     setPaying(true);
 
-    // Ensure Razorpay script is loaded
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded) {
-      setError("Could not load payment gateway. Please check your internet connection and try again.");
+      setError("Could not load payment gateway. Showing alternate payment option.");
+      setUseFallback(true);
       setPaying(false);
       return;
     }
@@ -86,14 +96,12 @@ const Checkout = ({ cart, userInfo }) => {
         order_id: data.order_id,
         handler: async function (response) {
           setRedirecting(true);
-
           try {
             const verifyRes = await axios.post(`${API}/verify-payment`, {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             });
-
             if (verifyRes.data.verified) {
               setTimeout(() => {
                 navigate("/payment-success", {
@@ -110,12 +118,12 @@ const Checkout = ({ cart, userInfo }) => {
             } else {
               setRedirecting(false);
               setPaying(false);
-              setError("Payment verification failed. If money was deducted, it will be refunded automatically. Please try again.");
+              setError("Payment verification failed. If money was deducted, it will be refunded. Please try again.");
             }
           } catch {
             setRedirecting(false);
             setPaying(false);
-            setError("Could not verify payment. If money was deducted, it will be refunded automatically. Please try again.");
+            setError("Could not verify payment. If money was deducted, it will be refunded. Please try again.");
           }
         },
         modal: {
@@ -128,9 +136,7 @@ const Checkout = ({ cart, userInfo }) => {
           email: details.email,
           contact: details.phone
         },
-        theme: {
-          color: "#D4AF37"
-        },
+        theme: { color: "#D4AF37" },
         notes: {
           customer_name: details.name,
           phone: details.phone,
@@ -148,9 +154,9 @@ const Checkout = ({ cart, userInfo }) => {
       });
       rzp.open();
     } catch (err) {
-      console.error("Payment error:", err);
-      const msg = err?.response?.data?.detail || err?.message || "Something went wrong";
-      setError(`Could not initiate payment: ${msg}. Please try again.`);
+      console.error("Standard Checkout failed, switching to Payment Button:", err);
+      setError("Standard payment couldn't be initiated. You can pay using the button below.");
+      setUseFallback(true);
       setPaying(false);
     }
   };
@@ -196,9 +202,7 @@ const Checkout = ({ cart, userInfo }) => {
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-start gap-3" data-testid="checkout-error">
             <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-red-300">{error}</p>
-            </div>
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
@@ -279,29 +283,43 @@ const Checkout = ({ cart, userInfo }) => {
               </div>
             </div>
 
-            {/* Pay Now Button */}
-            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
-              <button
-                onClick={handlePay}
-                disabled={paying || !isFormValid()}
-                data-testid="pay-now-button"
-                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:opacity-40 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 sm:py-5 rounded-lg transition-colors text-base sm:text-lg touch-manipulation flex items-center justify-center gap-3"
-              >
-                {paying ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>Pay ₹{getTotalPrice()}</>
-                )}
-              </button>
-              <p className="text-xs text-gray-500 text-center mt-3">Secured by Razorpay</p>
+            {/* Payment Section */}
+            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8" data-testid="payment-section">
+              <h2 className="text-xl sm:text-2xl font-light gold-text mb-4 sm:mb-6">Complete Payment</h2>
+
               {!isFormValid() && (
-                <p className="text-xs text-gray-600 text-center mt-2" data-testid="form-incomplete-hint">
-                  Please fill in all delivery details to proceed
-                </p>
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-500" data-testid="form-incomplete-hint">
+                    Please fill in all delivery details above to proceed
+                  </p>
+                </div>
               )}
+
+              {isFormValid() && !useFallback && (
+                <button
+                  onClick={handlePay}
+                  disabled={paying}
+                  data-testid="pay-now-button"
+                  className="w-full bg-[#D4AF37] hover:bg-[#FDE047] disabled:opacity-50 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-4 sm:py-5 rounded-lg transition-colors text-base sm:text-lg touch-manipulation flex items-center justify-center gap-3"
+                >
+                  {paying ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>Pay ₹{getTotalPrice()}</>
+                  )}
+                </button>
+              )}
+
+              {isFormValid() && useFallback && fallbackButtonId && (
+                <div data-testid="razorpay-fallback-button" className="razorpay-button-container">
+                  <RazorpayButton buttonId={fallbackButtonId} />
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 text-center mt-4">Secured by Razorpay</p>
             </div>
 
             {/* Terms & Conditions */}
