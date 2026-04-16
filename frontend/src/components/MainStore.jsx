@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen } from "lucide-react";
+import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight } from "lucide-react";
 import RecipeModal from "./RecipeModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -58,6 +58,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   const variants = [
     { id: "250g", weight: "250 grams", price: 200 },
@@ -88,7 +89,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
       await axios.post(`${API}/orders`, orderData);
       setCart([orderData]);
       toast.success(`Added ${quantity} item(s) to cart!`);
-      navigate("/checkout");
+      setTransitioning(true);
+      setTimeout(() => navigate("/checkout"), 600);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");
@@ -100,6 +102,12 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Page exit transition */}
+      <div
+        className="fixed inset-0 z-[100] bg-[#0a0a0a] pointer-events-none transition-opacity duration-500"
+        style={{ opacity: transitioning ? 1 : 0 }}
+      />
+      
       {/* Header */}
       <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -245,88 +253,74 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
         )}
 
         {/* Product Section */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 mb-12 sm:mb-16">
-          {/* Product Image */}
-          <div className="md:col-span-7 fade-up">
-            <div className="card-surface rounded-2xl overflow-hidden h-[300px] sm:h-[400px] md:h-[500px]">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/scqqgqhb_estate%202.jpg"
-                alt="Estate Premium Tea"
-                className="w-full h-full object-cover"
-                data-testid="product-main-image"
-              />
+        <div className="max-w-lg mx-auto mb-12 sm:mb-16 fade-up" data-testid="product-section">
+          <div className="text-center mb-8 sm:mb-10">
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2 sm:mb-3">Premium Collection</p>
+            <h1 className="text-3xl sm:text-4xl font-light tracking-tight mb-3 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>
+            <p className="text-sm sm:text-base leading-relaxed text-gray-400">
+              Carefully selected tea leaves from the finest estates, offering a rich and aromatic experience.
+            </p>
+          </div>
+
+          {/* Variant Selection */}
+          <div className="mb-6 sm:mb-8">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4 text-center">Select Size</p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {variants.map((variant) => (
+                <button
+                  key={variant.id}
+                  data-testid={`variant-${variant.id}`}
+                  onClick={() => setSelectedVariant(variant.id)}
+                  className={`p-4 sm:p-6 rounded-xl border transition-all duration-300 touch-manipulation active:scale-[0.97] text-center ${
+                    selectedVariant === variant.id
+                      ? 'border-[#D4AF37] bg-[#D4AF37]/5'
+                      : 'border-white/10 hover:border-white/25'
+                  }`}
+                >
+                  <p className="text-lg sm:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
+                  <p className="text-lg sm:text-xl gold-text">₹{variant.price}</p>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Product Details */}
-          <div className="md:col-span-5 fade-up" style={{ animationDelay: '0.2s' }}>
-            <div className="card-surface rounded-2xl p-5 sm:p-6 md:p-8">
-              <div className="mb-6 sm:mb-8">
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2 sm:mb-3">Premium Collection</p>
-                <h1 className="text-3xl sm:text-4xl font-light tracking-tight mb-3 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>
-                <p className="text-sm sm:text-base leading-relaxed text-gray-400">
-                  Carefully selected tea leaves from the finest estates, offering a rich and aromatic experience.
-                </p>
-              </div>
-
-              {/* Variant Selection */}
-              <div className="mb-6 sm:mb-8">
-                <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4">Select Size</p>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  {variants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      data-testid={`variant-${variant.id}`}
-                      onClick={() => setSelectedVariant(variant.id)}
-                      className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 transition-all touch-manipulation active:scale-95 ${
-                        selectedVariant === variant.id
-                          ? 'border-[#D4AF37] bg-[#D4AF37]/5'
-                          : 'border-white/10 hover:border-white/30'
-                      }`}
-                    >
-                      <p className="text-base sm:text-xl md:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
-                      <p className="text-base sm:text-lg md:text-xl gold-text">₹{variant.price}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="mb-6 sm:mb-8">
-                <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4">Quantity</p>
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <button
-                    data-testid="decrease-quantity-button"
-                    onClick={decrementQuantity}
-                    disabled={quantity <= 1}
-                    className="border-2 border-white/20 hover:border-[#D4AF37] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed p-3 rounded-lg transition-all touch-manipulation"
-                  >
-                    <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </button>
-                  <div className="flex-1 text-center">
-                    <span data-testid="quantity-display" className="text-2xl sm:text-3xl font-light">{quantity}</span>
-                  </div>
-                  <button
-                    data-testid="increase-quantity-button"
-                    onClick={incrementQuantity}
-                    className="border-2 border-white/20 hover:border-[#D4AF37] active:scale-95 p-3 rounded-lg transition-all touch-manipulation"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Add to Cart Button */}
+          {/* Quantity Selector */}
+          <div className="mb-6 sm:mb-8">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-gray-300 mb-3 sm:mb-4 text-center">Quantity</p>
+            <div className="flex items-center gap-4 justify-center">
               <button
-                data-testid="add-to-cart-button"
-                onClick={handleAddToCart}
-                disabled={!selectedVariant}
-                className="w-full bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
+                data-testid="decrease-quantity-button"
+                onClick={decrementQuantity}
+                disabled={quantity <= 1}
+                className="border border-white/15 hover:border-[#D4AF37] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed p-3 rounded-xl transition-all touch-manipulation"
               >
-                Add to Cart
+                <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </button>
+              <span data-testid="quantity-display" className="text-2xl sm:text-3xl font-light w-16 text-center">{quantity}</span>
+              <button
+                data-testid="increase-quantity-button"
+                onClick={incrementQuantity}
+                className="border border-white/15 hover:border-[#D4AF37] active:scale-95 p-3 rounded-xl transition-all touch-manipulation"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </button>
             </div>
           </div>
+
+          {/* Add to Cart Button */}
+          <button
+            data-testid="add-to-cart-button"
+            onClick={handleAddToCart}
+            disabled={!selectedVariant}
+            className="w-full flex items-center justify-center gap-3 bg-[#D4AF37] hover:bg-[#c5a030] active:bg-[#b89528] disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-xl transition-all text-sm sm:text-base touch-manipulation active:scale-[0.98]"
+          >
+            {selectedVariant ? (
+              <>
+                <span>Add to Cart — ₹{(variants.find(v => v.id === selectedVariant)?.price || 0) * quantity}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            ) : "Select a size"}
+          </button>
         </div>
 
         {/* About Section */}
