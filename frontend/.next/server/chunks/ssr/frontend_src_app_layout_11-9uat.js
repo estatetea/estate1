@@ -1,3 +1,0 @@
-module.exports=[92286,a=>{"use strict";var b=a.i(18332);a.s(["default",0,function({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{children:a})})},"metadata",0,{title:"Estate Tea — Premium Tea from Kotagiri",description:"Hand-picked premium tea from the misty hills of Kotagiri, India."}])},96740,a=>{a.n(a.i(92286))}];
-
-//# sourceMappingURL=frontend_src_app_layout_11-9uat.js.map
