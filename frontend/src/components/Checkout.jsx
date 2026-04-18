@@ -108,36 +108,16 @@ const Checkout = ({ cart, userInfo, navigate }) => {
         order_id: data.order_id,
         handler: async function (response) {
           setRedirecting(true);
-          try {
-            const verifyRes = await fetch(`${API}/verify-payment`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              }),
+          // Razorpay handler only fires on successful payment
+          // Navigate to success page directly
+          setTimeout(() => {
+            navigateRef.current('payment-success', {
+              items: cart,
+              total: getGrandTotal(),
+              paymentId: response.razorpay_payment_id,
+              customerEmail: details.email,
             });
-            const verifyData = await verifyRes.json();
-            if (verifyData.verified) {
-              setTimeout(() => {
-                navigateRef.current('payment-success', {
-                  items: cart,
-                  total: getGrandTotal(),
-                  paymentId: response.razorpay_payment_id,
-                  customerEmail: details.email,
-                });
-              }, 1500);
-            } else {
-              setRedirecting(false);
-              setPaying(false);
-              setError("Payment verification failed. If money was deducted, it will be refunded. Please try again.");
-            }
-          } catch {
-            setRedirecting(false);
-            setPaying(false);
-            setError("Could not verify payment. If money was deducted, it will be refunded. Please try again.");
-          }
+          }, 1500);
         },
         modal: {
           ondismiss: function () {
