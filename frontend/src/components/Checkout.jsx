@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -31,6 +31,8 @@ const Checkout = ({ cart, userInfo, navigate }) => {
   const [redirecting, setRedirecting] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const [error, setError] = useState(null);
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   const [details, setDetails] = useState({
     name: userInfo?.name || "",
     phone: "",
@@ -119,7 +121,7 @@ const Checkout = ({ cart, userInfo, navigate }) => {
             const verifyData = await verifyRes.json();
             if (verifyData.verified) {
               setTimeout(() => {
-                navigate('payment-success', {
+                navigateRef.current('payment-success', {
                   items: cart,
                   total: getGrandTotal(),
                   paymentId: response.razorpay_payment_id,
@@ -161,7 +163,7 @@ const Checkout = ({ cart, userInfo, navigate }) => {
       rzp.on("payment.failed", function (response) {
         setPaying(false);
         const reason = response?.error?.description || "Payment was not completed.";
-        navigate('payment-failed', { reason });
+        navigateRef.current('payment-failed', { reason });
       });
       rzp.open();
     } catch (err) {
