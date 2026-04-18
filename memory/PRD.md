@@ -1,73 +1,76 @@
 # Estate Tea - Product Requirements Document
 
 ## Original Problem Statement
-E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive. Features: scroll-based landing page, auto-location entry form, weather-based tea suggestions, cart system, Razorpay payment integration with automatic redirect, checkout with T&Cs, full-page payment success/failure screens, invoice sending via email/SMS.
+E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive. Features: scroll-based landing page, auto-location entry form, weather-based tea suggestions, cart system, Razorpay payment integration with automatic redirect, checkout with T&Cs, full-page payment success/failure screens.
 
 ## Core Architecture
-- **Frontend**: React + Tailwind CSS + Shadcn UI
-- **Backend**: FastAPI + MongoDB (Motor)
+- **Framework**: Next.js 16 (App Router, single-page SPA pattern)
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Backend API**: Next.js API Routes (in `/src/app/api/`)
+- **Database**: MongoDB (via `mongodb` Node.js driver)
 - **Payments**: Razorpay Standard Checkout (checkout.js) with JS callbacks
 - **Weather**: Open-Meteo API (FREE, no key, real-time)
 - **Geocoding**: Nominatim/OpenStreetMap (FREE, no key)
-- **Email**: Resend (infrastructure ready, needs API key)
-- **SMS**: Twilio (infrastructure ready, needs API keys)
+- **Python Backend**: Still exists at `/app/backend/` for Emergent preview (routes /api/* to port 8001)
 
-## Payment Flow
-1. User clicks **"PAY ₹X"** on checkout
-2. Backend creates Razorpay order → returns order_id + key
-3. Razorpay Standard Checkout modal opens (branded gold theme)
-4. **Success**: `handler` callback → "Redirecting you back..." → `/payment-success` with order details + payment ID
-5. **Failure**: `payment.failed` event → `/payment-failed` with empathetic retry message
-6. **Dismissed**: `modal.ondismiss` → `/payment-failed`
-7. Backend verifies payment signature + stores in MongoDB
+## Deployment
+- **Vercel**: `next build && next start` — single project deployment
+- **Env Vars needed on Vercel**: MONGO_URL, DB_NAME, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
 
 ## File Structure
 ```
-/app/
-├── backend/
-│   ├── server.py (weather, orders, razorpay checkout, verify-payment, webhook, invoices)
-│   ├── tests/
-│   ├── requirements.txt
-│   └── .env
-└── frontend/
-    ├── src/
-    │   ├── App.js (Routing + state)
-    │   ├── components/
-    │   │   ├── EntryForm.jsx (Name-only, auto-locate)
-    │   │   ├── WelcomeScreen.jsx (Fade transition)
-    │   │   ├── MainStore.jsx (Products, real weather/dual options, recipes)
-    │   │   ├── RecipeModal.jsx (Step-by-step recipes)
-    │   │   ├── Cart.jsx (Cart management)
-    │   │   ├── Checkout.jsx (Razorpay Standard Checkout, auto-redirect)
-    │   │   ├── PaymentSuccess.jsx (Full-page success + invoice notice + payment ID)
-    │   │   └── PaymentFailed.jsx (Full-page failure + empathetic message)
-    │   └── index.css
-    └── package.json
+/app/frontend/
+├── src/
+│   ├── app/
+│   │   ├── layout.js (Root layout)
+│   │   ├── page.js (SPA: all state + routing via useState)
+│   │   ├── globals.css (All styles)
+│   │   └── api/ (Next.js API Routes)
+│   │       ├── weather/route.js
+│   │       ├── orders/route.js
+│   │       ├── create-razorpay-order/route.js
+│   │       ├── verify-payment/route.js
+│   │       ├── razorpay/webhook/route.js
+│   │       └── invoice/status/route.js
+│   ├── components/
+│   │   ├── ui/ (Shadcn components)
+│   │   ├── EntryForm.jsx
+│   │   ├── WelcomeScreen.jsx
+│   │   ├── MainStore.jsx (slideshow, weather, products, dropdowns)
+│   │   ├── Cart.jsx
+│   │   ├── Checkout.jsx (Razorpay Standard Checkout)
+│   │   ├── PaymentSuccess.jsx
+│   │   ├── PaymentFailed.jsx
+│   │   ├── RecipeModal.jsx
+│   │   └── RazorpayButton.jsx
+│   └── lib/
+│       ├── utils.js (Shadcn utils)
+│       └── mongodb.js (MongoDB connection)
+├── next.config.js
+├── tailwind.config.js
+└── package.json
 ```
 
-## API Endpoints
-- `POST /api/weather` — Real weather via Open-Meteo
-- `POST /api/orders` — Create order
-- `POST /api/create-razorpay-order` — Create Razorpay order (returns order_id, key_id)
-- `POST /api/verify-payment` — Verify Razorpay payment signature
-- `POST /api/razorpay/webhook` — Payment webhook
-- `GET /api/invoice/status` — Email/SMS config status
-
-## Required API Keys (Not Yet Configured)
-- **Resend** (Email): https://resend.com → `RESEND_API_KEY`
-- **Twilio** (SMS): https://www.twilio.com → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- **Razorpay Webhook**: Dashboard → Webhooks → `RAZORPAY_WEBHOOK_SECRET`
-
-## Completed (Latest)
-- [x] Image slideshow on store page — smooth crossfade between 3 product images, auto-advance, dot indicators (Apr 2026)
-- [x] Clean minimal product layout — removed side product image, centered variant/quantity selection (Apr 2026)
-- [x] Page exit transition — smooth fade-to-black when navigating to checkout (Apr 2026)
-- [x] Header nav dropdowns — "Categories" (Tea, Hampers) and "Services" (Wedding Favours) (Apr 2026)
+## Completed
+- [x] Landing page with scroll-based evaporation transition
+- [x] Entry form with silent auto-location (Name only)
+- [x] Welcome screen fade-in transition
+- [x] Weather-based tea suggestions (Open-Meteo)
+- [x] Dual Hot/Cold options when location denied
+- [x] Recipe modals for both options
+- [x] Image slideshow (3 product images, crossfade)
+- [x] Categories (Tea, Hampers) and Services (Wedding Favours) dropdowns
+- [x] Clean minimal product layout with variant selection
+- [x] 5% GST (CGST 2.5% + SGST 2.5%) on checkout
+- [x] Cart + Checkout with delivery details form
+- [x] Razorpay Standard Checkout (Live keys)
+- [x] Full-page payment success/failure screens
+- [x] Page exit transition (fade-to-black)
+- [x] **Migrated from CRA to Next.js** for Vercel deployment (Apr 2026)
 
 ## Upcoming Tasks (P1)
-- [ ] Build separate pages for Hampers and Wedding Favours (when ready)
+- [ ] Build dedicated Hampers and Wedding Favours pages
 - [ ] Configure Resend + Twilio API keys for live invoice sending
-- [ ] Set up Razorpay webhook URL in dashboard
 
 ## Future Tasks (P2)
 - [ ] Order status tracking / admin dashboard
