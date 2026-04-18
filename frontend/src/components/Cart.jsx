@@ -1,10 +1,8 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const Cart = ({ cart, setCart, userInfo }) => {
-  const navigate = useNavigate();
+const Cart = ({ cart, setCart, userInfo, navigate }) => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -12,7 +10,7 @@ const Cart = ({ cart, setCart, userInfo }) => {
 
   const handleBuyLater = () => {
     toast.info("Continue shopping");
-    navigate("/store");
+    navigate('store');
   };
 
   const handleRemoveItem = (index) => {
@@ -30,7 +28,7 @@ const Cart = ({ cart, setCart, userInfo }) => {
       toast.error("Cart is empty");
       return;
     }
-    navigate("/checkout");
+    navigate('checkout');
   };
 
   return (
@@ -57,7 +55,7 @@ const Cart = ({ cart, setCart, userInfo }) => {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         {/* Back Button */}
         <button
-          onClick={() => navigate("/store")}
+          onClick={() => navigate('store')}
           data-testid="back-to-store-button"
           className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] active:text-[#D4AF37] transition-colors mb-6 sm:mb-8 touch-manipulation"
         >
@@ -70,7 +68,7 @@ const Cart = ({ cart, setCart, userInfo }) => {
             <h2 className="text-3xl sm:text-4xl font-light mb-3 sm:mb-4">Your Cart is Empty</h2>
             <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">Add some premium tea to get started</p>
             <button
-              onClick={() => navigate("/store")}
+              onClick={() => navigate('store')}
               className="bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] px-6 sm:px-8 py-3 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
             >
               Shop Now

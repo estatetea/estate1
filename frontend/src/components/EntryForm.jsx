@@ -67,8 +67,7 @@ const EntryForm = ({ onSubmit }) => {
     );
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!name.trim()) {
       toast.error("Please enter your name");
       return;
@@ -149,7 +148,7 @@ const EntryForm = ({ onSubmit }) => {
             <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-400 mt-3 sm:mt-4 text-center">Premium Tea Experience</p>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+          <form className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
                 Your Name
@@ -162,7 +161,6 @@ const EntryForm = ({ onSubmit }) => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
                 className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
-                required
               />
             </div>
 
@@ -181,8 +179,9 @@ const EntryForm = ({ onSubmit }) => {
             )}
             
             <button
-              type="submit"
+              type="button"
               data-testid="entry-submit-button"
+              onClick={handleSubmit}
               className="w-full bg-[#D4AF37] hover:bg-[#FDE047] active:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors mt-6 sm:mt-8 text-sm sm:text-base touch-manipulation"
             >
               Enter Store

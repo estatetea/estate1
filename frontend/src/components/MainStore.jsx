@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
 import RecipeModal from "./RecipeModal";
@@ -11,8 +9,7 @@ import {
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = '/api';
 
 const SLIDE_IMAGES = [
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/83pa1dqc_You%E2%80%99ve%20sipped%20it%2C%20loved%20it%2C%20and%20missed%20it.%20Now%20it%E2%80%99s%20back.Estate%20Tea%20%E2%80%94%20our%20family-run%20brand%20brewe.jpg",
@@ -59,8 +56,7 @@ const ImageSlideshow = () => {
   );
 };
 
-const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
-  const navigate = useNavigate();
+const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
@@ -93,11 +89,15 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
     };
 
     try {
-      await axios.post(`${API}/orders`, orderData);
+      await fetch(`${API}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
       setCart([orderData]);
       toast.success(`Added ${quantity} item(s) to cart!`);
       setTransitioning(true);
-      setTimeout(() => navigate("/checkout"), 600);
+      setTimeout(() => navigate('checkout'), 600);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");
@@ -178,7 +178,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart }) => {
           <div className="flex items-center gap-3 sm:gap-6">
             <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Welcome, {userInfo.name}</p>
             <button 
-              onClick={() => navigate("/cart")}
+              onClick={() => navigate('cart')}
               className="relative hover:scale-110 active:scale-95 transition-transform touch-manipulation" 
               data-testid="cart-icon-button"
             >

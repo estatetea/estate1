@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import RazorpayButton from "./RazorpayButton";
-import axios from "axios";
 import { toast } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = '/api';
 
 const PAYMENT_BUTTONS = {
   "250 grams": "pl_SbQMIgFUp1d0QU",
@@ -29,8 +26,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-const Checkout = ({ cart, userInfo }) => {
-  const navigate = useNavigate();
+const Checkout = ({ cart, userInfo, navigate }) => {
   const [paying, setPaying] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
@@ -90,11 +86,16 @@ const Checkout = ({ cart, userInfo }) => {
     }
 
     try {
-      const { data } = await axios.post(`${API}/create-razorpay-order`, {
-        amount: getGrandTotal(),
-        customer_name: details.name,
-        variant: cart.map(i => i.variant).join(", ")
+      const res = await fetch(`${API}/create-razorpay-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: getGrandTotal(),
+          customer_name: details.name,
+          variant: cart.map(i => i.variant).join(", ")
+        }),
       });
+      const data = await res.json();
 
       const options = {
         key: data.key_id,
@@ -106,22 +107,23 @@ const Checkout = ({ cart, userInfo }) => {
         handler: async function (response) {
           setRedirecting(true);
           try {
-            const verifyRes = await axios.post(`${API}/verify-payment`, {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature
+            const verifyRes = await fetch(`${API}/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              }),
             });
-            if (verifyRes.data.verified) {
+            const verifyData = await verifyRes.json();
+            if (verifyData.verified) {
               setTimeout(() => {
-                navigate("/payment-success", {
-                  state: {
-                    orderDetails: {
-                      items: cart,
-                      total: getGrandTotal(),
-                      paymentId: response.razorpay_payment_id,
-                      customerEmail: details.email
-                    }
-                  }
+                navigate('payment-success', {
+                  items: cart,
+                  total: getGrandTotal(),
+                  paymentId: response.razorpay_payment_id,
+                  customerEmail: details.email,
                 });
               }, 1500);
             } else {
@@ -159,7 +161,7 @@ const Checkout = ({ cart, userInfo }) => {
       rzp.on("payment.failed", function (response) {
         setPaying(false);
         const reason = response?.error?.description || "Payment was not completed.";
-        navigate("/payment-failed", { state: { reason } });
+        navigate('payment-failed', { reason });
       });
       rzp.open();
     } catch (err) {
@@ -171,7 +173,7 @@ const Checkout = ({ cart, userInfo }) => {
   };
 
   if (cart.length === 0 && !redirecting) {
-    navigate("/cart");
+    navigate('cart');
     return null;
   }
 
@@ -200,7 +202,7 @@ const Checkout = ({ cart, userInfo }) => {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <button
-          onClick={() => navigate("/cart")}
+          onClick={() => navigate('cart')}
           className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] transition-colors mb-6 sm:mb-8 touch-manipulation"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
