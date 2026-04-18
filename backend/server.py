@@ -19,7 +19,7 @@ import json
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# Force Razorpay keys from .env file (prevents stale cached values in deployment)
+# Force Razorpay keys from .env file if it exists (local/preview dev)
 _dotenv_path = ROOT_DIR / '.env'
 if _dotenv_path.exists():
     with open(_dotenv_path) as _f:
@@ -32,14 +32,20 @@ if _dotenv_path.exists():
                 if _key.startswith('RAZORPAY_'):
                     os.environ[_key] = _val
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+mongo_url = os.environ.get('MONGO_URL', '')
+if mongo_url:
+    client = AsyncIOMotorClient(mongo_url)
+    db = client[os.environ.get('DB_NAME', 'estate_tea')]
+else:
+    client = None
+    db = None
 
 # Initialize Razorpay client
-razorpay_client = razorpay.Client(
-    auth=(os.environ['RAZORPAY_KEY_ID'], os.environ['RAZORPAY_KEY_SECRET'])
-)
+razorpay_client = None
+if os.environ.get('RAZORPAY_KEY_ID') and os.environ.get('RAZORPAY_KEY_SECRET'):
+    razorpay_client = razorpay.Client(
+        auth=(os.environ['RAZORPAY_KEY_ID'], os.environ['RAZORPAY_KEY_SECRET'])
+    )
 
 # Optional integrations (graceful if missing)
 resend_available = False
