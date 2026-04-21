@@ -220,12 +220,21 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                   </span>
                 </div>
               </div>
+
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed font-light" data-testid="weather-greeting">
+                {weatherData.temperature < 20
+                  ? `We notice it's quite cool where you are, ${userInfo.name}. Here's something to warm you up.`
+                  : weatherData.temperature < 28
+                    ? `It feels pretty pleasant in ${weatherData.place} right now, ${userInfo.name}. Here's what we'd suggest.`
+                    : `It's quite warm where you are, ${userInfo.name}. Here's our pick to help you cool down.`
+                }
+              </p>
               
               <div className="bg-[#D4AF37]/10 p-4 sm:p-5 rounded-xl border border-[#D4AF37]/30">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                    <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] font-medium">Recommended for you</p>
+                    <p className="text-xs sm:text-sm uppercase tracking-[0.15em] text-[#D4AF37] font-medium">Our suggestion for you</p>
                   </div>
                   <button
                     onClick={() => setRecipeType(weatherData.temperature < 25 ? "hot" : "cold")}
