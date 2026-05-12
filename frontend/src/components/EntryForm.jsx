@@ -91,7 +91,7 @@ const EntryForm = ({ onSubmit }) => {
     <div className="w-full">
       {/* Hero Section - Evaporating Logo */}
       <section 
-        className="h-screen w-full bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden px-4" 
+        className="h-screen h-[100dvh] w-full bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden px-4" 
         data-testid="hero-section"
         style={{
           opacity: Math.pow(1 - scrollProgress, 2),
@@ -129,7 +129,7 @@ const EntryForm = ({ onSubmit }) => {
 
       {/* Entry Form Section - Materializing */}
       <section 
-        className="hero-bg min-h-screen w-full flex items-center justify-center p-4 sm:p-6 relative" 
+        className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative" 
         data-testid="form-section"
         style={{
           opacity: Math.pow(scrollProgress, 1.5) * 1.2,
@@ -137,15 +137,15 @@ const EntryForm = ({ onSubmit }) => {
           filter: `blur(${Math.max(0, (1 - scrollProgress) * 15)}px)`
         }}
       >
-        <div className="glass-surface rounded-2xl p-6 sm:p-8 md:p-12 max-w-lg w-full">
-          <div className="flex flex-col items-center mb-8 sm:mb-12">
+        <div className="glass-surface rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto">
+          <div className="flex flex-col items-center mb-6 sm:mb-12">
             <img 
               src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
               alt="Estate Tea Logo" 
-              className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 logo-sharp"
+              className="w-16 h-16 sm:w-24 sm:h-24 mb-3 sm:mb-6 logo-sharp"
             />
-            <h2 className="text-3xl sm:text-4xl font-light tracking-tight gold-text">Welcome</h2>
-            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-400 mt-3 sm:mt-4 text-center">Premium Tea Experience</p>
+            <h2 className="text-2xl sm:text-4xl font-light tracking-tight gold-text">Welcome</h2>
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-400 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
           </div>
           
           <form className="space-y-5 sm:space-y-6">

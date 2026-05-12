@@ -12,7 +12,8 @@ import {
 const API = '/api';
 
 const SLIDE_IMAGES = [
-  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/83pa1dqc_You%E2%80%99ve%20sipped%20it%2C%20loved%20it%2C%20and%20missed%20it.%20Now%20it%E2%80%99s%20back.Estate%20Tea%20%E2%80%94%20our%20family-run%20brand%20brewe.jpg",
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/p3gkmb59_WhatsApp%20Image%202026-05-12%20at%2011.03.38%20AM.jpeg",
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/bfjxesqj_estate%205%20insta.png",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/scqqgqhb_estate%202.jpg",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/bn0sx1sc_estate%201.jpg"
 ];
@@ -117,66 +118,64 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
       
       {/* Header */}
       <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
-                alt="Estate Tea" 
-                className="w-10 h-10 sm:w-12 sm:h-12"
-              />
-              <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
-            </div>
-
-            {/* Nav Dropdowns */}
-            <nav className="flex items-center gap-1 sm:gap-2" data-testid="nav-dropdowns">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
-                    Categories
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[140px]">
-                  <DropdownMenuItem
-                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
-                    data-testid="nav-tea"
-                    onClick={() => productRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                  >
-                    Tea
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
-                    data-testid="nav-hampers"
-                    onClick={() => toast("Hampers — Coming Soon!", { description: "We're working on something special." })}
-                  >
-                    Hampers
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="services-dropdown">
-                    Services
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[160px]">
-                  <DropdownMenuItem
-                    className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
-                    data-testid="nav-wedding-favours"
-                    onClick={() => toast("Wedding Favours — Coming Soon!", { description: "Custom tea hampers for your special day." })}
-                  >
-                    Wedding Favours
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </nav>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
+              alt="Estate Tea" 
+              className="w-8 h-8 sm:w-12 sm:h-12"
+            />
+            <h2 className="hidden sm:block text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
           </div>
 
+          {/* Nav Dropdowns */}
+          <nav className="flex items-center gap-0.5 sm:gap-2" data-testid="nav-dropdowns">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-0.5 sm:gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
+                  Categories
+                  <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[140px]">
+                <DropdownMenuItem
+                  className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                  data-testid="nav-tea"
+                  onClick={() => productRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                >
+                  Tea
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                  data-testid="nav-hampers"
+                  onClick={() => toast("Hampers — Coming Soon!", { description: "We're working on something special." })}
+                >
+                  Hampers
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-0.5 sm:gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="services-dropdown">
+                  Services
+                  <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[160px]">
+                <DropdownMenuItem
+                  className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                  data-testid="nav-wedding-favours"
+                  onClick={() => toast("Wedding Favours — Coming Soon!", { description: "Custom tea hampers for your special day." })}
+                >
+                  Wedding Favours
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+
           <div className="flex items-center gap-3 sm:gap-6">
-            <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Welcome, {userInfo.name}</p>
+            <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>
             <button 
               onClick={() => navigate('cart')}
               className="relative hover:scale-110 active:scale-95 transition-transform touch-manipulation" 
