@@ -13,6 +13,7 @@ const API = '/api';
 
 const SLIDE_IMAGES = [
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/p3gkmb59_WhatsApp%20Image%202026-05-12%20at%2011.03.38%20AM.jpeg",
+  "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/aq9g7zq6_estate%207.jpg.jpeg",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/bfjxesqj_estate%205%20insta.png",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/scqqgqhb_estate%202.jpg",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/bn0sx1sc_estate%201.jpg"
@@ -32,7 +33,7 @@ const ImageSlideshow = () => {
   }, [next]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden h-[300px] sm:h-[400px] md:h-[500px] bg-[#0e0e0e] fade-up" data-testid="image-slideshow">
+    <div className="relative overflow-hidden h-[300px] sm:h-[400px] md:h-[500px] bg-transparent fade-up" data-testid="image-slideshow">
       {SLIDE_IMAGES.map((src, i) => (
         <img
           key={i}
@@ -43,6 +44,10 @@ const ImageSlideshow = () => {
           loading={i === 0 ? "eager" : "lazy"}
         />
       ))}
+      {/* Edge blend vignette — fades all edges into the background */}
+      <div className="absolute inset-0 z-[5] pointer-events-none" style={{
+        boxShadow: 'inset 0 0 60px 30px #0a0a0a, inset 0 0 120px 60px rgba(10,10,10,0.5)'
+      }} />
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10" data-testid="slideshow-dots">
         {SLIDE_IMAGES.map((_, i) => (
           <button
@@ -110,14 +115,14 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] relative">
-      {/* Tea powder background */}
+      {/* Tea leaves background */}
       <div className="fixed inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1540363786380-d00a1f4622c8?w=1920&q=80" 
+          src="https://images.pexels.com/photos/6087517/pexels-photo-6087517.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=1200&w=1920" 
           alt="" 
-          className="w-full h-full object-cover opacity-15"
+          className="w-full h-full object-cover opacity-20"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/85 to-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/70 via-[#0a0a0a]/60 to-[#0a0a0a]/90" />
       </div>
 
       {/* Page exit transition */}
