@@ -23,39 +23,74 @@ const SLIDE_IMAGES = [
 
 const ImageSlideshow = () => {
   const [current, setCurrent] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(true);
   const timerRef = useRef(null);
 
   const next = useCallback(() => {
+    setIsAnimating(false);
     setCurrent(prev => (prev + 1) % SLIDE_IMAGES.length);
+    // Reset animation after state change
+    requestAnimationFrame(() => setIsAnimating(true));
   }, []);
 
   useEffect(() => {
-    timerRef.current = setInterval(next, 4500);
+    timerRef.current = setInterval(next, 6000);
     return () => clearInterval(timerRef.current);
   }, [next]);
 
+  // Ken Burns: alternate between zoom-in and zoom-out + subtle pan for each slide
+  const kenBurnsStyles = [
+    { from: 'scale(1) translate(0%, 0%)', to: 'scale(1.15) translate(-2%, -1%)' },
+    { from: 'scale(1.15) translate(2%, 0%)', to: 'scale(1) translate(0%, 1%)' },
+    { from: 'scale(1) translate(0%, 2%)', to: 'scale(1.12) translate(1%, -2%)' },
+    { from: 'scale(1.1) translate(-1%, 1%)', to: 'scale(1) translate(1%, 0%)' },
+    { from: 'scale(1) translate(1%, -1%)', to: 'scale(1.15) translate(-1%, 1%)' },
+    { from: 'scale(1.12) translate(0%, 2%)', to: 'scale(1) translate(-2%, -1%)' },
+    { from: 'scale(1) translate(-2%, 0%)', to: 'scale(1.1) translate(2%, 1%)' },
+  ];
+
   return (
-    <div className="relative overflow-hidden h-[300px] sm:h-[400px] md:h-[500px] bg-transparent fade-up" data-testid="image-slideshow">
-      {SLIDE_IMAGES.map((src, i) => (
-        <img
-          key={i}
-          src={src}
-          alt={`Estate Tea ${i + 1}`}
-          className="absolute inset-0 w-full h-full object-contain transition-opacity duration-[1200ms] ease-in-out"
-          style={{ opacity: current === i ? 1 : 0 }}
-          loading={i === 0 ? "eager" : "lazy"}
-        />
-      ))}
-      {/* Edge blend vignette — fades all edges into the background */}
-      <div className="absolute inset-0 z-[5] pointer-events-none" style={{
-        boxShadow: 'inset 0 0 60px 30px #0a0a0a, inset 0 0 120px 60px rgba(10,10,10,0.5)'
-      }} />
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10" data-testid="slideshow-dots">
+    <div className="relative overflow-hidden h-[340px] sm:h-[440px] md:h-[560px] fade-up" data-testid="image-slideshow">
+      {SLIDE_IMAGES.map((src, i) => {
+        const kb = kenBurnsStyles[i % kenBurnsStyles.length];
+        const isActive = current === i;
+        return (
+          <div
+            key={i}
+            className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+            style={{ opacity: isActive ? 1 : 0 }}
+          >
+            <img
+              src={src}
+              alt={`Estate Tea ${i + 1}`}
+              className="w-full h-full object-cover"
+              style={{
+                transform: isActive && isAnimating ? kb.to : kb.from,
+                transition: isActive ? 'transform 6s ease-in-out' : 'none',
+              }}
+              loading={i === 0 ? "eager" : "lazy"}
+            />
+          </div>
+        );
+      })}
+
+      {/* Soft vignette — fades edges into the page */}
+      <div className="absolute inset-0 z-[5] pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(10,10,10,0.6) 75%, #0a0a0a 100%)'
+        }}
+      />
+      {/* Top + bottom fade for seamless blending */}
+      <div className="absolute inset-x-0 top-0 h-20 sm:h-28 z-[5] pointer-events-none bg-gradient-to-b from-[#0a0a0a] to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-20 sm:h-28 z-[5] pointer-events-none bg-gradient-to-t from-[#0a0a0a] to-transparent" />
+
+      {/* Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2.5 z-10" data-testid="slideshow-dots">
         {SLIDE_IMAGES.map((_, i) => (
           <button
             key={i}
-            onClick={() => { setCurrent(i); clearInterval(timerRef.current); timerRef.current = setInterval(next, 4500); }}
-            className={`rounded-full transition-all duration-400 ${current === i ? "w-6 h-1.5 bg-[#D4AF37]" : "w-1.5 h-1.5 bg-white/40"}`}
+            onClick={() => { setCurrent(i); setIsAnimating(false); requestAnimationFrame(() => setIsAnimating(true)); clearInterval(timerRef.current); timerRef.current = setInterval(next, 6000); }}
+            className={`rounded-full transition-all duration-500 ${current === i ? "w-7 h-1.5 bg-[#D4AF37]" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/50"}`}
             data-testid={`slideshow-dot-${i}`}
           />
         ))}
