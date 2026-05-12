@@ -109,7 +109,17 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#0a0a0a] relative">
+      {/* Tea powder background */}
+      <div className="fixed inset-0 z-0">
+        <img 
+          src="https://images.unsplash.com/photo-1540363786380-d00a1f4622c8?w=1920&q=80" 
+          alt="" 
+          className="w-full h-full object-cover opacity-15"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/85 to-[#0a0a0a]" />
+      </div>
+
       {/* Page exit transition */}
       <div
         className="fixed inset-0 z-[100] bg-[#0a0a0a] pointer-events-none transition-opacity duration-500"
@@ -117,7 +127,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
       />
       
       {/* Header */}
-      <header className="glass-surface sticky top-0 z-50 border-b border-white/10">
+      <header className="glass-surface sticky top-0 z-50 border-b border-white/10 relative">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <img 
@@ -192,7 +202,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 relative z-10">
 
         {/* Image Slideshow */}
         <div className="mb-8 sm:mb-12">
