@@ -107,8 +107,7 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
 
 .logo-sharp {
   filter: contrast(1.1) brightness(1.05) drop-shadow(0 0 40px rgba(212, 175, 55, 0.15));
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
   transition: all 0.3s ease;
 }
 

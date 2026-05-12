@@ -32,13 +32,13 @@ const ImageSlideshow = () => {
   }, [next]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden h-[240px] sm:h-[320px] md:h-[400px] fade-up" data-testid="image-slideshow">
+    <div className="relative rounded-2xl overflow-hidden h-[300px] sm:h-[400px] md:h-[500px] bg-[#0e0e0e] fade-up" data-testid="image-slideshow">
       {SLIDE_IMAGES.map((src, i) => (
         <img
           key={i}
           src={src}
           alt={`Estate Tea ${i + 1}`}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ease-in-out"
+          className="absolute inset-0 w-full h-full object-contain transition-opacity duration-[1200ms] ease-in-out"
           style={{ opacity: current === i ? 1 : 0 }}
           loading={i === 0 ? "eager" : "lazy"}
         />
