@@ -1,30 +1,25 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGO_URL;
-const dbName = process.env.DB_NAME || 'estate_tea';
+let clientPromise = null;
 
-let client;
-let clientPromise;
+function getClientPromise() {
+  if (clientPromise) return clientPromise;
+  
+  const uri = process.env.MONGO_URL;
+  if (!uri) return null;
 
-if (uri) {
-  if (process.env.NODE_ENV === 'development') {
-    if (!global._mongoClientPromise) {
-      client = new MongoClient(uri);
-      global._mongoClientPromise = client.connect();
-    }
-    clientPromise = global._mongoClientPromise;
-  } else {
-    client = new MongoClient(uri);
-    clientPromise = client.connect();
-  }
+  const client = new MongoClient(uri);
+  clientPromise = client.connect();
+  return clientPromise;
 }
 
 export async function getDb() {
-  if (!clientPromise) {
+  const promise = getClientPromise();
+  if (!promise) {
     throw new Error('MONGO_URL not configured');
   }
-  const client = await clientPromise;
-  return client.db(dbName);
+  const client = await promise;
+  return client.db(process.env.DB_NAME || 'estate_tea');
 }
 
-export default clientPromise;
+export default getClientPromise;

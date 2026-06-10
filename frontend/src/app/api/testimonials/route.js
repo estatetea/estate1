@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/mongodb';
 import { v4 as uuidv4 } from 'uuid';
+
+async function getDb() {
+  const { MongoClient } = await import('mongodb');
+  const uri = process.env.MONGO_URL;
+  if (!uri) throw new Error('MONGO_URL env var not set');
+  const client = new MongoClient(uri);
+  await client.connect();
+  return client.db(process.env.DB_NAME || 'estate_tea');
+}
 
 export async function GET() {
   try {
@@ -22,6 +30,7 @@ export async function POST(request) {
     if (!name || !text) {
       return NextResponse.json({ error: 'Name and review are required' }, { status: 400 });
     }
+
     const db = await getDb();
     const testimonial = {
       id: uuidv4(),
@@ -33,6 +42,7 @@ export async function POST(request) {
     await db.collection('testimonials').insertOne({ ...testimonial });
     return NextResponse.json(testimonial);
   } catch (error) {
+    console.error('Testimonial error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
