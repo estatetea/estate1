@@ -513,6 +513,135 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== AUTH ENDPOINTS ====================
+
+class SessionRequest(BaseModel):
+    session_id: str
+
+@api_router.post("/auth/session")
+async def exchange_session(req: SessionRequest):
+    """Exchange Emergent Auth session_id for user data + session_token"""
+    try:
+        async with httpx.AsyncClient() as client_http:
+            resp = await client_http.get(
+                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                headers={"X-Session-ID": req.session_id}
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=401, detail="Invalid session")
+            user_data = resp.json()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Auth error: {str(e)}")
+
+    email = user_data.get("email")
+    name = user_data.get("name")
+    picture = user_data.get("picture")
+    session_token = user_data.get("session_token")
+
+    if db:
+        existing = await db.users.find_one({"email": email}, {"_id": 0})
+        if not existing:
+            user_id = f"user_{uuid.uuid4().hex[:12]}"
+            await db.users.insert_one({
+                "user_id": user_id,
+                "email": email,
+                "name": name,
+                "picture": picture,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        else:
+            user_id = existing["user_id"]
+            await db.users.update_one({"email": email}, {"$set": {"name": name, "picture": picture}})
+
+        await db.user_sessions.insert_one({
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    return {"name": name, "email": email, "picture": picture, "session_token": session_token}
+
+@api_router.get("/auth/me")
+async def get_current_user(request: Request):
+    """Get current user from session token"""
+    token = None
+    cookie_token = request.cookies.get("session_token")
+    auth_header = request.headers.get("authorization", "")
+    if cookie_token:
+        token = cookie_token
+    elif auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not db:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
+    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return {"name": user["name"], "email": user["email"], "picture": user.get("picture")}
+
+# ==================== TESTIMONIALS ENDPOINTS ====================
+
+class TestimonialCreate(BaseModel):
+    text: str
+    rating: int = Field(ge=1, le=5)
+
+@api_router.get("/testimonials")
+async def get_testimonials():
+    """Get all approved testimonials"""
+    if not db:
+        return []
+    testimonials = await db.testimonials.find({}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
+    return testimonials
+
+@api_router.post("/testimonials")
+async def create_testimonial(req: TestimonialCreate, request: Request):
+    """Create a testimonial (requires auth)"""
+    token = request.cookies.get("session_token")
+    auth_header = request.headers.get("authorization", "")
+    if not token and auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Sign in to leave a review")
+    
+    if not db:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
+    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    testimonial = {
+        "id": str(uuid.uuid4()),
+        "user_name": user["name"],
+        "user_picture": user.get("picture", ""),
+        "user_email": user["email"],
+        "text": req.text[:500],
+        "rating": req.rating,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.testimonials.insert_one({**testimonial})
+    del testimonial["user_email"]
+    return testimonial
+
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

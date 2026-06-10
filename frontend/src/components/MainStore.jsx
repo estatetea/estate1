@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
 import RecipeModal from "./RecipeModal";
+import Testimonials from "./Testimonials";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -436,6 +437,11 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
               </>
             ) : "Select a size"}
           </button>
+        </div>
+
+        {/* Testimonials Section */}
+        <div className="mb-12 sm:mb-16">
+          <Testimonials navigate={navigate} />
         </div>
 
         {/* About Section */}
