@@ -593,51 +593,33 @@ async def get_current_user(request: Request):
 # ==================== TESTIMONIALS ENDPOINTS ====================
 
 class TestimonialCreate(BaseModel):
+    name: str
     text: str
     rating: int = Field(ge=1, le=5)
 
 @api_router.get("/testimonials")
 async def get_testimonials():
-    """Get all approved testimonials"""
+    """Get all testimonials"""
     if db is None:
         return []
     testimonials = await db.testimonials.find({}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
     return testimonials
 
 @api_router.post("/testimonials")
-async def create_testimonial(req: TestimonialCreate, request: Request):
-    """Create a testimonial (requires auth)"""
-    token = request.cookies.get("session_token")
-    auth_header = request.headers.get("authorization", "")
-    if not token and auth_header.startswith("Bearer "):
-        token = auth_header[7:]
-    
-    if not token:
-        raise HTTPException(status_code=401, detail="Sign in to leave a review")
-    
+async def create_testimonial(req: TestimonialCreate):
+    """Create a testimonial — no auth required"""
     if db is None:
         raise HTTPException(status_code=500, detail="Database not available")
     
-    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
-    if not session:
-        raise HTTPException(status_code=401, detail="Invalid session")
-    
-    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    
     testimonial = {
         "id": str(uuid.uuid4()),
-        "user_name": user["name"],
-        "user_picture": user.get("picture", ""),
-        "user_email": user["email"],
+        "user_name": req.name[:50],
         "text": req.text[:500],
         "rating": req.rating,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.testimonials.insert_one({**testimonial})
-    del testimonial["user_email"]
     return testimonial
 
 

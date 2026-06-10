@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Toaster } from 'sonner';
 import EntryForm from '@/components/EntryForm';
 import WelcomeScreen from '@/components/WelcomeScreen';
@@ -17,39 +17,6 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [page, setPage] = useState('home');
   const [pageData, setPageData] = useState(null);
-  const [authUser, setAuthUser] = useState(null);
-  const [authToken, setAuthToken] = useState(null);
-
-  // Detect OAuth callback — skip entry form and go straight to store
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('session_id=')) {
-      if (!userInfo) {
-        const sessionId = window.location.hash.split('session_id=')[1]?.split('&')[0];
-        if (sessionId) {
-          window.history.replaceState(null, '', window.location.pathname);
-          fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ session_id: sessionId }),
-          })
-            .then(r => r.json())
-            .then(data => {
-              if (data.name) {
-                setUserInfo({ name: data.name, place: '' });
-                setAuthUser({ name: data.name, email: data.email, picture: data.picture });
-                setAuthToken(data.session_token);
-                setPage('store');
-              }
-            })
-            .catch(() => {
-              setUserInfo({ name: 'Guest', place: '' });
-              setPage('store');
-            });
-        }
-      }
-    }
-  }, []);
 
   const navigate = useCallback((path, data) => {
     setPageData(data || null);
@@ -118,7 +85,7 @@ export default function App() {
   switch (page) {
     case 'store':
     case 'home':
-      content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} authUser={authUser} authToken={authToken} setAuthUser={setAuthUser} setAuthToken={setAuthToken} />;
+      content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />;
       break;
     case 'cart':
       content = <CartComponent cart={cart} setCart={setCart} userInfo={userInfo} navigate={navigate} />;
