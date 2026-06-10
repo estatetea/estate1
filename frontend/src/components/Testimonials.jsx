@@ -66,47 +66,29 @@ function getTimeAgo(date) {
   return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const Testimonials = ({ navigate }) => {
+const Testimonials = ({ navigate, authUser, authToken, setAuthUser, setAuthToken }) => {
   const [testimonials, setTestimonials] = useState([]);
-  const [authUser, setAuthUser] = useState(null);
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
-  const [sessionToken, setSessionToken] = useState(null);
 
   // Load testimonials
   useEffect(() => {
     fetch(`${API}/testimonials`).then(r => r.json()).then(setTestimonials).catch(() => {});
   }, []);
 
-  // Check for returning OAuth callback
+  // Check if user is already signed in (session from OAuth)
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('session_id=')) {
-      const sessionId = hash.split('session_id=')[1]?.split('&')[0];
-      if (sessionId) {
-        setAuthLoading(true);
-        window.history.replaceState(null, '', window.location.pathname);
-        fetch(`${API}/auth/session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ session_id: sessionId }),
+    if (!authUser) {
+      fetch(`${API}/auth/me`, { credentials: 'include' })
+        .then(r => { if (r.ok) return r.json(); throw new Error(); })
+        .then(data => {
+          if (data.name) setAuthUser(data);
         })
-          .then(r => r.json())
-          .then(data => {
-            if (data.name) {
-              setAuthUser(data);
-              setSessionToken(data.session_token);
-              toast.success(`Welcome, ${data.name}!`);
-            }
-          })
-          .catch(() => toast.error('Sign in failed'))
-          .finally(() => setAuthLoading(false));
-      }
+        .catch(() => {});
     }
-  }, []);
+  }, [authUser, setAuthUser]);
 
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
   const handleGoogleSignIn = () => {
@@ -119,7 +101,7 @@ const Testimonials = ({ navigate }) => {
     setSubmitting(true);
     try {
       const headers = { 'Content-Type': 'application/json' };
-      if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
       const res = await fetch(`${API}/testimonials`, {
         method: 'POST',
         headers,

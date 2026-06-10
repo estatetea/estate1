@@ -100,7 +100,7 @@ const ImageSlideshow = () => {
   );
 };
 
-const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
+const MainStore = ({ userInfo, weatherData, cart, setCart, navigate, authUser, authToken, setAuthUser, setAuthToken }) => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
@@ -441,7 +441,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
         {/* Testimonials Section */}
         <div className="mb-12 sm:mb-16">
-          <Testimonials navigate={navigate} />
+          <Testimonials navigate={navigate} authUser={authUser} authToken={authToken} setAuthUser={setAuthUser} setAuthToken={setAuthToken} />
         </div>
 
         {/* About Section */}
