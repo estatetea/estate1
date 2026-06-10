@@ -503,8 +503,6 @@ async def invoice_status():
         "sms_provider": "Twilio" if twilio_available else None
     }
 
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -513,6 +511,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== AUTH ENDPOINTS ====================
 # ==================== AUTH ENDPOINTS ====================
 
 class SessionRequest(BaseModel):
@@ -540,7 +539,7 @@ async def exchange_session(req: SessionRequest):
     picture = user_data.get("picture")
     session_token = user_data.get("session_token")
 
-    if db:
+    if db is not None:
         existing = await db.users.find_one({"email": email}, {"_id": 0})
         if not existing:
             user_id = f"user_{uuid.uuid4().hex[:12]}"
@@ -578,7 +577,7 @@ async def get_current_user(request: Request):
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not available")
     
     session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
@@ -600,7 +599,7 @@ class TestimonialCreate(BaseModel):
 @api_router.get("/testimonials")
 async def get_testimonials():
     """Get all approved testimonials"""
-    if not db:
+    if db is None:
         return []
     testimonials = await db.testimonials.find({}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
     return testimonials
@@ -616,7 +615,7 @@ async def create_testimonial(req: TestimonialCreate, request: Request):
     if not token:
         raise HTTPException(status_code=401, detail="Sign in to leave a review")
     
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not available")
     
     session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
@@ -651,3 +650,6 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# Include router AFTER all routes are defined
+app.include_router(api_router)
