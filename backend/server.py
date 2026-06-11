@@ -630,10 +630,9 @@ logging.basicConfig(
 
 # ==================== ADMIN ENDPOINTS ====================
 
-import secrets
+import hmac, hashlib
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
-admin_tokens = set()
 
 class AdminLogin(BaseModel):
     password: str
@@ -643,18 +642,19 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     in_stock: Optional[bool] = None
 
+def make_admin_token():
+    return hmac.new(ADMIN_PASSWORD.encode(), b'estate-tea-admin', hashlib.sha256).hexdigest()
+
 @api_router.post("/admin/login")
 async def admin_login(req: AdminLogin):
     if req.password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Invalid password")
-    token = secrets.token_hex(32)
-    admin_tokens.add(token)
-    return {"token": token}
+    return {"token": make_admin_token()}
 
 def verify_admin(request: Request):
     auth = request.headers.get("authorization", "")
     token = auth.replace("Bearer ", "") if auth.startswith("Bearer ") else ""
-    if token not in admin_tokens:
+    if not ADMIN_PASSWORD or token != make_admin_token():
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 @api_router.get("/admin/products")

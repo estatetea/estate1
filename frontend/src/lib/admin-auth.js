@@ -1,12 +1,14 @@
-import { NextResponse } from 'next/server';
-
-const adminTokens = new Set();
+import crypto from 'crypto';
 
 export function verifyAdmin(request) {
+  const adminPass = process.env.ADMIN_PASSWORD;
+  if (!adminPass) return false;
+  
   const auth = request.headers.get('authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!adminTokens.has(token)) return false;
-  return true;
+  if (!token) return false;
+  
+  // Verify against deterministic hash
+  const expected = crypto.createHmac('sha256', adminPass).update('estate-tea-admin').digest('hex');
+  return token === expected;
 }
-
-export function addToken(token) { adminTokens.add(token); }

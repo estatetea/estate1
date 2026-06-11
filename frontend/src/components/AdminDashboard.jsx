@@ -15,7 +15,7 @@ const AdminDashboard = ({ navigate }) => {
   const [editingPrice, setEditingPrice] = useState(null);
   const [newPrice, setNewPrice] = useState('');
 
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+  const getHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
 
   const handleLogin = async () => {
     setLogging(true);
@@ -34,15 +34,15 @@ const AdminDashboard = ({ navigate }) => {
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${API}/admin/products`, { headers }).then(r => r.json()).then(setProducts).catch(() => {});
-    fetch(`${API}/admin/testimonials`, { headers }).then(r => r.json()).then(setTestimonials).catch(() => {});
-    fetch(`${API}/admin/orders`, { headers }).then(r => r.json()).then(setOrders).catch(() => {});
+    fetch(`${API}/admin/products`, { headers: getHeaders() }).then(r => r.json()).then(setProducts).catch(() => {});
+    fetch(`${API}/admin/testimonials`, { headers: getHeaders() }).then(r => r.json()).then(setTestimonials).catch(() => {});
+    fetch(`${API}/admin/orders`, { headers: getHeaders() }).then(r => r.json()).then(setOrders).catch(() => {});
   }, [token]);
 
   const toggleStock = async (productId, currentStock) => {
     try {
       const res = await fetch(`${API}/admin/products`, {
-        method: 'PUT', headers,
+        method: 'PUT', headers: getHeaders(),
         body: JSON.stringify({ product_id: productId, in_stock: !currentStock }),
       });
       const updated = await res.json();
@@ -56,7 +56,7 @@ const AdminDashboard = ({ navigate }) => {
     if (isNaN(price) || price <= 0) { toast.error('Enter a valid price'); return; }
     try {
       const res = await fetch(`${API}/admin/products`, {
-        method: 'PUT', headers,
+        method: 'PUT', headers: getHeaders(),
         body: JSON.stringify({ product_id: productId, price }),
       });
       const updated = await res.json();
@@ -69,7 +69,7 @@ const AdminDashboard = ({ navigate }) => {
 
   const deleteTestimonial = async (id) => {
     try {
-      await fetch(`${API}/admin/testimonials/${id}`, { method: 'DELETE', headers });
+      await fetch(`${API}/admin/testimonials/${id}`, { method: 'DELETE', headers: getHeaders() });
       setTestimonials(prev => prev.filter(t => t.id !== id));
       toast.success('Review deleted');
     } catch { toast.error('Failed to delete'); }

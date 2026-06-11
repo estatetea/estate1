@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { addToken } from '@/lib/admin-auth';
 
 export async function POST(request) {
   const { password } = await request.json();
@@ -8,7 +7,7 @@ export async function POST(request) {
   if (!adminPass || password !== adminPass) {
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
   }
-  const token = crypto.randomBytes(32).toString('hex');
-  addToken(token);
+  // Create a signed token: hash of password + secret
+  const token = crypto.createHmac('sha256', adminPass).update('estate-tea-admin').digest('hex');
   return NextResponse.json({ token });
 }
