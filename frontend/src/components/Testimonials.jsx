@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Star, Quote, Send } from "lucide-react";
+import { Star, Quote, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 const API = '/api';
 
-const StarRating = ({ rating, onRate, interactive = false }) => (
-  <div className="flex gap-1">
+const StarRating = ({ rating, onRate, interactive = false, size = "sm" }) => (
+  <div className="flex gap-0.5">
     {[1, 2, 3, 4, 5].map((star) => (
       <button
         key={star}
@@ -15,7 +15,7 @@ const StarRating = ({ rating, onRate, interactive = false }) => (
         data-testid={`star-${star}`}
       >
         <Star
-          className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${
+          className={`${size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4"} transition-colors ${
             star <= rating ? 'fill-[#D4AF37] text-[#D4AF37]' : 'text-white/15'
           }`}
         />
@@ -29,18 +29,13 @@ const TestimonialCard = ({ testimonial }) => {
   const timeAgo = getTimeAgo(date);
 
   return (
-    <div className="card-surface rounded-xl p-5 sm:p-6 border border-white/5 hover:border-[#D4AF37]/20 transition-colors" data-testid="testimonial-card">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="text-sm font-medium text-white">{testimonial.user_name}</p>
-          <p className="text-xs text-gray-500">{timeAgo}</p>
-        </div>
+    <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5" data-testid="testimonial-card">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-medium text-white">{testimonial.user_name}</p>
         <StarRating rating={testimonial.rating} />
       </div>
-      <div className="relative pl-4">
-        <Quote className="absolute left-0 top-0 w-3 h-3 text-[#D4AF37]/30" />
-        <p className="text-sm sm:text-base text-gray-300 leading-relaxed italic">{testimonial.text}</p>
-      </div>
+      <p className="text-sm text-gray-400 leading-relaxed">{testimonial.text}</p>
+      <p className="text-[10px] text-gray-600 mt-2">{timeAgo}</p>
     </div>
   );
 };
@@ -60,6 +55,7 @@ const Testimonials = () => {
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/testimonials`).then(r => r.json()).then(setTestimonials).catch(() => {});
@@ -81,6 +77,7 @@ const Testimonials = () => {
       setName('');
       setReviewText('');
       setRating(5);
+      setFormOpen(false);
       toast.success('Thank you for your review!');
     } catch {
       toast.error('Could not submit review');
@@ -91,63 +88,16 @@ const Testimonials = () => {
 
   return (
     <div className="fade-up" data-testid="testimonials-section">
-      <div className="text-center mb-8 sm:mb-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#D4AF37]/60 mb-3">What Our Customers Say</p>
-        <h2 className="text-3xl sm:text-4xl font-light gold-text">Testimonials</h2>
-        <div className="mt-4 mx-auto w-16 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
+      {/* Header */}
+      <div className="text-center mb-6 sm:mb-8">
+        <p className="text-xs uppercase tracking-[0.3em] text-[#D4AF37]/60 mb-2">What Our Customers Say</p>
+        <h2 className="text-2xl sm:text-3xl font-light gold-text">Testimonials</h2>
+        <div className="mt-3 mx-auto w-12 h-px bg-[#D4AF37]/30" />
       </div>
 
-      {/* Review form */}
-      <div className="card-surface rounded-2xl p-5 sm:p-8 mb-8 border border-white/5" data-testid="review-form-section">
-        <p className="text-sm sm:text-base text-gray-300 mb-5 font-light">Loved your cup of Estate Tea? We'd love to hear from you.</p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs uppercase tracking-wider text-gray-400 mb-1.5 block">Your Name</label>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Enter your name"
-              maxLength={50}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-[#D4AF37]/50 focus:outline-none transition-colors"
-              data-testid="review-name-input"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs uppercase tracking-wider text-gray-400 mb-1.5 block">Your Rating</label>
-            <StarRating rating={rating} onRate={setRating} interactive />
-          </div>
-
-          <div>
-            <label className="text-xs uppercase tracking-wider text-gray-400 mb-1.5 block">Your Experience</label>
-            <textarea
-              value={reviewText}
-              onChange={e => setReviewText(e.target.value)}
-              placeholder="Tell us about your experience with Estate Tea..."
-              maxLength={500}
-              rows={3}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-500 focus:border-[#D4AF37]/50 focus:outline-none resize-none transition-colors"
-              data-testid="review-textarea"
-            />
-            <span className="text-xs text-gray-500 mt-1 block text-right">{reviewText.length}/500</span>
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !name.trim() || !reviewText.trim()}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#D4AF37] hover:bg-[#c5a030] disabled:bg-gray-700 disabled:text-gray-500 text-black text-sm font-medium rounded-xl transition-colors touch-manipulation"
-            data-testid="submit-review-button"
-          >
-            <Send className="w-3.5 h-3.5" />
-            {submitting ? 'Posting...' : 'Post Review'}
-          </button>
-        </div>
-      </div>
-
-      {/* Testimonials grid */}
+      {/* Customer testimonials first */}
       {testimonials.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5" data-testid="testimonials-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6" data-testid="testimonials-grid">
           {testimonials.map((t, i) => (
             <TestimonialCard key={t.id || i} testimonial={t} />
           ))}
@@ -155,8 +105,60 @@ const Testimonials = () => {
       )}
 
       {testimonials.length === 0 && (
-        <p className="text-center text-sm text-gray-500 py-6">Be the first to share your experience with Estate Tea!</p>
+        <p className="text-center text-xs text-gray-500 py-4 mb-4">Be the first to share your experience!</p>
       )}
+
+      {/* Compact write review — collapsible */}
+      <div className="card-surface rounded-xl border border-white/5 overflow-hidden" data-testid="review-form-section">
+        <button
+          onClick={() => setFormOpen(!formOpen)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-300 hover:text-[#D4AF37] transition-colors touch-manipulation"
+          data-testid="toggle-review-form"
+        >
+          <span className="font-light">Leave a review</span>
+          {formOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {formOpen && (
+          <div className="px-4 pb-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your name"
+                maxLength={50}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#D4AF37]/50 focus:outline-none transition-colors"
+                data-testid="review-name-input"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-xs text-gray-500">Rating</span>
+                <StarRating rating={rating} onRate={setRating} interactive size="md" />
+              </div>
+            </div>
+            <textarea
+              value={reviewText}
+              onChange={e => setReviewText(e.target.value)}
+              placeholder="Tell us about your experience..."
+              maxLength={500}
+              rows={2}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#D4AF37]/50 focus:outline-none resize-none transition-colors"
+              data-testid="review-textarea"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-600">{reviewText.length}/500</span>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !name.trim() || !reviewText.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#D4AF37] hover:bg-[#c5a030] disabled:bg-gray-700 disabled:text-gray-500 text-black text-xs font-medium rounded-lg transition-colors touch-manipulation"
+                data-testid="submit-review-button"
+              >
+                <Send className="w-3 h-3" />
+                {submitting ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
