@@ -128,6 +128,7 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
   html { font-size: 14px; }
   .glass-surface { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
   .razorpay-button-container iframe, .razorpay-button-wrapper iframe { width: 100% !important; }
+  input, textarea, select { font-size: 16px !important; }
 }
 
 .payment-success-pulse { animation: successPulse 2s ease-in-out infinite; }
