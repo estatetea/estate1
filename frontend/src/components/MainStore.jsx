@@ -114,10 +114,27 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
   const productRef = useRef(null);
 
-  const variants = [
-    { id: "250g", weight: "250 grams", price: 200 },
-    { id: "500g", weight: "500 grams", price: 390 }
-  ];
+  const [variants, setVariants] = useState([
+    { id: "250g", weight: "250 grams", price: 200, in_stock: true },
+    { id: "500g", weight: "500 grams", price: 390, in_stock: true }
+  ]);
+
+  // Load product config from API (admin-managed)
+  useEffect(() => {
+    fetch('/api/products')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setVariants(data.map(p => ({
+            id: p.product_id,
+            weight: p.weight,
+            price: p.price,
+            in_stock: p.in_stock !== false
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const hotRecommendation = "Hot Estate Classic with ginger and honey — perfect for warming up on chilly days";
   const coldRecommendation = "Iced Estate Tea with mint and lime — a refreshing cooler for sunny weather";
@@ -404,15 +421,21 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                 <button
                   key={variant.id}
                   data-testid={`variant-${variant.id}`}
-                  onClick={() => setSelectedVariant(variant.id)}
-                  className={`p-4 sm:p-6 rounded-xl border transition-all duration-300 touch-manipulation active:scale-[0.97] text-center ${
-                    selectedVariant === variant.id
-                      ? 'border-[#D4AF37] bg-[#D4AF37]/5'
-                      : 'border-white/10 hover:border-white/25'
+                  onClick={() => variant.in_stock && setSelectedVariant(variant.id)}
+                  disabled={!variant.in_stock}
+                  className={`p-4 sm:p-6 rounded-xl border transition-all duration-300 touch-manipulation text-center relative ${
+                    !variant.in_stock
+                      ? 'border-white/5 opacity-50 cursor-not-allowed'
+                      : selectedVariant === variant.id
+                        ? 'border-[#D4AF37] bg-[#D4AF37]/5 active:scale-[0.97]'
+                        : 'border-white/10 hover:border-white/25 active:scale-[0.97]'
                   }`}
                 >
                   <p className="text-lg sm:text-2xl font-light mb-1 sm:mb-2">{variant.weight}</p>
                   <p className="text-lg sm:text-xl gold-text">₹{variant.price}</p>
+                  {!variant.in_stock && (
+                    <p className="text-[10px] uppercase tracking-wider text-red-400 mt-2">Out of Stock</p>
+                  )}
                 </button>
               ))}
             </div>

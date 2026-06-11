@@ -627,6 +627,112 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# ==================== ADMIN ENDPOINTS ====================
+
+import secrets
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+admin_tokens = set()
+
+class AdminLogin(BaseModel):
+    password: str
+
+class ProductUpdate(BaseModel):
+    product_id: str
+    price: Optional[float] = None
+    in_stock: Optional[bool] = None
+
+@api_router.post("/admin/login")
+async def admin_login(req: AdminLogin):
+    if req.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+    token = secrets.token_hex(32)
+    admin_tokens.add(token)
+    return {"token": token}
+
+def verify_admin(request: Request):
+    auth = request.headers.get("authorization", "")
+    token = auth.replace("Bearer ", "") if auth.startswith("Bearer ") else ""
+    if token not in admin_tokens:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+@api_router.get("/admin/products")
+async def get_admin_products(request: Request):
+    verify_admin(request)
+    if db is None:
+        return [
+            {"product_id": "250g", "name": "Estate Premium Tea", "weight": "250 grams", "price": 200, "in_stock": True},
+            {"product_id": "500g", "name": "Estate Premium Tea", "weight": "500 grams", "price": 390, "in_stock": True}
+        ]
+    products = await db.products.find({}, {"_id": 0}).to_list(10)
+    if not products:
+        defaults = [
+            {"product_id": "250g", "name": "Estate Premium Tea", "weight": "250 grams", "price": 200, "in_stock": True},
+            {"product_id": "500g", "name": "Estate Premium Tea", "weight": "500 grams", "price": 390, "in_stock": True}
+        ]
+        await db.products.insert_many([{**p} for p in defaults])
+        return defaults
+    return products
+
+@api_router.put("/admin/products")
+async def update_admin_product(req: ProductUpdate, request: Request):
+    verify_admin(request)
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not available")
+    update = {}
+    if req.price is not None:
+        update["price"] = req.price
+    if req.in_stock is not None:
+        update["in_stock"] = req.in_stock
+    if not update:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    await db.products.update_one({"product_id": req.product_id}, {"$set": update})
+    product = await db.products.find_one({"product_id": req.product_id}, {"_id": 0})
+    return product
+
+@api_router.get("/admin/testimonials")
+async def get_admin_testimonials(request: Request):
+    verify_admin(request)
+    if db is None:
+        return []
+    testimonials = await db.testimonials.find({}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return testimonials
+
+@api_router.delete("/admin/testimonials/{testimonial_id}")
+async def delete_admin_testimonial(testimonial_id: str, request: Request):
+    verify_admin(request)
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not available")
+    result = await db.testimonials.delete_one({"id": testimonial_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Testimonial not found")
+    return {"deleted": True}
+
+@api_router.get("/admin/orders")
+async def get_admin_orders(request: Request):
+    verify_admin(request)
+    if db is None:
+        return []
+    orders = await db.orders.find({}, {"_id": 0}).sort("timestamp", -1).limit(50).to_list(50)
+    return orders
+
+# Public endpoint: store reads product config
+@api_router.get("/products")
+async def get_products():
+    if db is None:
+        return [
+            {"product_id": "250g", "weight": "250 grams", "price": 200, "in_stock": True},
+            {"product_id": "500g", "weight": "500 grams", "price": 390, "in_stock": True}
+        ]
+    products = await db.products.find({}, {"_id": 0, "name": 0}).to_list(10)
+    if not products:
+        return [
+            {"product_id": "250g", "weight": "250 grams", "price": 200, "in_stock": True},
+            {"product_id": "500g", "weight": "500 grams", "price": 390, "in_stock": True}
+        ]
+    return products
+
 logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")

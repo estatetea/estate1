@@ -9,13 +9,17 @@ import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentFailed from '@/components/PaymentFailed';
+import AdminDashboard from '@/components/AdminDashboard';
 
 export default function App() {
   const [userInfo, setUserInfo] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
   const [cart, setCart] = useState([]);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#admin') return 'admin';
+    return 'home';
+  });
   const [pageData, setPageData] = useState(null);
 
   const navigate = useCallback((path, data) => {
@@ -59,6 +63,16 @@ export default function App() {
     setShowWelcome(false);
     setPage('store');
   };
+
+  // Admin panel — accessible without entry form
+  if (page === 'admin') {
+    return (
+      <>
+        <Toaster position="top-center" richColors />
+        <AdminDashboard navigate={navigate} />
+      </>
+    );
+  }
 
   // Welcome screen overlay
   if (showWelcome && userInfo) {
