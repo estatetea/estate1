@@ -51,7 +51,7 @@ const ImageSlideshow = () => {
   ];
 
   return (
-    <div className="relative overflow-hidden h-[340px] sm:h-[440px] md:h-[560px] fade-up" data-testid="image-slideshow">
+    <div className="relative overflow-hidden h-[220px] sm:h-[380px] md:h-[500px] fade-up" data-testid="image-slideshow">
       {SLIDE_IMAGES.map((src, i) => {
         const kb = kenBurnsStyles[i % kenBurnsStyles.length];
         const isActive = current === i;
@@ -172,21 +172,21 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
       
       {/* Header */}
       <header className="glass-surface sticky top-0 z-50 border-b border-white/10 relative">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <img 
               src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
               alt="Estate Tea" 
-              className="w-8 h-8 sm:w-12 sm:h-12"
+              className="w-7 h-7 sm:w-12 sm:h-12"
             />
             <h2 className="hidden sm:block text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
           </div>
 
           {/* Nav Dropdowns */}
-          <nav className="flex items-center gap-0.5 sm:gap-2" data-testid="nav-dropdowns">
+          <nav className="flex items-center gap-0" data-testid="nav-dropdowns">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-0.5 sm:gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
+                <button className="flex items-center gap-0.5 px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
                   Categories
                   <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
@@ -211,7 +211,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-0.5 sm:gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="services-dropdown">
+                <button className="flex items-center gap-0.5 px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="services-dropdown">
                   Services
                   <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
@@ -228,7 +228,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </DropdownMenu>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-4">
             <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>
             <button
               onClick={() => setLargeFont(f => !f)}
@@ -258,7 +258,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 relative z-10">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">
 
         {/* Image Slideshow */}
         <div className="mb-8 sm:mb-12">
@@ -320,16 +320,16 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
         {/* Both options (location denied) */}
         {!weatherData && (
-          <div className="mb-8 sm:mb-12 fade-up" data-testid="tea-options-section">
-            <div className="text-center mb-6 sm:mb-8">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2">What are you in the mood for?</p>
-              <h3 className="text-2xl sm:text-3xl font-light gold-text">Choose Your Preparation</h3>
+          <div className="mb-6 sm:mb-12 fade-up" data-testid="tea-options-section">
+            <div className="text-center mb-4 sm:mb-8">
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-gray-400 mb-1">What are you in the mood for?</p>
+              <h3 className="text-xl sm:text-3xl font-light gold-text">Choose Your Preparation</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="hot-tea-option">
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                  <div className="bg-orange-500/10 p-3 rounded-xl">
-                    <Flame className="w-6 h-6 text-orange-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+              <div className="card-surface rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="hot-tea-option">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-white/10">
+                  <div className="bg-orange-500/10 p-2 sm:p-3 rounded-xl">
+                    <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />
                   </div>
                   <div>
                     <h4 className="text-lg sm:text-xl font-light text-white">Hot Tea</h4>
@@ -349,10 +349,10 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                 </button>
               </div>
 
-              <div className="card-surface rounded-2xl p-5 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="cold-tea-option">
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                  <div className="bg-cyan-500/10 p-3 rounded-xl">
-                    <Snowflake className="w-6 h-6 text-cyan-400" />
+              <div className="card-surface rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 hover:border-[#D4AF37]/30 transition-colors" data-testid="cold-tea-option">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-white/10">
+                  <div className="bg-cyan-500/10 p-2 sm:p-3 rounded-xl">
+                    <Snowflake className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
                   </div>
                   <div>
                     <h4 className="text-lg sm:text-xl font-light text-white">Iced Tea</h4>
@@ -381,10 +381,10 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         )}
 
         {/* Product Section */}
-        <div ref={productRef} className="max-w-lg mx-auto mb-12 sm:mb-16 fade-up" data-testid="product-section">
-          <div className="text-center mb-8 sm:mb-10">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-2 sm:mb-3">Premium Collection</p>
-            <h1 className="text-3xl sm:text-4xl font-light tracking-tight mb-3 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>
+        <div ref={productRef} className="max-w-lg mx-auto mb-8 sm:mb-16 fade-up" data-testid="product-section">
+          <div className="text-center mb-5 sm:mb-10">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-gray-400 mb-1 sm:mb-3">Premium Collection</p>
+            <h1 className="text-2xl sm:text-4xl font-light tracking-tight mb-2 sm:mb-4" data-testid="product-name">Estate Premium Tea</h1>
             <p className="text-sm sm:text-base leading-relaxed text-gray-400">
               Carefully selected tea leaves from the finest estates, offering a rich and aromatic experience.
             </p>
