@@ -106,6 +106,12 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const [recipeType, setRecipeType] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
   const [largeFont, setLargeFont] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.style.fontSize = largeFont ? '20px' : '';
+    return () => { document.documentElement.style.fontSize = ''; };
+  }, [largeFont]);
+
   const productRef = useRef(null);
 
   const variants = [
@@ -153,7 +159,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   return (
-    <div className={`min-h-screen bg-[#0a0a0a] relative ${largeFont ? 'text-lg sm:text-xl' : ''}`}>
+    <div className="min-h-screen bg-[#0a0a0a] relative">
       {/* Tea leaves background */}
       <div className="fixed inset-0 z-0">
         <img 
