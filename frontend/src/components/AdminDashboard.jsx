@@ -238,20 +238,26 @@ const AdminDashboard = ({ navigate }) => {
           <div className="space-y-3" data-testid="admin-orders-section">
             <h2 className="text-sm uppercase tracking-wider text-gray-400">Recent Orders ({orders.length})</h2>
             {orders.length === 0 && <p className="text-sm text-gray-500 py-4">No orders yet</p>}
-            {orders.map((order, i) => (
+            {orders.map((order, i) => {
+              const subtotal = order.price * (order.quantity || 1);
+              const gst = Math.round(subtotal * 0.05);
+              const total = subtotal + gst;
+              return (
               <div key={order.id || i} className="card-surface rounded-xl p-4 border border-white/5" data-testid={`admin-order-${i}`}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-white">{order.customer_name}</p>
-                  <p className="text-sm gold-text">₹{order.price * (order.quantity || 1)}</p>
+                  <p className="text-sm gold-text">₹{total}</p>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                   <span>{order.variant}</span>
                   <span>Qty: {order.quantity || 1}</span>
+                  <span>₹{order.price} + GST ₹{gst}</span>
                   <span>{order.customer_place}</span>
                   {order.timestamp && <span>{new Date(order.timestamp).toLocaleDateString()}</span>}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
