@@ -137,20 +137,20 @@ const EntryForm = ({ onSubmit }) => {
           filter: `blur(${Math.max(0, (1 - scrollProgress) * 15)}px)`
         }}
       >
-        <div className="glass-surface rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto">
+        <div className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10" style={{ background: 'rgba(0, 0, 0, 0.82)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)' }}>
           <div className="flex flex-col items-center mb-6 sm:mb-12">
             <img 
               src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
               alt="Estate Tea Logo" 
               className="w-16 h-16 sm:w-24 sm:h-24 mb-3 sm:mb-6 logo-sharp"
             />
-            <h2 className="text-2xl sm:text-4xl font-light tracking-tight gold-text">Welcome</h2>
-            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-400 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
+            <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-[#D4AF37] drop-shadow-[0_0_12px_rgba(212,175,55,0.3)]">Welcome</h2>
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-300 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
           </div>
           
           <form className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-300">
+              <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-200">
                 Your Name
               </Label>
               <Input
@@ -160,7 +160,7 @@ const EntryForm = ({ onSubmit }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className="bg-black/40 border-white/10 text-white focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
+                className="bg-black/60 border-white/20 text-white placeholder-gray-400 focus:border-[#D4AF37] h-11 sm:h-12 text-base touch-manipulation"
               />
             </div>
 
