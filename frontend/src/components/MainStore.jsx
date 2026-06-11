@@ -139,13 +139,15 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const hotRecommendation = "Hot Estate Classic with ginger and honey — perfect for warming up on chilly days";
   const coldRecommendation = "Iced Estate Tea with mint and lime — a refreshing cooler for sunny weather";
 
+  const [addingToCart, setAddingToCart] = useState(false);
+
   const handleAddToCart = async () => {
-    if (!selectedVariant) {
-      toast.error("Please select a variant");
-      return;
-    }
+    if (!selectedVariant || addingToCart) return;
 
     const variant = variants.find(v => v.id === selectedVariant);
+    if (!variant || !variant.in_stock) return;
+
+    setAddingToCart(true);
     const orderData = {
       customer_name: userInfo.name,
       customer_age: 0,
@@ -164,11 +166,13 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
       });
       setCart([orderData]);
       toast.success(`Added ${quantity} item(s) to cart!`);
+      setQuantity(1);
       setTransitioning(true);
       setTimeout(() => navigate('checkout'), 600);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to add to cart");
+      setAddingToCart(false);
     }
   };
 

@@ -239,7 +239,8 @@ const AdminDashboard = ({ navigate }) => {
             <h2 className="text-sm uppercase tracking-wider text-gray-400">Recent Orders ({orders.length})</h2>
             {orders.length === 0 && <p className="text-sm text-gray-500 py-4">No orders yet</p>}
             {orders.map((order, i) => {
-              const subtotal = order.price * (order.quantity || 1);
+              const qty = order.quantity || 1;
+              const subtotal = order.price * qty;
               const gst = Math.round(subtotal * 0.05);
               const total = subtotal + gst;
               return (
@@ -249,11 +250,13 @@ const AdminDashboard = ({ navigate }) => {
                   <p className="text-sm gold-text">₹{total}</p>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                  <span>{order.product_name || 'Estate Premium Tea'}</span>
                   <span>{order.variant}</span>
-                  <span>Qty: {order.quantity || 1}</span>
-                  <span>₹{order.price} + GST ₹{gst}</span>
-                  <span>{order.customer_place}</span>
-                  {order.timestamp && <span>{new Date(order.timestamp).toLocaleDateString()}</span>}
+                  <span>Qty: {qty}</span>
+                  <span>@ ₹{order.price}/pack</span>
+                  <span>+ GST ₹{gst}</span>
+                  {order.customer_place && order.customer_place !== 'Unknown' && <span>{order.customer_place}</span>}
+                  {order.timestamp && <span>{new Date(order.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                 </div>
               </div>
               );
