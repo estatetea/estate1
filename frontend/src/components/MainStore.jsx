@@ -105,6 +105,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
+  const [largeFont, setLargeFont] = useState(false);
   const productRef = useRef(null);
 
   const variants = [
@@ -152,7 +153,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] relative">
+    <div className={`min-h-screen bg-[#0a0a0a] relative ${largeFont ? 'text-lg sm:text-xl' : ''}`}>
       {/* Tea leaves background */}
       <div className="fixed inset-0 z-0">
         <img 
@@ -227,8 +228,20 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </DropdownMenu>
           </nav>
 
-          <div className="flex items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-4">
             <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>
+            <button
+              onClick={() => setLargeFont(f => !f)}
+              className={`px-2 py-1 rounded-lg text-xs font-medium border transition-all touch-manipulation ${
+                largeFont
+                  ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10'
+                  : 'border-white/15 text-gray-400 hover:text-[#D4AF37] hover:border-[#D4AF37]/30'
+              }`}
+              data-testid="font-size-toggle"
+              title={largeFont ? "Normal text" : "Larger text"}
+            >
+              <span className="text-[10px]">A</span><span className="text-sm">A</span>
+            </button>
             <button 
               onClick={() => navigate('cart')}
               className="relative hover:scale-110 active:scale-95 transition-transform touch-manipulation" 
