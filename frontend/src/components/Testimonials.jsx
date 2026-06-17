@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Star, Quote, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Star, Send, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 const API = '/api';
@@ -24,22 +24,6 @@ const StarRating = ({ rating, onRate, interactive = false, size = "sm" }) => (
   </div>
 );
 
-const TestimonialCard = ({ testimonial }) => {
-  const date = new Date(testimonial.created_at);
-  const timeAgo = getTimeAgo(date);
-
-  return (
-    <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5" data-testid="testimonial-card">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-white">{testimonial.user_name}</p>
-        <StarRating rating={testimonial.rating} />
-      </div>
-      <p className="text-sm text-gray-400 leading-relaxed">{testimonial.text}</p>
-      <p className="text-[10px] text-gray-600 mt-2">{timeAgo}</p>
-    </div>
-  );
-};
-
 function getTimeAgo(date) {
   const seconds = Math.floor((new Date() - date) / 1000);
   if (seconds < 60) return 'Just now';
@@ -51,15 +35,35 @@ function getTimeAgo(date) {
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
+  const [current, setCurrent] = useState(0);
   const [name, setName] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     fetch(`${API}/testimonials`).then(r => r.json()).then(setTestimonials).catch(() => {});
   }, []);
+
+  // Auto-advance slideshow
+  const nextReview = useCallback(() => {
+    if (testimonials.length <= 1) return;
+    setCurrent(prev => (prev + 1) % testimonials.length);
+  }, [testimonials.length]);
+
+  useEffect(() => {
+    if (testimonials.length <= 1) return;
+    timerRef.current = setInterval(nextReview, 5000);
+    return () => clearInterval(timerRef.current);
+  }, [nextReview, testimonials.length]);
+
+  const goTo = (index) => {
+    setCurrent(index);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(nextReview, 5000);
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) { toast.error('Please enter your name'); return; }
@@ -74,6 +78,7 @@ const Testimonials = () => {
       if (!res.ok) throw new Error();
       const newTestimonial = await res.json();
       setTestimonials(prev => [newTestimonial, ...prev]);
+      setCurrent(0);
       setName('');
       setReviewText('');
       setRating(5);
@@ -86,6 +91,8 @@ const Testimonials = () => {
     }
   };
 
+  const t = testimonials[current];
+
   return (
     <div className="fade-up" data-testid="testimonials-section">
       {/* Header */}
@@ -95,16 +102,66 @@ const Testimonials = () => {
         <div className="mt-3 mx-auto w-12 h-px bg-[#D4AF37]/30" />
       </div>
 
-      {/* Customer testimonials first */}
-      {testimonials.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6" data-testid="testimonials-grid">
-          {testimonials.map((t, i) => (
-            <TestimonialCard key={t.id || i} testimonial={t} />
-          ))}
-        </div>
-      )}
+      {/* Review slideshow */}
+      {testimonials.length > 0 ? (
+        <div className="relative mb-6" data-testid="testimonials-carousel">
+          {/* Card */}
+          <div className="relative overflow-hidden min-h-[120px] sm:min-h-[100px]">
+            {testimonials.map((review, i) => (
+              <div
+                key={review.id || i}
+                className="transition-all duration-500 ease-in-out"
+                style={{
+                  position: i === current ? 'relative' : 'absolute',
+                  opacity: i === current ? 1 : 0,
+                  transform: i === current ? 'translateX(0)' : i < current ? 'translateX(-30px)' : 'translateX(30px)',
+                  top: 0, left: 0, right: 0,
+                  pointerEvents: i === current ? 'auto' : 'none',
+                }}
+              >
+                <div className="bg-white/[0.03] rounded-xl p-5 sm:p-6 border border-white/5 text-center max-w-xl mx-auto" data-testid="testimonial-card">
+                  <StarRating rating={review.rating} />
+                  <p className="text-sm sm:text-base text-gray-300 leading-relaxed mt-3 mb-3 italic">"{review.text}"</p>
+                  <p className="text-sm text-white font-medium">— {review.user_name}</p>
+                  <p className="text-[10px] text-gray-600 mt-1">{getTimeAgo(new Date(review.created_at))}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {testimonials.length === 0 && (
+          {/* Navigation */}
+          {testimonials.length > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <button
+                onClick={() => goTo((current - 1 + testimonials.length) % testimonials.length)}
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 hover:border-[#D4AF37]/40 text-gray-400 hover:text-[#D4AF37] transition-colors touch-manipulation"
+                data-testid="review-prev"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex gap-1.5">
+                {testimonials.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className={`rounded-full transition-all duration-300 ${
+                      current === i ? "w-5 h-1.5 bg-[#D4AF37]" : "w-1.5 h-1.5 bg-white/20"
+                    }`}
+                    data-testid={`review-dot-${i}`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => goTo((current + 1) % testimonials.length)}
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 hover:border-[#D4AF37]/40 text-gray-400 hover:text-[#D4AF37] transition-colors touch-manipulation"
+                data-testid="review-next"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
         <p className="text-center text-xs text-gray-500 py-4 mb-4">Be the first to share your experience!</p>
       )}
 
