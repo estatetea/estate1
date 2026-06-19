@@ -9,12 +9,12 @@ const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-47
 
 const EntryForm = ({ onSubmit }) => {
   const [name, setName] = useState("");
-  const [phase, setPhase] = useState("logo"); // logo → ready → video → blackout → form
+  const [phase, setPhase] = useState("logo"); // logo → ready → video → abyss → form
   const [logoVisible, setLogoVisible] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
-  const [pourGrains, setPourGrains] = useState(false);
-  const [settleGrains, setSettleGrains] = useState(false);
+  const [streamActive, setStreamActive] = useState(false);
+  const [wispsActive, setWispsActive] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
   const locationAttempted = useRef(false);
@@ -48,32 +48,33 @@ const EntryForm = ({ onSubmit }) => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
-        setTimeout(() => triggerBlackout(), 3000);
+        setTimeout(() => triggerAbyss(), 3000);
       });
     }
   };
 
-  const triggerBlackout = useCallback(() => {
+  const triggerAbyss = useCallback(() => {
     if (transitioned.current) return;
     transitioned.current = true;
-    // Video fades out → black screen with pour grains
-    setPhase("blackout");
-    setPourGrains(true);
-    // After grains fall on black for a moment, fade the form in
+    // Immediate: video fades to black, stream continues
+    setPhase("abyss");
+    setStreamActive(true);
+    // Stream pours into the void for a while, then thins out
+    // At ~3s: stream fades, last wisps remain
+    setTimeout(() => setWispsActive(true), 2200);
+    setTimeout(() => setStreamActive(false), 3800);
+    // At ~3.5s: form starts emerging from the darkness
     setTimeout(() => {
       setPhase("form");
-      setSettleGrains(true);
-      setTimeout(() => setFormVisible(true), 300);
-    }, 1800);
-    // Pour grains fade out
-    setTimeout(() => setPourGrains(false), 5000);
-    // Settle grains linger longer then fade
-    setTimeout(() => setSettleGrains(false), 6500);
+      setTimeout(() => setFormVisible(true), 200);
+    }, 3500);
+    // Wisps linger over the form, then dissolve
+    setTimeout(() => setWispsActive(false), 7000);
   }, []);
 
   const handleVideoEnded = useCallback(() => {
-    triggerBlackout();
-  }, [triggerBlackout]);
+    triggerAbyss();
+  }, [triggerAbyss]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) return;
@@ -116,86 +117,114 @@ const EntryForm = ({ onSubmit }) => {
   const showVideo = (phase === "ready" || phase === "video") && videoReady;
 
   return (
-    <div className="relative w-full h-screen h-[100dvh] overflow-hidden bg-[#0a0a0a]" data-testid="entry-wrapper">
+    <div className="relative w-full h-screen h-[100dvh] overflow-hidden bg-[#050403]" data-testid="entry-wrapper">
 
-      {/* ── Keyframes ── */}
       <style>{`
-        @keyframes pourFall {
-          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
-          30% { opacity: 0.9; }
-          70% { opacity: 0.6; }
-          100% { transform: translateY(105vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
+        @keyframes streamCore {
+          0% { transform: translateY(0) translateX(0); opacity: 1; }
+          15% { opacity: 1; }
+          85% { opacity: 0.7; }
+          100% { transform: translateY(110vh) translateX(var(--drift)); opacity: 0; }
         }
-        @keyframes pourFade {
+        @keyframes streamScatter {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.8; }
+          40% { opacity: 0.5; }
+          100% { transform: translateY(110vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
+        }
+        @keyframes streamFade {
           0% { opacity: 1; }
-          50% { opacity: 0.7; }
+          70% { opacity: 0.6; }
           100% { opacity: 0; }
         }
-        @keyframes settleFall {
-          0% { transform: translateY(0) translateX(0); opacity: 0.7; }
-          50% { opacity: 0.4; }
-          100% { transform: translateY(70vh) translateX(var(--drift)); opacity: 0; }
+        @keyframes wispFloat {
+          0% { transform: translateY(0) translateX(0); opacity: 0.5; }
+          60% { opacity: 0.25; }
+          100% { transform: translateY(60vh) translateX(var(--drift)); opacity: 0; }
         }
-        @keyframes settleFade {
+        @keyframes wispFade {
           0% { opacity: 1; }
-          40% { opacity: 0.7; }
+          40% { opacity: 0.6; }
           100% { opacity: 0; }
         }
       `}</style>
 
-      {/* ── Pour grains: concentrated stream from center-right, matching video ── */}
-      {pourGrains && (
+      {/* ═══ STREAM: Tight center pour continuing from video ═══ */}
+      {streamActive && (
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
-          style={{ animation: 'pourFade 4.5s ease-out 0.5s forwards' }}
+          style={{ animation: 'streamFade 3.5s ease-out 0.3s forwards' }}
         >
-          {Array.from({ length: 80 }).map((_, i) => {
-            // Concentrated around center (45-60%), matching the pouch pour location
-            const x = 42 + Math.random() * 20;
-            const delay = Math.random() * 1.5;
-            const size = 1.5 + Math.random() * 3;
-            // Tight drift — grains fall mostly straight like a pour stream
-            const drift = (Math.random() - 0.5) * 18;
-            const duration = 1.6 + Math.random() * 1.2;
-            const spin = 120 + Math.random() * 240;
+          {/* Core stream — very tight, dead center, matches video pour */}
+          {Array.from({ length: 70 }).map((_, i) => {
+            // Dead center: 48-52% — the packet opening
+            const x = 48 + Math.random() * 4;
+            const delay = Math.random() * 0.8;
+            const size = 1 + Math.random() * 2.5;
+            const drift = (Math.random() - 0.5) * 8;
+            const duration = 1.3 + Math.random() * 0.8;
             return (
               <div
-                key={`p-${i}`}
+                key={`c-${i}`}
+                className="absolute"
+                style={{
+                  left: `${x}%`,
+                  top: '-2px',
+                  width: `${size}px`,
+                  height: `${size * (0.8 + Math.random() * 0.6)}px`,
+                  borderRadius: '50%',
+                  background: `hsl(${22 + Math.random() * 8}, ${25 + Math.random() * 20}%, ${4 + Math.random() * 10}%)`,
+                  animation: `streamCore ${duration}s ease-in ${delay}s forwards`,
+                  '--drift': `${drift}px`,
+                }}
+              />
+            );
+          })}
+          {/* Inner scatter — grains that bounce off the main stream */}
+          {Array.from({ length: 45 }).map((_, i) => {
+            const x = 45 + Math.random() * 10;
+            const delay = 0.1 + Math.random() * 1.2;
+            const size = 1 + Math.random() * 2;
+            const drift = (Math.random() - 0.5) * 25;
+            const duration = 1.5 + Math.random() * 1.2;
+            const spin = (Math.random() - 0.5) * 300;
+            return (
+              <div
+                key={`is-${i}`}
                 className="absolute rounded-full"
                 style={{
                   left: `${x}%`,
-                  top: '-4px',
+                  top: '-2px',
                   width: `${size}px`,
                   height: `${size}px`,
-                  background: `hsl(${25 + Math.random() * 15}, ${40 + Math.random() * 30}%, ${8 + Math.random() * 18}%)`,
-                  animation: `pourFall ${duration}s ease-in ${delay}s forwards`,
+                  background: `hsl(${20 + Math.random() * 10}, ${20 + Math.random() * 25}%, ${6 + Math.random() * 12}%)`,
+                  animation: `streamScatter ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                   '--spin': `${spin}deg`,
                 }}
               />
             );
           })}
-          {/* Wider scatter — a few grains that drift outward from the stream */}
-          {Array.from({ length: 25 }).map((_, i) => {
-            const x = 30 + Math.random() * 40;
-            const delay = 0.3 + Math.random() * 1.8;
-            const size = 1 + Math.random() * 2;
-            const drift = (Math.random() - 0.5) * 50;
-            const duration = 2.2 + Math.random() * 1.5;
+          {/* Outer dust — fine particles that float outward */}
+          {Array.from({ length: 20 }).map((_, i) => {
+            const x = 40 + Math.random() * 20;
+            const delay = 0.4 + Math.random() * 2;
+            const size = 0.8 + Math.random() * 1.5;
+            const drift = (Math.random() - 0.5) * 60;
+            const duration = 2.5 + Math.random() * 1.5;
             const spin = Math.random() * 360;
             return (
               <div
-                key={`ps-${i}`}
+                key={`od-${i}`}
                 className="absolute rounded-full"
                 style={{
                   left: `${x}%`,
-                  top: '-4px',
+                  top: '-2px',
                   width: `${size}px`,
                   height: `${size}px`,
-                  background: `hsl(${28 + Math.random() * 12}, ${35 + Math.random() * 20}%, ${12 + Math.random() * 15}%)`,
-                  animation: `pourFall ${duration}s ease-in ${delay}s forwards`,
+                  background: `hsl(${25 + Math.random() * 8}, ${15 + Math.random() * 20}%, ${8 + Math.random() * 10}%)`,
+                  animation: `streamScatter ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                   '--spin': `${spin}deg`,
-                  opacity: 0.6,
+                  opacity: 0.4,
                 }}
               />
             );
@@ -203,28 +232,28 @@ const EntryForm = ({ onSubmit }) => {
         </div>
       )}
 
-      {/* ── Settle grains: lighter, slower, on the form page ── */}
-      {settleGrains && (
+      {/* ═══ WISPS: Last few grains dissolving in the abyss ═══ */}
+      {wispsActive && (
         <div className="fixed inset-0 z-[150] pointer-events-none overflow-hidden"
-          style={{ animation: 'settleFade 4s ease-out 1s forwards' }}
+          style={{ animation: 'wispFade 4s ease-out 1.5s forwards' }}
         >
-          {Array.from({ length: 18 }).map((_, i) => {
-            const x = 25 + Math.random() * 50;
-            const delay = Math.random() * 2;
-            const size = 1 + Math.random() * 2;
-            const drift = (Math.random() - 0.5) * 25;
-            const duration = 3 + Math.random() * 2.5;
+          {Array.from({ length: 12 }).map((_, i) => {
+            const x = 43 + Math.random() * 14;
+            const delay = Math.random() * 3;
+            const size = 0.8 + Math.random() * 1.8;
+            const drift = (Math.random() - 0.5) * 35;
+            const duration = 4 + Math.random() * 3;
             return (
               <div
-                key={`s-${i}`}
+                key={`w-${i}`}
                 className="absolute rounded-full"
                 style={{
                   left: `${x}%`,
-                  top: '-4px',
+                  top: '-2px',
                   width: `${size}px`,
                   height: `${size}px`,
-                  background: `hsl(${30 + Math.random() * 10}, ${30 + Math.random() * 25}%, ${14 + Math.random() * 14}%)`,
-                  animation: `settleFall ${duration}s ease-out ${delay}s forwards`,
+                  background: `hsl(${24 + Math.random() * 8}, ${18 + Math.random() * 15}%, ${6 + Math.random() * 10}%)`,
+                  animation: `wispFloat ${duration}s ease-out ${delay}s forwards`,
                   '--drift': `${drift}px`,
                 }}
               />
@@ -233,13 +262,13 @@ const EntryForm = ({ onSubmit }) => {
         </div>
       )}
 
-      {/* ── Video layer ── */}
+      {/* ═══ Video layer ═══ */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
         style={{
           opacity: showVideo ? 1 : 0,
-          transition: 'opacity 1.2s ease-out',
+          transition: 'opacity 0.8s ease-out',
         }}
         src={VIDEO_URL}
         preload="auto"
@@ -248,13 +277,8 @@ const EntryForm = ({ onSubmit }) => {
         onEnded={handleVideoEnded}
         data-testid="hero-video"
       />
-      {/* Subtle overlay on video */}
-      <div
-        className="absolute inset-0 bg-black/15"
-        style={{ opacity: showVideo ? 1 : 0, transition: 'opacity 1.2s' }}
-      />
 
-      {/* ── Logo (during logo phase) ── */}
+      {/* ═══ Logo ═══ */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <img
           src={LOGO_URL}
@@ -267,7 +291,7 @@ const EntryForm = ({ onSubmit }) => {
         />
       </div>
 
-      {/* ── "Get Started" button (during ready phase) ── */}
+      {/* ═══ "Get Started" button ═══ */}
       <div
         className="absolute inset-0 flex flex-col items-center justify-end pb-16 sm:pb-24 z-20"
         data-testid="hero-section"
@@ -287,20 +311,19 @@ const EntryForm = ({ onSubmit }) => {
         </button>
       </div>
 
-      {/* ── Form (fades in over black + grains) ── */}
+      {/* ═══ Form (emerges from the darkness) ═══ */}
       <div
         className="absolute inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         style={{
           opacity: formVisible ? 1 : 0,
-          transition: 'opacity 1.5s ease-in',
-          pointerEvents: (phase === "form") ? 'auto' : 'none',
+          transition: 'opacity 1.8s ease-in',
+          pointerEvents: phase === "form" ? 'auto' : 'none',
         }}
         data-testid="form-section"
       >
-        {/* Subtle background texture behind form */}
         <div className="absolute inset-0 hero-bg" style={{
           opacity: formVisible ? 1 : 0,
-          transition: 'opacity 2s ease-in',
+          transition: 'opacity 2.5s ease-in',
         }} />
 
         <div
@@ -310,8 +333,8 @@ const EntryForm = ({ onSubmit }) => {
             backdropFilter: 'blur(30px)',
             WebkitBackdropFilter: 'blur(30px)',
             opacity: formVisible ? 1 : 0,
-            transform: formVisible ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity 1.2s ease 0.3s, transform 1.2s ease 0.3s',
+            transform: formVisible ? 'translateY(0)' : 'translateY(15px)',
+            transition: 'opacity 1.5s ease 0.4s, transform 1.5s ease 0.4s',
           }}
         >
           <div className="flex flex-col items-center mb-6 sm:mb-12">
