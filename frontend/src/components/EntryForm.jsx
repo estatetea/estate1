@@ -60,11 +60,11 @@ const EntryForm = ({ onSubmit }) => {
     transitioned.current = true;
     setPhase("descending");
     setTranslateY("-100vh");
-    // Form fades in after descent completes
+    // Form fades in sooner during descent
     setTimeout(() => {
       setPhase("form");
-      setTimeout(() => setFormVisible(true), 150);
-    }, 2500);
+      setTimeout(() => setFormVisible(true), 50);
+    }, 1800);
   }, []);
 
   // Trigger descent at the right moment during the video
@@ -214,7 +214,7 @@ const EntryForm = ({ onSubmit }) => {
               WebkitBackdropFilter: 'blur(30px)',
               opacity: formVisible ? 1 : 0,
               transform: formVisible ? 'translateY(0)' : 'translateY(15px)',
-              transition: 'opacity 1.5s ease 0.3s, transform 1.5s ease 0.3s',
+              transition: 'opacity 0.8s ease, transform 0.8s ease',
             }}
           >
             <div className="flex flex-col items-center mb-6 sm:mb-12">
