@@ -26,7 +26,7 @@ E-commerce website for "Estate Tea" tea business. Black and gold theme, mobile-r
 | AdminDashboard.jsx | Product/Order/Review management (/#admin) |
 
 ## Completed Features (as of Jun 2026)
-- [x] Cinematic video landing page (Logo fade → Video → Get Started → Tea grain particles → Entry form)
+- [x] Cinematic video landing page (Logo fade → "Get Started" on dark bg → Click starts video → Near video end, tea grains fall & video fades → Grains fade as entry form appears)
 - [x] Auto-location detection (silent geolocation + Nominatim reverse geocoding)
 - [x] Weather-based tea suggestions via Open-Meteo
 - [x] Store with product listings (250g/500g), Ken Burns slideshow, tea powder background

@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 const VIDEO_URL = "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/z2zc6gmx_opening%20page.mp4";
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png";
-const VIDEO_DURATION = 5.04;
 const TRANSITION_START = 3.2; // seconds before end to start grain transition
 
 const EntryForm = ({ onSubmit }) => {
