@@ -16,20 +16,11 @@ const EntryForm = ({ onSubmit }) => {
   const [videoReady, setVideoReady] = useState(false);
   const [translateY, setTranslateY] = useState("0");
   const [formVisible, setFormVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
   const locationAttempted = useRef(false);
   const videoRef = useRef(null);
   const transitioned = useRef(false);
-
-  // Detect mobile
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   // Phase 1: Logo fades in/out
   useEffect(() => {
@@ -129,7 +120,6 @@ const EntryForm = ({ onSubmit }) => {
 
   const showVideo = (phase === "ready" || phase === "video") && videoReady;
   const isDescending = phase === "descending" || phase === "form";
-  const videoZoomed = phase === "video" || phase === "descending" || phase === "form";
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
@@ -143,14 +133,13 @@ const EntryForm = ({ onSubmit }) => {
       >
         {/* ── Section 1: Hero ── */}
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
-          {/* Video — full screen object-cover, with mobile zoom effect */}
+          {/* Video — full screen on all devices */}
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
             style={{
               opacity: showVideo ? 1 : 0,
-              transform: (isMobile && !videoZoomed) ? 'scale(0.55)' : 'scale(1)',
-              transition: 'opacity 1.2s ease-out, transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1)',
+              transition: 'opacity 1.2s ease-out',
             }}
             src={VIDEO_URL}
             preload="auto"
