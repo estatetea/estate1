@@ -134,38 +134,33 @@ const EntryForm = ({ onSubmit }) => {
       >
         {/* ── Section 1: Hero ── */}
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
-          {/* Video wrapper — starts as 16:9 centered box on mobile, expands to fill on click */}
-          <div
-            className="absolute sm:inset-0"
+          {/* Video — always full screen with object-cover, zoom via scale transform on mobile */}
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover"
             style={{
-              ...(videoZoomed ? {
-                inset: '0',
-              } : {
-                top: '50%',
-                left: '0',
-                right: '0',
-                transform: 'translateY(-50%)',
-                aspectRatio: '16/9',
-              }),
-              transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              opacity: showVideo ? 1 : 0,
+              transition: videoZoomed
+                ? 'opacity 1.2s ease-out, transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1)'
+                : 'opacity 1.2s ease-out',
+              transform: videoZoomed ? 'scale(1)' : '',
             }}
-          >
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              style={{
-                opacity: showVideo ? 1 : 0,
-                transition: 'opacity 1.2s ease-out',
-              }}
-              src={VIDEO_URL}
-              preload="auto"
-              muted
-              playsInline
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={handleVideoEnded}
-              data-testid="hero-video"
-            />
-          </div>
+            src={VIDEO_URL}
+            preload="auto"
+            muted
+            playsInline
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleVideoEnded}
+            data-testid="hero-video"
+          />
+          <style>{`
+            @media (max-width: 639px) {
+              video[data-testid="hero-video"]:not([style*="scale(1)"]) {
+                transform: scale(0.55) !important;
+                border-radius: 12px;
+              }
+            }
+          `}</style>
 
           {/* Bottom feather — fades hero into darkness at the seam */}
           <div
