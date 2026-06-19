@@ -6,16 +6,15 @@ import { toast } from "sonner";
 
 const VIDEO_URL = "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/z2zc6gmx_opening%20page.mp4";
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png";
+const POUR_STARTS = 3.0; // seconds into video when hand starts pouring
+const DESCENT_TRIGGER = POUR_STARTS + 1.0; // 1 second after pour begins
 
 const EntryForm = ({ onSubmit }) => {
   const [name, setName] = useState("");
-  const [phase, setPhase] = useState("logo"); // logo → ready → video → descending → abyss → arriving → form
+  const [phase, setPhase] = useState("logo"); // logo → ready → video → descending → form
   const [logoVisible, setLogoVisible] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [translateY, setTranslateY] = useState("0");
-  const [transitionDuration, setTransitionDuration] = useState("0s");
-  const [streamActive, setStreamActive] = useState(false);
-  const [wispsActive, setWispsActive] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
@@ -50,6 +49,7 @@ const EntryForm = ({ onSubmit }) => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
+        // Fallback if video can't play
         setTimeout(() => triggerDescent(), 3000);
       });
     }
@@ -58,26 +58,24 @@ const EntryForm = ({ onSubmit }) => {
   const triggerDescent = useCallback(() => {
     if (transitioned.current) return;
     transitioned.current = true;
-
-    // Stream starts + elevator descends directly from video to form
     setPhase("descending");
-    setStreamActive(true);
-    setTransitionDuration("3s");
     setTranslateY("-100vh");
-
-    // Arrived at form — fade it in
+    // Form fades in after descent completes
     setTimeout(() => {
       setPhase("form");
-      setWispsActive(true);
-      setTimeout(() => setFormVisible(true), 200);
-    }, 2800);
-
-    // Stream fades out
-    setTimeout(() => setStreamActive(false), 5500);
-    // Wisps linger then fade
-    setTimeout(() => setWispsActive(false), 8000);
+      setTimeout(() => setFormVisible(true), 150);
+    }, 2500);
   }, []);
 
+  // Trigger descent at the right moment during the video
+  const handleTimeUpdate = useCallback(() => {
+    if (!videoRef.current || transitioned.current) return;
+    if (videoRef.current.currentTime >= DESCENT_TRIGGER) {
+      triggerDescent();
+    }
+  }, [triggerDescent]);
+
+  // Fallback if video ends without triggering
   const handleVideoEnded = useCallback(() => {
     triggerDescent();
   }, [triggerDescent]);
@@ -120,194 +118,19 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  const showVideo = (phase === "ready" || phase === "video") && videoReady;
+  const showVideo = (phase === "ready" || phase === "video" || phase === "descending") && videoReady;
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
-
-      <style>{`
-        @keyframes columnGrow {
-          0% { height: 0; opacity: 0.9; }
-          10% { opacity: 0.9; }
-          60% { opacity: 0.7; }
-          100% { height: 120vh; opacity: 0; }
-        }
-        @keyframes particleFall {
-          0% { transform: translateY(0) translateX(0); opacity: 1; }
-          50% { opacity: 0.9; }
-          100% { transform: translateY(110vh) translateX(var(--drift)); opacity: 0; }
-        }
-        @keyframes dustFall {
-          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
-          50% { opacity: 0.4; }
-          100% { transform: translateY(100vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
-        }
-        @keyframes streamContainerFade {
-          0% { opacity: 1; }
-          65% { opacity: 0.8; }
-          100% { opacity: 0; }
-        }
-        @keyframes wispDrift {
-          0% { transform: translateY(0) translateX(0); opacity: 0.5; }
-          60% { opacity: 0.2; }
-          100% { transform: translateY(50vh) translateX(var(--drift)); opacity: 0; }
-        }
-        @keyframes wispContainerFade {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 0; }
-        }
-      `}</style>
-
-      {/* ═══ THE STREAM — one continuous pour ═══ */}
-      {streamActive && (
-        <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
-          style={{ animation: 'streamContainerFade 6s ease-out 1.5s forwards' }}
-        >
-          {/* STREAM BODY: Visible gradient columns that form the core pour */}
-          {[0, 1, 2].map((idx) => {
-            const offsets = [-2, 0, 2];
-            const widths = [6, 10, 6];
-            const opacities = [0.5, 0.8, 0.5];
-            const delays = [0, 0.1, 0.05];
-            const durations = [2.8, 3.2, 3.0];
-            return (
-              <div
-                key={`col-${idx}`}
-                className="absolute"
-                style={{
-                  left: `calc(34% + ${offsets[idx]}px)`,
-                  top: 0,
-                  width: `${widths[idx]}px`,
-                  background: `linear-gradient(to bottom, #4B3B2F ${0}%, #3C2C22 15%, #2A1F17 40%, rgba(42,31,23,0.3) 75%, transparent 100%)`,
-                  opacity: opacities[idx],
-                  animation: `columnGrow ${durations[idx]}s ease-in ${delays[idx]}s forwards`,
-                  filter: 'blur(1px)',
-                }}
-              />
-            );
-          })}
-
-          {/* STREAM GLOW: subtle warm haze around the core */}
-          <div
-            className="absolute"
-            style={{
-              left: 'calc(34% - 10px)',
-              top: 0,
-              width: '30px',
-              background: 'linear-gradient(to bottom, rgba(75,59,47,0.25) 0%, rgba(42,31,23,0.15) 30%, transparent 70%)',
-              animation: 'columnGrow 3.5s ease-in 0s forwards',
-              filter: 'blur(6px)',
-            }}
-          />
-
-          {/* DENSE PARTICLES: tightly packed along the stream body */}
-          {Array.from({ length: 120 }).map((_, i) => {
-            const teaColors = ['#2A1F17','#31241B','#35281E','#3C2C22','#3E2E22','#4B3B2F'];
-            const highlightColors = ['#6A4C2C','#7A5C34','#5A3F25','#A97C48'];
-            const isHighlight = Math.random() < 0.12;
-            const color = isHighlight
-              ? highlightColors[Math.floor(Math.random() * highlightColors.length)]
-              : teaColors[Math.floor(Math.random() * teaColors.length)];
-            // Very tight horizontal: 33-35% = ~30px band for dense core
-            const x = 33 + Math.random() * 2.5;
-            // Staggered but fast — creates continuous flow feel
-            const wave = Math.floor(i / 30);
-            const delay = wave * 0.6 + Math.random() * 0.5;
-            const size = 2 + Math.random() * 4;
-            const h = size * (0.5 + Math.random() * 1);
-            const drift = -6 + Math.random() * 8;
-            const duration = 1.3 + Math.random() * 0.7;
-            return (
-              <div
-                key={`p-${i}`}
-                className="absolute"
-                style={{
-                  left: `${x}%`,
-                  top: '-3px',
-                  width: `${size}px`,
-                  height: `${h}px`,
-                  borderRadius: '40%',
-                  background: color,
-                  animation: `particleFall ${duration}s ease-in ${delay}s forwards`,
-                  '--drift': `${drift}px`,
-                }}
-              />
-            );
-          })}
-
-          {/* EDGE SCATTER: particles that break away from the stream */}
-          {Array.from({ length: 40 }).map((_, i) => {
-            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F'];
-            const color = teaColors[Math.floor(Math.random() * teaColors.length)];
-            const side = Math.random() < 0.5 ? -1 : 1;
-            const x = 34 + side * (1.5 + Math.random() * 6);
-            const delay = 0.3 + Math.random() * 2.5;
-            const size = 1.5 + Math.random() * 3;
-            const drift = side * (10 + Math.random() * 30);
-            const duration = 2 + Math.random() * 1.5;
-            const spin = (Math.random() - 0.5) * 200;
-            return (
-              <div
-                key={`e-${i}`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${x}%`,
-                  top: '-3px',
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  background: color,
-                  animation: `dustFall ${duration}s ease-in ${delay}s forwards`,
-                  '--drift': `${drift}px`,
-                  '--spin': `${spin}deg`,
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* ═══ Wisps: last particles dissolving ═══ */}
-      {wispsActive && (
-        <div className="fixed inset-0 z-[150] pointer-events-none overflow-hidden"
-          style={{ animation: 'wispContainerFade 5s ease-out 2s forwards' }}
-        >
-          {Array.from({ length: 14 }).map((_, i) => {
-            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F'];
-            const color = teaColors[Math.floor(Math.random() * teaColors.length)];
-            const x = 30 + Math.random() * 12;
-            const delay = Math.random() * 4;
-            const size = 2 + Math.random() * 3;
-            const drift = -15 + Math.random() * 20;
-            const duration = 5 + Math.random() * 4;
-            return (
-              <div
-                key={`w-${i}`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${x}%`,
-                  top: '-2px',
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  background: color,
-                  animation: `wispDrift ${duration}s ease-out ${delay}s forwards`,
-                  '--drift': `${drift}px`,
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* ═══ Elevator container — 3 stacked full-screen sections ═══ */}
+      {/* Elevator container — 2 stacked sections */}
       <div
         className="will-change-transform"
         style={{
           transform: `translateY(${translateY})`,
-          transition: `transform ${transitionDuration} cubic-bezier(0.4, 0, 0.2, 1)`,
+          transition: phase === "descending" ? 'transform 2.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         }}
       >
-        {/* ── Section 1: Hero (video + logo + button) ── */}
+        {/* ── Section 1: Hero ── */}
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
           <video
             ref={videoRef}
@@ -320,6 +143,7 @@ const EntryForm = ({ onSubmit }) => {
             preload="auto"
             muted
             playsInline
+            onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
             data-testid="hero-video"
           />
