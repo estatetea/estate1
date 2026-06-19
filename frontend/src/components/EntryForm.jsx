@@ -6,94 +6,72 @@ import { toast } from "sonner";
 
 const VIDEO_URL = "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/z2zc6gmx_opening%20page.mp4";
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png";
-const TRANSITION_START = 3.2; // seconds before end to start grain transition
 
 const EntryForm = ({ onSubmit }) => {
   const [name, setName] = useState("");
-  const [phase, setPhase] = useState("logo"); // logo → ready → video → transition → form
+  const [phase, setPhase] = useState("logo"); // logo → ready → video → sliding → done
   const [logoVisible, setLogoVisible] = useState(false);
-  const [buttonVisible, setButtonVisible] = useState(false);
-  const [videoFading, setVideoFading] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [sliding, setSliding] = useState(false);
   const [grainsActive, setGrainsActive] = useState(false);
-  const [grainsFading, setGrainsFading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
   const locationAttempted = useRef(false);
   const videoRef = useRef(null);
-  const transitionStarted = useRef(false);
+  const slideTriggered = useRef(false);
 
-  // Phase 1: Logo fades in then out → Phase 2: Ready with button
+  // Phase 1: Logo — smoother, slower fade in/out, shorter hold
   useEffect(() => {
-    const t1 = setTimeout(() => setLogoVisible(true), 300);
-    const t2 = setTimeout(() => setLogoVisible(false), 2500);
-    const t3 = setTimeout(() => {
-      setPhase("ready");
-      setButtonVisible(true);
-    }, 3500);
+    const t1 = setTimeout(() => setLogoVisible(true), 200);
+    const t2 = setTimeout(() => setLogoVisible(false), 1900);
+    const t3 = setTimeout(() => setPhase("ready"), 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
-  // Preload video on mount
+  // Preload video so first frame is available
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-    }
+    const video = videoRef.current;
+    if (!video) return;
+    const onLoaded = () => setVideoReady(true);
+    video.addEventListener("loadeddata", onLoaded);
+    video.load();
+    return () => video.removeEventListener("loadeddata", onLoaded);
   }, []);
 
   const handleGetStarted = () => {
     setPhase("video");
-    setButtonVisible(false);
-    // Start location detection during video
     if (!locationAttempted.current) {
       locationAttempted.current = true;
       handleGetLocation();
     }
-    // Play the video
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
-        // If video can't play, skip directly to form after a delay
-        setTimeout(() => startTransition(), 2000);
+        // Fallback: if video can't play, trigger slide after a delay
+        setTimeout(() => triggerSlide(), 3000);
       });
     }
   };
 
-  const startTransition = useCallback(() => {
-    if (transitionStarted.current) return;
-    transitionStarted.current = true;
+  const triggerSlide = useCallback(() => {
+    if (slideTriggered.current) return;
+    slideTriggered.current = true;
+    setPhase("sliding");
+    setSliding(true);
     setGrainsActive(true);
-    setVideoFading(true);
-
-    // After grains have been falling for a bit, start fading them and show form
+    // After slide animation completes, show form
     setTimeout(() => {
-      setPhase("form");
-      setGrainsFading(true);
-      setTimeout(() => setFormVisible(true), 200);
+      setPhase("done");
+      setTimeout(() => setFormVisible(true), 150);
     }, 1800);
-
-    // Fully remove grains after they fade
-    setTimeout(() => {
-      setGrainsActive(false);
-      setGrainsFading(false);
-    }, 4000);
+    // Grains linger and fade — removed after full fade
+    setTimeout(() => setGrainsActive(false), 4000);
   }, []);
 
-  // Monitor video progress to trigger transition near end
-  const handleTimeUpdate = useCallback(() => {
-    if (!videoRef.current || transitionStarted.current) return;
-    const remaining = videoRef.current.duration - videoRef.current.currentTime;
-    if (remaining <= TRANSITION_START) {
-      startTransition();
-    }
-  }, [startTransition]);
-
-  // Fallback: if video ends without triggering transition
   const handleVideoEnded = useCallback(() => {
-    if (!transitionStarted.current) {
-      startTransition();
-    }
-  }, [startTransition]);
+    triggerSlide();
+  }, [triggerSlide]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) return;
@@ -133,67 +111,130 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  // Falling tea grains overlay
-  const renderGrains = () => {
-    if (!grainsActive) return null;
-    return (
+  // Show video background during: ready (first frame), video (playing), sliding (last frame)
+  const showVideo = (phase === "ready" || phase === "video" || phase === "sliding") && videoReady;
+
+  return (
+    <div className="overflow-hidden h-screen h-[100dvh]" data-testid="entry-wrapper">
+      {/* Grain overlay — fixed so it persists across the slide */}
+      {grainsActive && (
+        <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
+          style={{ animation: 'grainContainerFade 3.5s ease-out 0.5s forwards' }}
+        >
+          {Array.from({ length: 100 }).map((_, i) => {
+            const x = 15 + Math.random() * 70;
+            const delay = Math.random() * 1.0;
+            const size = 1.5 + Math.random() * 3.5;
+            const drift = (Math.random() - 0.5) * 30;
+            const duration = 2.0 + Math.random() * 1.5;
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  left: `${x}%`,
+                  top: '-6px',
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  background: `hsl(${26 + Math.random() * 16}, ${40 + Math.random() * 30}%, ${10 + Math.random() * 22}%)`,
+                  animation: `grainFall ${duration}s ease-in ${delay}s forwards`,
+                  '--drift': `${drift}px`,
+                }}
+              />
+            );
+          })}
+          <style>{`
+            @keyframes grainFall {
+              0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+              60% { opacity: 0.7; }
+              100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
+            }
+            @keyframes grainContainerFade {
+              0% { opacity: 1; }
+              70% { opacity: 0.4; }
+              100% { opacity: 0; }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Sliding container — holds hero + form stacked vertically */}
       <div
-        className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
+        className="will-change-transform"
         style={{
-          opacity: grainsFading ? 0 : 1,
-          transition: 'opacity 2s ease-out',
+          transform: sliding ? 'translateY(-100vh)' : 'translateY(0)',
+          transition: sliding ? 'transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
         }}
       >
-        {Array.from({ length: 90 }).map((_, i) => {
-          const x = 10 + Math.random() * 80;
-          const delay = Math.random() * 1.2;
-          const size = 1.5 + Math.random() * 3;
-          const drift = (Math.random() - 0.5) * 40;
-          const duration = 1.8 + Math.random() * 1.5;
-          return (
-            <div
-              key={i}
-              className="absolute rounded-full"
+        {/* ═══ HERO SECTION (100vh) ═══ */}
+        <div className="h-screen h-[100dvh] bg-[#0a0a0a] relative overflow-hidden" data-testid="hero-section">
+          {/* Video — first frame visible during "ready", plays during "video" */}
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              opacity: showVideo ? 1 : 0,
+              transition: 'opacity 1s ease-in-out',
+            }}
+            src={VIDEO_URL}
+            preload="auto"
+            muted
+            playsInline
+            onEnded={handleVideoEnded}
+          />
+          {/* Subtle vignette on video */}
+          <div
+            className="absolute inset-0 bg-black/20"
+            style={{ opacity: showVideo ? 1 : 0, transition: 'opacity 1s' }}
+          />
+
+          {/* Logo — smooth slow fade in/out */}
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <img
+              src={LOGO_URL}
+              alt="Estate Tea Logo"
+              className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 logo-sharp"
               style={{
-                left: `${x}%`,
-                top: '-4px',
-                width: `${size}px`,
-                height: `${size}px`,
-                background: `hsl(${28 + Math.random() * 15}, ${45 + Math.random() * 30}%, ${12 + Math.random() * 20}%)`,
-                animation: `grainFall ${duration}s ease-in ${delay}s forwards`,
-                '--drift': `${drift}px`,
+                opacity: phase === "logo" && logoVisible ? 1 : 0,
+                transition: 'opacity 1.5s ease-in-out',
               }}
             />
-          );
-        })}
-        <style>{`
-          @keyframes grainFall {
-            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
-            70% { opacity: 0.8; }
-            100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
-          }
-        `}</style>
-      </div>
-    );
-  };
+          </div>
 
-  // Phase: Form
-  if (phase === "form") {
-    return (
-      <div className="w-full">
-        {renderGrains()}
+          {/* "Get Started" button — appears during "ready" phase */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-end pb-16 sm:pb-24 z-20"
+            style={{
+              opacity: phase === "ready" ? 1 : 0,
+              transform: phase === "ready" ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'opacity 0.8s ease, transform 0.8s ease',
+              pointerEvents: phase === "ready" ? 'auto' : 'none',
+            }}
+          >
+            <button
+              onClick={handleGetStarted}
+              className="px-8 sm:px-10 py-3 sm:py-4 border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black uppercase tracking-[0.3em] text-xs sm:text-sm font-light rounded-lg transition-all duration-300 touch-manipulation backdrop-blur-sm bg-black/20"
+              data-testid="get-started-button"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+
+        {/* ═══ FORM SECTION (100vh) ═══ */}
         <section
           className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
           data-testid="form-section"
         >
           <div
-            className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10 transition-all duration-1000"
+            className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10"
             style={{
               background: 'rgba(0, 0, 0, 0.82)',
               backdropFilter: 'blur(30px)',
               WebkitBackdropFilter: 'blur(30px)',
               opacity: formVisible ? 1 : 0,
               transform: formVisible ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'opacity 1s ease, transform 1s ease',
             }}
           >
             <div className="flex flex-col items-center mb-6 sm:mb-12">
@@ -240,56 +281,6 @@ const EntryForm = ({ onSubmit }) => {
             </form>
           </div>
         </section>
-      </div>
-    );
-  }
-
-  // Phases: logo, ready, video
-  return (
-    <div className="w-full h-screen h-[100dvh] bg-[#0a0a0a] relative overflow-hidden" data-testid="hero-section">
-      {/* Tea grain transition overlay */}
-      {renderGrains()}
-
-      {/* Video — hidden until "Get Started" is clicked */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
-        style={{ opacity: phase === "video" && !videoFading ? 1 : 0 }}
-        src={VIDEO_URL}
-        preload="auto"
-        muted
-        playsInline
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleVideoEnded}
-      />
-      {/* Subtle dark overlay on video */}
-      <div
-        className="absolute inset-0 bg-black/20 transition-opacity duration-[1500ms]"
-        style={{ opacity: phase === "video" && !videoFading ? 1 : 0 }}
-      />
-
-      {/* Logo — fades in then fades out */}
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <img
-          src={LOGO_URL}
-          alt="Estate Tea Logo"
-          className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 logo-sharp transition-opacity duration-[1200ms]"
-          style={{ opacity: phase === "logo" && logoVisible ? 1 : 0 }}
-        />
-      </div>
-
-      {/* Get Started button — appears after logo phase */}
-      <div
-        className="absolute inset-0 flex flex-col items-center justify-end pb-16 sm:pb-24 z-20 transition-all duration-700"
-        style={{ opacity: buttonVisible ? 1 : 0, transform: buttonVisible ? 'translateY(0)' : 'translateY(20px)', pointerEvents: buttonVisible ? 'auto' : 'none' }}
-      >
-        <button
-          onClick={handleGetStarted}
-          className="px-8 sm:px-10 py-3 sm:py-4 border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black uppercase tracking-[0.3em] text-xs sm:text-sm font-light rounded-lg transition-all duration-300 touch-manipulation backdrop-blur-sm bg-black/20"
-          data-testid="get-started-button"
-        >
-          Get Started
-        </button>
       </div>
     </div>
   );
