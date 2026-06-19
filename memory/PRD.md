@@ -26,7 +26,7 @@ E-commerce website for "Estate Tea" tea business. Black and gold theme, mobile-r
 | AdminDashboard.jsx | Product/Order/Review management (/#admin) |
 
 ## Completed Features (as of Jun 2026)
-- [x] Cinematic video landing page (Logo smooth fade → Video first frame bg + "Get Started" → Click plays video fully → Elevator descent through 3 sections → Continuous flowing tea stream: gradient column body + 120 dense particles + glow haze, video-matched hex colors on #0C0B0A warm near-black → Stream thins into wisps → Login form emerges)
+- [x] Cinematic video landing page (Logo smooth fade → Video first frame bg + "Get Started" → Click plays video fully → Seamless elevator descent directly from video to login form (no black screen gap) with continuous flowing tea stream: gradient column body + 120 dense particles + glow haze, video-matched hex colors on #0C0B0A → Stream + wisps fade as form appears)
 - [x] Auto-location detection (silent geolocation + Nominatim reverse geocoding)
 - [x] Weather-based tea suggestions via Open-Meteo
 - [x] Store with product listings (250g/500g), Ken Burns slideshow, tea powder background

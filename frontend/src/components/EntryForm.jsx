@@ -59,34 +59,23 @@ const EntryForm = ({ onSubmit }) => {
     if (transitioned.current) return;
     transitioned.current = true;
 
-    // Stage 1: Descend from video into the abyss
+    // Stream starts + elevator descends directly from video to form
     setPhase("descending");
     setStreamActive(true);
-    setTransitionDuration("2.2s");
+    setTransitionDuration("3s");
     setTranslateY("-100vh");
 
-    // Stage 2: Arrived at abyss — hold while grains fall
-    setTimeout(() => {
-      setPhase("abyss");
-    }, 2200);
-
-    // Stage 3: Descend from abyss into the form
-    setTimeout(() => {
-      setPhase("arriving");
-      setWispsActive(true);
-      setTransitionDuration("2.8s");
-      setTranslateY("-200vh");
-    }, 4500);
-
-    // Stage 4: Arrived at form — fade it in
+    // Arrived at form — fade it in
     setTimeout(() => {
       setPhase("form");
-      setStreamActive(false);
+      setWispsActive(true);
       setTimeout(() => setFormVisible(true), 200);
-    }, 7000);
+    }, 2800);
 
+    // Stream fades out
+    setTimeout(() => setStreamActive(false), 5500);
     // Wisps linger then fade
-    setTimeout(() => setWispsActive(false), 10000);
+    setTimeout(() => setWispsActive(false), 8000);
   }, []);
 
   const handleVideoEnded = useCallback(() => {
@@ -368,10 +357,7 @@ const EntryForm = ({ onSubmit }) => {
           </div>
         </div>
 
-        {/* ── Section 2: The Abyss (pure black void) ── */}
-        <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative" data-testid="abyss-section" />
-
-        {/* ── Section 3: Login Form ── */}
+        {/* ── Section 2: Login Form ── */}
         <section
           className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
           data-testid="form-section"
