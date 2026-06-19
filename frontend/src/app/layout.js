@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Estate Tea — Premium Tea from Kotagiri',
-  description: 'Hand-picked premium tea from the misty hills of Kotagiri, India.',
+  title: 'Estate Tea — Premium Tea from Nilgiris',
+  description: 'Premium tea from the misty hills of Nilgiris, India.',
 };
 
 export const viewport = {
