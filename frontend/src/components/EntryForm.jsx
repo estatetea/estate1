@@ -14,6 +14,7 @@ const EntryForm = ({ onSubmit }) => {
   const [videoReady, setVideoReady] = useState(false);
   const [sliding, setSliding] = useState(false);
   const [grainsActive, setGrainsActive] = useState(false);
+  const [formGrainsActive, setFormGrainsActive] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
@@ -48,7 +49,6 @@ const EntryForm = ({ onSubmit }) => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
-        // Fallback: if video can't play, trigger slide after a delay
         setTimeout(() => triggerSlide(), 3000);
       });
     }
@@ -60,13 +60,16 @@ const EntryForm = ({ onSubmit }) => {
     setPhase("sliding");
     setSliding(true);
     setGrainsActive(true);
-    // After slide animation completes, show form
+    // After slide animation completes, show form + activate form grains
     setTimeout(() => {
       setPhase("done");
+      setFormGrainsActive(true);
       setTimeout(() => setFormVisible(true), 150);
     }, 1800);
-    // Grains linger and fade — removed after full fade
-    setTimeout(() => setGrainsActive(false), 4000);
+    // Main transition grains fade out
+    setTimeout(() => setGrainsActive(false), 4500);
+    // Form grains linger then fade
+    setTimeout(() => setFormGrainsActive(false), 6000);
   }, []);
 
   const handleVideoEnded = useCallback(() => {
@@ -111,15 +114,14 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  // Show video background during: ready (first frame), video (playing), sliding (last frame)
   const showVideo = (phase === "ready" || phase === "video" || phase === "sliding") && videoReady;
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh]" data-testid="entry-wrapper">
-      {/* Grain overlay — fixed so it persists across the slide */}
+      {/* ── Transition grain overlay (fixed, persists across slide) ── */}
       {grainsActive && (
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
-          style={{ animation: 'grainContainerFade 3.5s ease-out 0.5s forwards' }}
+          style={{ animation: 'grainContainerFade 4s ease-out 0.5s forwards' }}
         >
           {Array.from({ length: 100 }).map((_, i) => {
             const x = 15 + Math.random() * 70;
@@ -143,22 +145,65 @@ const EntryForm = ({ onSubmit }) => {
               />
             );
           })}
-          <style>{`
-            @keyframes grainFall {
-              0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
-              60% { opacity: 0.7; }
-              100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
-            }
-            @keyframes grainContainerFade {
-              0% { opacity: 1; }
-              70% { opacity: 0.4; }
-              100% { opacity: 0; }
-            }
-          `}</style>
         </div>
       )}
 
-      {/* Sliding container — holds hero + form stacked vertically */}
+      {/* ── Form page grains (lighter, fewer, settle onto login page) ── */}
+      {formGrainsActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none overflow-hidden"
+          style={{ animation: 'formGrainFadeOut 3.5s ease-out 0.8s forwards' }}
+        >
+          {Array.from({ length: 25 }).map((_, i) => {
+            const x = 20 + Math.random() * 60;
+            const delay = Math.random() * 1.5;
+            const size = 1 + Math.random() * 2.5;
+            const drift = (Math.random() - 0.5) * 20;
+            const duration = 2.5 + Math.random() * 2;
+            return (
+              <div
+                key={`fg-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  left: `${x}%`,
+                  top: '-4px',
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  background: `hsl(${30 + Math.random() * 12}, ${35 + Math.random() * 25}%, ${14 + Math.random() * 18}%)`,
+                  animation: `grainSettleSlow ${duration}s ease-out ${delay}s forwards`,
+                  '--drift': `${drift}px`,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Keyframes ── */}
+      <style>{`
+        @keyframes grainFall {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+          60% { opacity: 0.7; }
+          100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
+        }
+        @keyframes grainContainerFade {
+          0% { opacity: 1; }
+          60% { opacity: 0.5; }
+          100% { opacity: 0; }
+        }
+        @keyframes grainSettleSlow {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.8; }
+          40% { opacity: 0.6; }
+          80% { opacity: 0.3; }
+          100% { transform: translateY(85vh) translateX(var(--drift)) rotate(180deg); opacity: 0; }
+        }
+        @keyframes formGrainFadeOut {
+          0% { opacity: 1; }
+          50% { opacity: 0.6; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+
+      {/* ── Sliding container (hero + form stacked) ── */}
       <div
         className="will-change-transform"
         style={{
@@ -166,9 +211,9 @@ const EntryForm = ({ onSubmit }) => {
           transition: sliding ? 'transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
         }}
       >
-        {/* ═══ HERO SECTION (100vh) ═══ */}
+        {/* ═══ HERO SECTION ═══ */}
         <div className="h-screen h-[100dvh] bg-[#0a0a0a] relative overflow-hidden" data-testid="hero-section">
-          {/* Video — first frame visible during "ready", plays during "video" */}
+          {/* Video */}
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
@@ -182,13 +227,12 @@ const EntryForm = ({ onSubmit }) => {
             playsInline
             onEnded={handleVideoEnded}
           />
-          {/* Subtle vignette on video */}
           <div
             className="absolute inset-0 bg-black/20"
             style={{ opacity: showVideo ? 1 : 0, transition: 'opacity 1s' }}
           />
 
-          {/* Logo — smooth slow fade in/out */}
+          {/* Logo */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <img
               src={LOGO_URL}
@@ -201,7 +245,7 @@ const EntryForm = ({ onSubmit }) => {
             />
           </div>
 
-          {/* "Get Started" button — appears during "ready" phase */}
+          {/* "Get Started" button */}
           <div
             className="absolute inset-0 flex flex-col items-center justify-end pb-16 sm:pb-24 z-20"
             style={{
@@ -219,15 +263,37 @@ const EntryForm = ({ onSubmit }) => {
               Get Started
             </button>
           </div>
+
+          {/* ── Blurred bottom edge (feathers into the form section) ── */}
+          <div
+            className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none"
+            style={{
+              height: '180px',
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.4) 30%, rgba(10,10,10,0.85) 70%, #0a0a0a 100%)',
+              opacity: sliding ? 1 : 0,
+              transition: 'opacity 0.6s ease',
+            }}
+          />
         </div>
 
-        {/* ═══ FORM SECTION (100vh) ═══ */}
+        {/* ═══ FORM SECTION ═══ */}
         <section
           className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
           data-testid="form-section"
         >
+          {/* ── Blurred top edge (feathers from the hero section) ── */}
           <div
-            className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10"
+            className="absolute top-0 left-0 right-0 z-30 pointer-events-none"
+            style={{
+              height: '160px',
+              background: 'linear-gradient(to top, transparent 0%, rgba(10,10,10,0.5) 40%, rgba(10,10,10,0.9) 80%, #0a0a0a 100%)',
+              opacity: (phase === "sliding" || phase === "done") ? 1 : 0,
+              transition: 'opacity 0.8s ease',
+            }}
+          />
+
+          <div
+            className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10 relative z-10"
             style={{
               background: 'rgba(0, 0, 0, 0.82)',
               backdropFilter: 'blur(30px)',

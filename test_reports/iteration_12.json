@@ -1,0 +1,46 @@
+{
+  "summary": "Iteration 12 — Frontend-only testing of Estate Tea landing flow additions: (1) blurred gradient seams between hero/form during slide and (2) second wave of 25 form-settling grains overlaying the login page. All 8 specified behaviors verified PASS on desktop (1920x1080) and mobile (375x812). Admin /#admin login still works with WEUSEDTOBECALLEDHAMLETTEA26.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/src/components/EntryForm.jsx"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "EntryForm.jsx is now ~355 lines with two inline grain overlays (100+25 particles) and a <style> block of 4 keyframes. Extract GrainOverlay into its own component with props (particleCount, animation, zIndex, durationRange) and move keyframes to global stylesheet to reduce re-render cost and improve reuse.",
+    "Multiple chained setTimeouts inside triggerSlide() (1800ms, 4500ms, 6000ms) are unguarded — if the component unmounts mid-transition (route change, hot-reload), timers leak. Wrap the timer ids in a ref array and clear on cleanup.",
+    "Hash-routing for /#admin still requires a full page navigation/reload to remount AdminDashboard (no hashchange listener in /app/frontend/src/app/page.js). Same observation as iteration 11 — not regressed.",
+    "Hero bottom gradient (180px, z-30) is INSIDE the sliding container, so it travels offscreen along with the hero during slide. That's fine visually, but if the form section is taller than 100vh on small screens, the seam may briefly show without the gradient backing as hero scrolls away. Not observed in mobile testing at 375x812.",
+    "Geolocation reverse-lookup still hits nominatim.openstreetmap.org without an identifiable User-Agent — OSM TOS recommends one. Add a no-toast fallback path for blocked geolocation."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (skipped per request)",
+    "frontend": "100% (8/8 behaviors validated)"
+  },
+  "test_credentials": "Admin password: WEUSEDTOBECALLEDHAMLETTEA26 at /#admin — confirmed working (Welcome, Admin toast + Products/Reviews/Orders tabs + Estate Premium Tea 250g ₹200 / 500g ₹390 IN STOCK).",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 12 adds two effects on top of iteration 11's architecture: (A) hero bottom blurred gradient (180px, linear-gradient transparent→#0a0a0a, z-30, opacity gated on `sliding` state, transition opacity 0.6s) and form top blurred gradient (160px, linear-gradient transparent→#0a0a0a, z-30, opacity gated on phase∈{sliding,done}, transition opacity 0.8s). Both confirmed opacity≈1.0 once phase=done. (B) Second grain overlay 'formGrainsActive' div at z-[150] (fixed) containing exactly 25 .absolute.rounded-full particles with computed animationName='grainSettleSlow' (2.5–4.5s ease-out, top:-4px → translateY(85vh)), wrapped in container with formGrainFadeOut 3.5s 0.8s. Activates when phase=done (1.8s after slide trigger), unmounted 6s after triggerSlide via setFormGrainsActive(false). Main transition grains overlay (z-200, 100 particles, grainFall + grainContainerFade 4s) unchanged behavior, unmounted at 4.5s. In headless Playwright, video readyState=0 so .play().catch() schedules triggerSlide() at 3s after click. data-testids all stable: entry-wrapper, hero-section, get-started-button, form-section, name-input, entry-submit-button. Admin: admin-password-input + admin-login-button + admin-products-section (and admin-tab-{products|testimonials|orders}). Full reload required when navigating to /#admin (hash listener missing).",
+  "rca_of_the_issue": "N/A — all requested behaviors verified PASS.",
+  "detailed_test_results": {
+    "test1_logo_smooth_fade": "PASS — logo fades in at 200ms, out at 1900ms, phase transitions to 'ready' at 3000ms. Get-started-button visible by 3.5s with parent opacity ~1.",
+    "test2_get_started_click_video_fallback": "PASS — click on get-started-button triggers phase='video'; video readyState=0 in headless → .play() promise rejects → fallback setTimeout(triggerSlide, 3000) executes.",
+    "test3_hero_bottom_blurred_gradient": "PASS — div inside hero-section with style 'height:180px' and inline linear-gradient(transparent 0% → rgba(10,10,10,0.4) 30% → rgba(10,10,10,0.85) 70% → #0a0a0a 100%), zIndex=30, position=absolute. Opacity 0.58 mid-transition during slide, 1.0 at done phase. Transition: opacity 0.6s ease.",
+    "test4_form_top_blurred_gradient": "PASS — div inside form-section with height:160px and linear-gradient(to top, transparent → rgba(10,10,10,0.5) → rgba(10,10,10,0.9) → #0a0a0a), zIndex=30. Opacity 0.41 mid-slide, 1.0 at done phase. Transition opacity 0.8s ease, gated on phase∈{sliding,done}.",
+    "test5_main_transition_grains_100_z200": "PASS — exactly 100 .absolute.rounded-full particles inside fixed.inset-0 container with computed zIndex=200, opacity fading via grainContainerFade keyframe.",
+    "test6_form_settling_grains_25_z150_grainSettleSlow": "PASS — exactly 25 .absolute.rounded-full particles inside fixed.inset-0 container with computed zIndex=150, computed animationName='grainSettleSlow'. Container opacity=1 immediately after done phase, fades via formGrainFadeOut. Screenshot confirms visible gold-toned grain dust overlaying the form card during done phase.",
+    "test7_form_rendered_after_slide": "PASS — Welcome H2 (gold #D4AF37), PREMIUM TEA EXPERIENCE subtitle, YOUR NAME label, name-input, entry-submit-button (ENTER STORE) all rendered and visible. Form card opacity 1 with 30px backdrop blur.",
+    "test8_form_submission_to_welcome": "PASS — entered 'TestUser', clicked ENTER STORE → body contains 'TestUser', welcome screen rendered.",
+    "test9_mobile_375x812_no_overflow": "PASS — scrollWidth=clientWidth=375 at landing, during slide (3.5s after click), and at done phase. Form card fully fits within viewport. Both gradient overlays + form grains render correctly on mobile (visual confirmed via screenshot).",
+    "test10_admin_dashboard": "PASS — direct navigation to /#admin renders admin-password-input. Entering WEUSEDTOBECALLEDHAMLETTEA26 + clicking admin-login-button → 'Welcome, Admin' toast + Products tab shows Estate Premium Tea 250g ₹200 IN STOCK and 500g ₹390 IN STOCK. Reviews + Orders tabs present."
+  }
+}
