@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Loader2 } from "lucide-react";
@@ -6,109 +6,95 @@ import { toast } from "sonner";
 
 const VIDEO_URL = "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/z2zc6gmx_opening%20page.mp4";
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png";
-
-const TeaGrainTransition = ({ active, onComplete }) => {
-  useEffect(() => {
-    if (active) {
-      const timer = setTimeout(onComplete, 2200);
-      return () => clearTimeout(timer);
-    }
-  }, [active, onComplete]);
-
-  if (!active) return null;
-
-  return (
-    <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
-      {/* Falling tea grains */}
-      {Array.from({ length: 80 }).map((_, i) => {
-        const x = 40 + Math.random() * 20;
-        const delay = Math.random() * 0.8;
-        const size = 1.5 + Math.random() * 3;
-        const drift = (Math.random() - 0.5) * 30;
-        const duration = 1.4 + Math.random() * 1;
-        return (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${x}%`,
-              top: '-4px',
-              width: `${size}px`,
-              height: `${size}px`,
-              background: `hsl(${30 + Math.random() * 15}, ${50 + Math.random() * 30}%, ${15 + Math.random() * 20}%)`,
-              animation: `grainFall ${duration}s ease-in ${delay}s forwards`,
-              '--drift': `${drift}px`,
-            }}
-          />
-        );
-      })}
-      {/* Dark overlay that builds up */}
-      <div 
-        className="absolute inset-0 bg-[#0a0a0a]"
-        style={{ animation: 'grainOverlay 2.2s ease-in forwards' }}
-      />
-      <style>{`
-        @keyframes grainFall {
-          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0.6; }
-        }
-        @keyframes grainOverlay {
-          0% { opacity: 0; }
-          60% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
-};
+const VIDEO_DURATION = 5.04;
+const TRANSITION_START = 3.2; // seconds before end to start grain transition
 
 const EntryForm = ({ onSubmit }) => {
   const [name, setName] = useState("");
-  const [phase, setPhase] = useState("logo"); // logo → video → form
+  const [phase, setPhase] = useState("logo"); // logo → ready → video → transition → form
   const [logoVisible, setLogoVisible] = useState(false);
-  const [videoVisible, setVideoVisible] = useState(false);
   const [buttonVisible, setButtonVisible] = useState(false);
-  const [transitioning, setTransitioning] = useState(false);
+  const [videoFading, setVideoFading] = useState(false);
+  const [grainsActive, setGrainsActive] = useState(false);
+  const [grainsFading, setGrainsFading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
   const locationAttempted = useRef(false);
   const videoRef = useRef(null);
+  const transitionStarted = useRef(false);
 
-  // Phase 1: Logo fades in then out → Phase 2: Video fades in
+  // Phase 1: Logo fades in then out → Phase 2: Ready with button
   useEffect(() => {
-    // Preload the video as soon as component mounts
-    if (videoRef.current) {
-      videoRef.current.load();
-    }
     const t1 = setTimeout(() => setLogoVisible(true), 300);
     const t2 = setTimeout(() => setLogoVisible(false), 2500);
     const t3 = setTimeout(() => {
-      setPhase("video");
-      setVideoVisible(true);
-      // Explicitly try to play the video
-      if (videoRef.current) {
-        videoRef.current.play().catch(() => {});
-      }
-    }, 3200);
-    const t4 = setTimeout(() => setButtonVisible(true), 4500);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+      setPhase("ready");
+      setButtonVisible(true);
+    }, 3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  // Preload video on mount
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
   }, []);
 
   const handleGetStarted = () => {
-    setTransitioning(true);
-    // Start location detection during transition
+    setPhase("video");
+    setButtonVisible(false);
+    // Start location detection during video
     if (!locationAttempted.current) {
       locationAttempted.current = true;
       handleGetLocation();
     }
+    // Play the video
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {
+        // If video can't play, skip directly to form after a delay
+        setTimeout(() => startTransition(), 2000);
+      });
+    }
   };
 
-  const handleTransitionComplete = () => {
-    setPhase("form");
-    setTransitioning(false);
-    setTimeout(() => setFormVisible(true), 100);
-  };
+  const startTransition = useCallback(() => {
+    if (transitionStarted.current) return;
+    transitionStarted.current = true;
+    setGrainsActive(true);
+    setVideoFading(true);
+
+    // After grains have been falling for a bit, start fading them and show form
+    setTimeout(() => {
+      setPhase("form");
+      setGrainsFading(true);
+      setTimeout(() => setFormVisible(true), 200);
+    }, 1800);
+
+    // Fully remove grains after they fade
+    setTimeout(() => {
+      setGrainsActive(false);
+      setGrainsFading(false);
+    }, 4000);
+  }, []);
+
+  // Monitor video progress to trigger transition near end
+  const handleTimeUpdate = useCallback(() => {
+    if (!videoRef.current || transitionStarted.current) return;
+    const remaining = videoRef.current.duration - videoRef.current.currentTime;
+    if (remaining <= TRANSITION_START) {
+      startTransition();
+    }
+  }, [startTransition]);
+
+  // Fallback: if video ends without triggering transition
+  const handleVideoEnded = useCallback(() => {
+    if (!transitionStarted.current) {
+      startTransition();
+    }
+  }, [startTransition]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) return;
@@ -148,48 +134,64 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
+  // Falling tea grains overlay
+  const renderGrains = () => {
+    if (!grainsActive) return null;
+    return (
+      <div
+        className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
+        style={{
+          opacity: grainsFading ? 0 : 1,
+          transition: 'opacity 2s ease-out',
+        }}
+      >
+        {Array.from({ length: 90 }).map((_, i) => {
+          const x = 10 + Math.random() * 80;
+          const delay = Math.random() * 1.2;
+          const size = 1.5 + Math.random() * 3;
+          const drift = (Math.random() - 0.5) * 40;
+          const duration = 1.8 + Math.random() * 1.5;
+          return (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${x}%`,
+                top: '-4px',
+                width: `${size}px`,
+                height: `${size}px`,
+                background: `hsl(${28 + Math.random() * 15}, ${45 + Math.random() * 30}%, ${12 + Math.random() * 20}%)`,
+                animation: `grainFall ${duration}s ease-in ${delay}s forwards`,
+                '--drift': `${drift}px`,
+              }}
+            />
+          );
+        })}
+        <style>{`
+          @keyframes grainFall {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+            70% { opacity: 0.8; }
+            100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
+          }
+        `}</style>
+      </div>
+    );
+  };
+
   // Phase: Form
   if (phase === "form") {
     return (
       <div className="w-full">
-        <section 
+        {renderGrains()}
+        <section
           className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
           data-testid="form-section"
         >
-          {/* Residual grain particles at the top — fading remnants of transition */}
-          <div className="absolute inset-x-0 top-0 h-32 sm:h-48 pointer-events-none overflow-hidden" style={{ opacity: formVisible ? 0 : 0.5, transition: 'opacity 3s ease-out' }}>
-            {Array.from({ length: 20 }).map((_, i) => {
-              const x = 30 + Math.random() * 40;
-              const y = Math.random() * 100;
-              const size = 1 + Math.random() * 2.5;
-              return (
-                <div
-                  key={i}
-                  className="absolute rounded-full"
-                  style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    width: `${size}px`,
-                    height: `${size}px`,
-                    background: `hsl(${30 + Math.random() * 15}, 60%, ${18 + Math.random() * 15}%)`,
-                    animation: `grainSettle 3s ease-out ${Math.random() * 0.5}s forwards`,
-                  }}
-                />
-              );
-            })}
-            <style>{`
-              @keyframes grainSettle {
-                0% { transform: translateY(0); opacity: 0.7; }
-                100% { transform: translateY(80px); opacity: 0; }
-              }
-            `}</style>
-          </div>
-
-          <div 
+          <div
             className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full my-auto border border-white/10 transition-all duration-1000"
-            style={{ 
-              background: 'rgba(0, 0, 0, 0.82)', 
-              backdropFilter: 'blur(30px)', 
+            style={{
+              background: 'rgba(0, 0, 0, 0.82)',
+              backdropFilter: 'blur(30px)',
               WebkitBackdropFilter: 'blur(30px)',
               opacity: formVisible ? 1 : 0,
               transform: formVisible ? 'translateY(0)' : 'translateY(30px)',
@@ -200,7 +202,7 @@ const EntryForm = ({ onSubmit }) => {
               <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-[#D4AF37] drop-shadow-[0_0_12px_rgba(212,175,55,0.3)]">Welcome</h2>
               <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-300 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
             </div>
-            
+
             <form className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-200">Your Name</Label>
@@ -227,7 +229,7 @@ const EntryForm = ({ onSubmit }) => {
                   <span className="text-sm text-[#D4AF37]">{detectedLocation.name}</span>
                 </div>
               )}
-              
+
               <button
                 type="button"
                 data-testid="entry-submit-button"
@@ -243,25 +245,29 @@ const EntryForm = ({ onSubmit }) => {
     );
   }
 
-  // Phase: Logo + Video
+  // Phases: logo, ready, video
   return (
     <div className="w-full h-screen h-[100dvh] bg-[#0a0a0a] relative overflow-hidden" data-testid="hero-section">
       {/* Tea grain transition overlay */}
-      <TeaGrainTransition active={transitioning} onComplete={handleTransitionComplete} />
+      {renderGrains()}
 
-      {/* Video background */}
+      {/* Video — hidden until "Get Started" is clicked */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
-        style={{ opacity: videoVisible && !transitioning ? 1 : 0 }}
+        style={{ opacity: phase === "video" && !videoFading ? 1 : 0 }}
         src={VIDEO_URL}
         preload="auto"
-        autoPlay
-        loop
         muted
         playsInline
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleVideoEnded}
       />
-      <div className="absolute inset-0 bg-black/30" style={{ opacity: videoVisible ? 1 : 0, transition: 'opacity 1.5s' }} />
+      {/* Subtle dark overlay on video */}
+      <div
+        className="absolute inset-0 bg-black/20 transition-opacity duration-[1500ms]"
+        style={{ opacity: phase === "video" && !videoFading ? 1 : 0 }}
+      />
 
       {/* Logo — fades in then fades out */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -269,14 +275,14 @@ const EntryForm = ({ onSubmit }) => {
           src={LOGO_URL}
           alt="Estate Tea Logo"
           className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 logo-sharp transition-opacity duration-[1200ms]"
-          style={{ opacity: logoVisible ? 1 : 0 }}
+          style={{ opacity: phase === "logo" && logoVisible ? 1 : 0 }}
         />
       </div>
 
-      {/* Get Started button — appears after video */}
-      <div 
+      {/* Get Started button — appears after logo phase */}
+      <div
         className="absolute inset-0 flex flex-col items-center justify-end pb-16 sm:pb-24 z-20 transition-all duration-700"
-        style={{ opacity: buttonVisible && !transitioning ? 1 : 0, transform: buttonVisible && !transitioning ? 'translateY(0)' : 'translateY(20px)' }}
+        style={{ opacity: buttonVisible ? 1 : 0, transform: buttonVisible ? 'translateY(0)' : 'translateY(20px)', pointerEvents: buttonVisible ? 'auto' : 'none' }}
       >
         <button
           onClick={handleGetStarted}
