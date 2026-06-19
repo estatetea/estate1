@@ -120,6 +120,7 @@ const EntryForm = ({ onSubmit }) => {
 
   const showVideo = (phase === "ready" || phase === "video") && videoReady;
   const isDescending = phase === "descending" || phase === "form";
+  const videoZoomed = phase === "video" || phase === "descending" || phase === "form";
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
@@ -133,22 +134,38 @@ const EntryForm = ({ onSubmit }) => {
       >
         {/* ── Section 1: Hero ── */}
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-contain sm:object-cover"
+          {/* Video wrapper — starts as 16:9 centered box on mobile, expands to fill on click */}
+          <div
+            className="absolute sm:inset-0"
             style={{
-              opacity: showVideo ? 1 : 0,
-              transition: 'opacity 1.2s ease-out',
-              objectPosition: 'center center',
+              ...(videoZoomed ? {
+                inset: '0',
+              } : {
+                top: '50%',
+                left: '0',
+                right: '0',
+                transform: 'translateY(-50%)',
+                aspectRatio: '16/9',
+              }),
+              transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
-            src={VIDEO_URL}
-            preload="auto"
-            muted
-            playsInline
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={handleVideoEnded}
-            data-testid="hero-video"
-          />
+          >
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              style={{
+                opacity: showVideo ? 1 : 0,
+                transition: 'opacity 1.2s ease-out',
+              }}
+              src={VIDEO_URL}
+              preload="auto"
+              muted
+              playsInline
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={handleVideoEnded}
+              data-testid="hero-video"
+            />
+          </div>
 
           {/* Bottom feather — fades hero into darkness at the seam */}
           <div
