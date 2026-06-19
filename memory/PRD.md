@@ -1,76 +1,71 @@
 # Estate Tea - Product Requirements Document
 
-## Original Problem Statement
-E-commerce website for "Estate Tea" — black and gold theme, mobile-responsive. Features: scroll-based landing page, auto-location entry form, weather-based tea suggestions, cart system, Razorpay payment integration with automatic redirect, checkout with T&Cs, full-page payment success/failure screens.
+## Problem Statement
+E-commerce website for "Estate Tea" tea business. Black and gold theme, mobile-responsive, premium aesthetic. Features include a cinematic landing page, weather-based tea suggestions, Razorpay payment integration, and admin dashboard.
 
-## Core Architecture
-- **Framework**: Next.js 16 (App Router, single-page SPA pattern)
-- **Styling**: Tailwind CSS + Shadcn UI
-- **Backend API**: Next.js API Routes (in `/src/app/api/`)
-- **Database**: MongoDB (via `mongodb` Node.js driver)
-- **Payments**: Razorpay Standard Checkout (checkout.js) with JS callbacks
-- **Weather**: Open-Meteo API (FREE, no key, real-time)
-- **Geocoding**: Nominatim/OpenStreetMap (FREE, no key)
-- **Python Backend**: Still exists at `/app/backend/` for Emergent preview (routes /api/* to port 8001)
+## Core Requirements
+- Black and gold theme, mobile-responsive, classy aesthetic
+- Cinematic landing page with video, logo transitions, particle animation, and entry form
+- Weather-based tea suggestions using real-time Open-Meteo data
+- Shopping cart with 250g/500g variants, 5% GST (CGST + SGST)
+- Razorpay payment integration (Standard checkout)
+- Admin dashboard for managing products, reviews, and orders
 
-## Deployment
-- **Vercel**: `next build && next start` — single project deployment
-- **Env Vars needed on Vercel**: MONGO_URL, DB_NAME, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+## Architecture
+- Frontend: Next.js 16 (React 19), Tailwind CSS, Framer Motion
+- Backend: FastAPI (Emergent preview) / Next.js API Routes (Vercel)
+- Database: MongoDB (Motor/Mongoose)
+- Integrations: Open-Meteo (Weather), Razorpay (Payments)
 
-## File Structure
-```
-/app/frontend/
-├── src/
-│   ├── app/
-│   │   ├── layout.js (Root layout)
-│   │   ├── page.js (SPA: all state + routing via useState)
-│   │   ├── globals.css (All styles)
-│   │   └── api/ (Next.js API Routes)
-│   │       ├── weather/route.js
-│   │       ├── orders/route.js
-│   │       ├── create-razorpay-order/route.js
-│   │       ├── verify-payment/route.js
-│   │       ├── razorpay/webhook/route.js
-│   │       └── invoice/status/route.js
-│   ├── components/
-│   │   ├── ui/ (Shadcn components)
-│   │   ├── EntryForm.jsx
-│   │   ├── WelcomeScreen.jsx
-│   │   ├── MainStore.jsx (slideshow, weather, products, dropdowns)
-│   │   ├── Cart.jsx
-│   │   ├── Checkout.jsx (Razorpay Standard Checkout)
-│   │   ├── PaymentSuccess.jsx
-│   │   ├── PaymentFailed.jsx
-│   │   ├── RecipeModal.jsx
-│   │   └── RazorpayButton.jsx
-│   └── lib/
-│       ├── utils.js (Shadcn utils)
-│       └── mongodb.js (MongoDB connection)
-├── next.config.js
-├── tailwind.config.js
-└── package.json
-```
+## Key Pages/Components
+| Component | Purpose |
+|-----------|---------|
+| EntryForm.jsx | Cinematic landing: Logo → Video → Tea grains → Entry form |
+| MainStore.jsx | Products, Weather suggestions, Slideshow, Testimonials |
+| Checkout.jsx | Cart summary, Razorpay payment |
+| AdminDashboard.jsx | Product/Order/Review management (/#admin) |
 
-## Completed
-- [x] Landing page with scroll-based evaporation transition
-- [x] Entry form with silent auto-location (Name only)
-- [x] Welcome screen fade-in transition
-- [x] Weather-based tea suggestions (Open-Meteo)
-- [x] Dual Hot/Cold options when location denied
-- [x] Recipe modals for both options
-- [x] Image slideshow (3 product images, crossfade)
-- [x] Categories (Tea, Hampers) and Services (Wedding Favours) dropdowns
-- [x] Clean minimal product layout with variant selection
-- [x] 5% GST (CGST 2.5% + SGST 2.5%) on checkout
-- [x] Cart + Checkout with delivery details form
-- [x] Razorpay Standard Checkout (Live keys)
-- [x] Full-page payment success/failure screens
-- [x] Page exit transition (fade-to-black)
-- [x] **Migrated from CRA to Next.js** for Vercel deployment (Apr 2026)
+## Completed Features (as of Jun 2026)
+- [x] Cinematic video landing page (Logo fade → Video → Get Started → Tea grain particles → Entry form)
+- [x] Auto-location detection (silent geolocation + Nominatim reverse geocoding)
+- [x] Weather-based tea suggestions via Open-Meteo
+- [x] Store with product listings (250g/500g), Ken Burns slideshow, tea powder background
+- [x] Cart system with 5% GST calculation
+- [x] Razorpay Standard Checkout integration
+- [x] Admin Dashboard (/#admin) — manage products, orders, reviews
+- [x] Font Size Toggle (accessibility)
+- [x] Testimonials auto-advancing slideshow
+- [x] Mobile-responsive (iOS zoom fix, viewport handling)
+- [x] Migrated from Vite/React to Next.js App Router for Vercel deployment
 
 ## Upcoming Tasks (P1)
-- [ ] Build dedicated Hampers and Wedding Favours pages
-- [ ] Configure Resend + Twilio API keys for live invoice sending
+- [ ] Build Hampers page (dropdown exists, currently "Coming Soon" toast)
+- [ ] Build Wedding Favours page (dropdown exists, currently "Coming Soon" toast)
 
-## Future Tasks (P2)
-- [ ] Order status tracking / admin dashboard
+## Future/Backlog (P2)
+- [ ] WhatsApp Business integration for payment confirmations (deferred by user)
+- [ ] Order status tracking with delivery updates
+- [ ] Twilio/Resend invoice notifications (blocked on user providing keys)
+- [ ] Server-side admin auth for enhanced security
+
+## API Endpoints
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| /api/weather | POST | Open-Meteo weather data |
+| /api/orders | GET/POST | Order CRUD |
+| /api/create-razorpay-order | POST | Create Razorpay order |
+| /api/verify-payment | POST | Verify Razorpay payment |
+| /api/testimonials | GET/POST | Testimonials |
+| /api/admin/login | POST | Admin authentication |
+| /api/admin/products | GET/PUT | Product management |
+| /api/admin/orders | GET | Order management |
+
+## DB Schema
+- orders: { name, variant, quantity, price, total, location, date, razorpay_order_id, razorpay_payment_id }
+- testimonials: { id, user_name, text, rating, created_at }
+
+## Key Notes
+- Vercel deployment via GitHub (Next.js API routes)
+- Emergent preview uses FastAPI backend on port 8001
+- Admin password: stored in test_credentials.md
+- Razorpay live keys should NOT be in source code for GitHub push
