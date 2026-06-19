@@ -118,7 +118,8 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  const showVideo = (phase === "ready" || phase === "video" || phase === "descending") && videoReady;
+  const showVideo = (phase === "ready" || phase === "video") && videoReady;
+  const isDescending = phase === "descending" || phase === "form";
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
@@ -137,7 +138,7 @@ const EntryForm = ({ onSubmit }) => {
             className="absolute inset-0 w-full h-full object-cover"
             style={{
               opacity: showVideo ? 1 : 0,
-              transition: 'opacity 0.8s ease-out',
+              transition: 'opacity 1.2s ease-out',
             }}
             src={VIDEO_URL}
             preload="auto"
@@ -146,6 +147,17 @@ const EntryForm = ({ onSubmit }) => {
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
             data-testid="hero-video"
+          />
+
+          {/* Bottom feather — fades hero into darkness at the seam */}
+          <div
+            className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none"
+            style={{
+              height: '40%',
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(12,11,10,0.6) 50%, #0C0B0A 100%)',
+              opacity: isDescending ? 1 : 0,
+              transition: 'opacity 0.8s ease',
+            }}
           />
 
           {/* Logo */}
@@ -186,6 +198,14 @@ const EntryForm = ({ onSubmit }) => {
           className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
           data-testid="form-section"
         >
+          {/* Top feather — fades from darkness into the form background */}
+          <div
+            className="absolute top-0 left-0 right-0 z-20 pointer-events-none"
+            style={{
+              height: '35%',
+              background: 'linear-gradient(to bottom, #0C0B0A 0%, rgba(12,11,10,0.7) 40%, transparent 100%)',
+            }}
+          />
           <div
             className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full border border-white/10 relative z-10"
             style={{
