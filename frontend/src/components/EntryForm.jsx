@@ -134,18 +134,18 @@ const EntryForm = ({ onSubmit }) => {
   const showVideo = (phase === "ready" || phase === "video") && videoReady;
 
   return (
-    <div className="overflow-hidden h-screen h-[100dvh]" data-testid="entry-wrapper">
+    <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
 
       <style>{`
         @keyframes streamPour {
           0% { transform: translateY(0) translateX(0); opacity: 1; }
-          20% { opacity: 1; }
-          80% { opacity: 0.6; }
-          100% { transform: translateY(100vh) translateX(var(--drift)); opacity: 0; }
+          40% { opacity: 1; }
+          75% { opacity: 0.8; }
+          100% { transform: translateY(100vh) translateX(var(--drift)); opacity: 0.1; }
         }
         @keyframes streamDust {
-          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
-          50% { opacity: 0.35; }
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.9; }
+          50% { opacity: 0.6; }
           100% { transform: translateY(100vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
         }
         @keyframes streamContainerFade {
@@ -165,19 +165,24 @@ const EntryForm = ({ onSubmit }) => {
         }
       `}</style>
 
-      {/* ═══ Grain stream — fixed overlay, persists across elevator descent ═══ */}
+      {/* ═══ Grain stream — thick, visible, matching video colors ═══ */}
       {streamActive && (
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
           style={{ animation: 'streamContainerFade 6s ease-out 1s forwards' }}
         >
-          {/* Core stream: dense column at 30-38% from left, slight leftward angle */}
-          {Array.from({ length: 80 }).map((_, i) => {
+          {/* Core stream: dense thick column at 30-38% from left */}
+          {Array.from({ length: 100 }).map((_, i) => {
+            const teaColors = ['#2A1F17','#31241B','#35281E','#3C2C22','#3E2E22','#4B3B2F','#3E2E22','#35281E'];
+            const highlightColors = ['#6A4C2C','#7A5C34','#5A3F25'];
+            const isHighlight = Math.random() < 0.15;
+            const color = isHighlight
+              ? highlightColors[Math.floor(Math.random() * highlightColors.length)]
+              : teaColors[Math.floor(Math.random() * teaColors.length)];
             const x = 31 + Math.random() * 7;
             const delay = Math.random() * 2.5;
-            const size = 1 + Math.random() * 2;
-            const h = size * (0.7 + Math.random() * 0.8);
-            // Slight leftward drift matching the video's angle
-            const drift = -12 + Math.random() * 10;
+            const size = 3 + Math.random() * 5;
+            const h = size * (0.6 + Math.random() * 0.8);
+            const drift = -14 + Math.random() * 12;
             const duration = 1.2 + Math.random() * 0.8;
             return (
               <div
@@ -185,11 +190,11 @@ const EntryForm = ({ onSubmit }) => {
                 className="absolute"
                 style={{
                   left: `${x}%`,
-                  top: '-3px',
+                  top: '-4px',
                   width: `${size}px`,
                   height: `${h}px`,
-                  borderRadius: '50%',
-                  background: `hsl(${20 + Math.random() * 10}, ${20 + Math.random() * 20}%, ${3 + Math.random() * 9}%)`,
+                  borderRadius: '40%',
+                  background: color,
                   animation: `streamPour ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                 }}
@@ -197,11 +202,13 @@ const EntryForm = ({ onSubmit }) => {
             );
           })}
           {/* Scatter: grains that break away from the main column */}
-          {Array.from({ length: 40 }).map((_, i) => {
-            const x = 27 + Math.random() * 16;
+          {Array.from({ length: 50 }).map((_, i) => {
+            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F','#31241B'];
+            const color = teaColors[Math.floor(Math.random() * teaColors.length)];
+            const x = 26 + Math.random() * 18;
             const delay = 0.2 + Math.random() * 3;
-            const size = 0.8 + Math.random() * 1.8;
-            const drift = -30 + Math.random() * 35;
+            const size = 2 + Math.random() * 4;
+            const drift = -35 + Math.random() * 40;
             const duration = 1.8 + Math.random() * 1.5;
             const spin = (Math.random() - 0.5) * 200;
             return (
@@ -210,10 +217,10 @@ const EntryForm = ({ onSubmit }) => {
                 className="absolute rounded-full"
                 style={{
                   left: `${x}%`,
-                  top: '-3px',
+                  top: '-4px',
                   width: `${size}px`,
                   height: `${size}px`,
-                  background: `hsl(${18 + Math.random() * 12}, ${15 + Math.random() * 20}%, ${5 + Math.random() * 10}%)`,
+                  background: color,
                   animation: `streamDust ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                   '--spin': `${spin}deg`,
@@ -224,15 +231,17 @@ const EntryForm = ({ onSubmit }) => {
         </div>
       )}
 
-      {/* ═══ Wisps: last faint particles dissolving ═══ */}
+      {/* ═══ Wisps: last particles dissolving ═══ */}
       {wispsActive && (
         <div className="fixed inset-0 z-[150] pointer-events-none overflow-hidden"
           style={{ animation: 'wispContainerFade 5s ease-out 2s forwards' }}
         >
-          {Array.from({ length: 10 }).map((_, i) => {
+          {Array.from({ length: 14 }).map((_, i) => {
+            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F'];
+            const color = teaColors[Math.floor(Math.random() * teaColors.length)];
             const x = 28 + Math.random() * 18;
             const delay = Math.random() * 4;
-            const size = 0.6 + Math.random() * 1.5;
+            const size = 2 + Math.random() * 3;
             const drift = -20 + Math.random() * 25;
             const duration = 5 + Math.random() * 4;
             return (
@@ -244,7 +253,7 @@ const EntryForm = ({ onSubmit }) => {
                   top: '-2px',
                   width: `${size}px`,
                   height: `${size}px`,
-                  background: `hsl(${22 + Math.random() * 8}, ${12 + Math.random() * 15}%, ${5 + Math.random() * 8}%)`,
+                  background: color,
                   animation: `wispDrift ${duration}s ease-out ${delay}s forwards`,
                   '--drift': `${drift}px`,
                 }}
@@ -263,7 +272,7 @@ const EntryForm = ({ onSubmit }) => {
         }}
       >
         {/* ── Section 1: Hero (video + logo + button) ── */}
-        <div className="h-screen h-[100dvh] bg-[#050403] relative overflow-hidden" data-testid="hero-section">
+        <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
@@ -313,7 +322,7 @@ const EntryForm = ({ onSubmit }) => {
         </div>
 
         {/* ── Section 2: The Abyss (pure black void) ── */}
-        <div className="h-screen h-[100dvh] bg-[#050403] relative" data-testid="abyss-section" />
+        <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative" data-testid="abyss-section" />
 
         {/* ── Section 3: Login Form ── */}
         <section
