@@ -125,20 +125,23 @@ const EntryForm = ({ onSubmit }) => {
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
       {/* Elevator container — 2 stacked sections */}
       <div
-        className="will-change-transform"
         style={{
           transform: `translateY(${translateY})`,
           transition: phase === "descending" ? 'transform 2.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+          willChange: phase === "descending" ? 'transform' : 'auto',
         }}
       >
         {/* ── Section 1: Hero ── */}
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
           <video
             ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover sm:object-position-center"
             style={{
               opacity: showVideo ? 1 : 0,
               transition: 'opacity 1.2s ease-out',
+              objectPosition: 'center 35%',
+              imageRendering: 'auto',
+              backfaceVisibility: 'hidden',
             }}
             src={VIDEO_URL}
             preload="auto"
