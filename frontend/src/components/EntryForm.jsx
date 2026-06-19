@@ -137,25 +137,30 @@ const EntryForm = ({ onSubmit }) => {
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
 
       <style>{`
-        @keyframes streamPour {
-          0% { transform: translateY(0) translateX(0); opacity: 1; }
-          40% { opacity: 1; }
-          75% { opacity: 0.8; }
-          100% { transform: translateY(100vh) translateX(var(--drift)); opacity: 0.1; }
+        @keyframes columnGrow {
+          0% { height: 0; opacity: 0.9; }
+          10% { opacity: 0.9; }
+          60% { opacity: 0.7; }
+          100% { height: 120vh; opacity: 0; }
         }
-        @keyframes streamDust {
-          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.9; }
-          50% { opacity: 0.6; }
+        @keyframes particleFall {
+          0% { transform: translateY(0) translateX(0); opacity: 1; }
+          50% { opacity: 0.9; }
+          100% { transform: translateY(110vh) translateX(var(--drift)); opacity: 0; }
+        }
+        @keyframes dustFall {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
+          50% { opacity: 0.4; }
           100% { transform: translateY(100vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
         }
         @keyframes streamContainerFade {
           0% { opacity: 1; }
-          60% { opacity: 0.8; }
+          65% { opacity: 0.8; }
           100% { opacity: 0; }
         }
         @keyframes wispDrift {
-          0% { transform: translateY(0) translateX(0); opacity: 0.4; }
-          60% { opacity: 0.15; }
+          0% { transform: translateY(0) translateX(0); opacity: 0.5; }
+          60% { opacity: 0.2; }
           100% { transform: translateY(50vh) translateX(var(--drift)); opacity: 0; }
         }
         @keyframes wispContainerFade {
@@ -165,63 +170,105 @@ const EntryForm = ({ onSubmit }) => {
         }
       `}</style>
 
-      {/* ═══ Grain stream — thick, visible, matching video colors ═══ */}
+      {/* ═══ THE STREAM — one continuous pour ═══ */}
       {streamActive && (
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
-          style={{ animation: 'streamContainerFade 6s ease-out 1s forwards' }}
+          style={{ animation: 'streamContainerFade 6s ease-out 1.5s forwards' }}
         >
-          {/* Core stream: dense thick column at 30-38% from left */}
-          {Array.from({ length: 100 }).map((_, i) => {
-            const teaColors = ['#2A1F17','#31241B','#35281E','#3C2C22','#3E2E22','#4B3B2F','#3E2E22','#35281E'];
-            const highlightColors = ['#6A4C2C','#7A5C34','#5A3F25'];
-            const isHighlight = Math.random() < 0.15;
+          {/* STREAM BODY: Visible gradient columns that form the core pour */}
+          {[0, 1, 2].map((idx) => {
+            const offsets = [-2, 0, 2];
+            const widths = [6, 10, 6];
+            const opacities = [0.5, 0.8, 0.5];
+            const delays = [0, 0.1, 0.05];
+            const durations = [2.8, 3.2, 3.0];
+            return (
+              <div
+                key={`col-${idx}`}
+                className="absolute"
+                style={{
+                  left: `calc(34% + ${offsets[idx]}px)`,
+                  top: 0,
+                  width: `${widths[idx]}px`,
+                  background: `linear-gradient(to bottom, #4B3B2F ${0}%, #3C2C22 15%, #2A1F17 40%, rgba(42,31,23,0.3) 75%, transparent 100%)`,
+                  opacity: opacities[idx],
+                  animation: `columnGrow ${durations[idx]}s ease-in ${delays[idx]}s forwards`,
+                  filter: 'blur(1px)',
+                }}
+              />
+            );
+          })}
+
+          {/* STREAM GLOW: subtle warm haze around the core */}
+          <div
+            className="absolute"
+            style={{
+              left: 'calc(34% - 10px)',
+              top: 0,
+              width: '30px',
+              background: 'linear-gradient(to bottom, rgba(75,59,47,0.25) 0%, rgba(42,31,23,0.15) 30%, transparent 70%)',
+              animation: 'columnGrow 3.5s ease-in 0s forwards',
+              filter: 'blur(6px)',
+            }}
+          />
+
+          {/* DENSE PARTICLES: tightly packed along the stream body */}
+          {Array.from({ length: 120 }).map((_, i) => {
+            const teaColors = ['#2A1F17','#31241B','#35281E','#3C2C22','#3E2E22','#4B3B2F'];
+            const highlightColors = ['#6A4C2C','#7A5C34','#5A3F25','#A97C48'];
+            const isHighlight = Math.random() < 0.12;
             const color = isHighlight
               ? highlightColors[Math.floor(Math.random() * highlightColors.length)]
               : teaColors[Math.floor(Math.random() * teaColors.length)];
-            const x = 31 + Math.random() * 7;
-            const delay = Math.random() * 2.5;
-            const size = 3 + Math.random() * 5;
-            const h = size * (0.6 + Math.random() * 0.8);
-            const drift = -14 + Math.random() * 12;
-            const duration = 1.2 + Math.random() * 0.8;
+            // Very tight horizontal: 33-35% = ~30px band for dense core
+            const x = 33 + Math.random() * 2.5;
+            // Staggered but fast — creates continuous flow feel
+            const wave = Math.floor(i / 30);
+            const delay = wave * 0.6 + Math.random() * 0.5;
+            const size = 2 + Math.random() * 4;
+            const h = size * (0.5 + Math.random() * 1);
+            const drift = -6 + Math.random() * 8;
+            const duration = 1.3 + Math.random() * 0.7;
             return (
               <div
-                key={`c-${i}`}
+                key={`p-${i}`}
                 className="absolute"
                 style={{
                   left: `${x}%`,
-                  top: '-4px',
+                  top: '-3px',
                   width: `${size}px`,
                   height: `${h}px`,
                   borderRadius: '40%',
                   background: color,
-                  animation: `streamPour ${duration}s ease-in ${delay}s forwards`,
+                  animation: `particleFall ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                 }}
               />
             );
           })}
-          {/* Scatter: grains that break away from the main column */}
-          {Array.from({ length: 50 }).map((_, i) => {
-            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F','#31241B'];
+
+          {/* EDGE SCATTER: particles that break away from the stream */}
+          {Array.from({ length: 40 }).map((_, i) => {
+            const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F'];
             const color = teaColors[Math.floor(Math.random() * teaColors.length)];
-            const x = 26 + Math.random() * 18;
-            const delay = 0.2 + Math.random() * 3;
-            const size = 2 + Math.random() * 4;
-            const drift = -35 + Math.random() * 40;
-            const duration = 1.8 + Math.random() * 1.5;
+            const side = Math.random() < 0.5 ? -1 : 1;
+            const x = 34 + side * (1.5 + Math.random() * 6);
+            const delay = 0.3 + Math.random() * 2.5;
+            const size = 1.5 + Math.random() * 3;
+            const drift = side * (10 + Math.random() * 30);
+            const duration = 2 + Math.random() * 1.5;
             const spin = (Math.random() - 0.5) * 200;
             return (
               <div
-                key={`sc-${i}`}
+                key={`e-${i}`}
                 className="absolute rounded-full"
                 style={{
                   left: `${x}%`,
-                  top: '-4px',
+                  top: '-3px',
                   width: `${size}px`,
                   height: `${size}px`,
                   background: color,
-                  animation: `streamDust ${duration}s ease-in ${delay}s forwards`,
+                  animation: `dustFall ${duration}s ease-in ${delay}s forwards`,
                   '--drift': `${drift}px`,
                   '--spin': `${spin}deg`,
                 }}
@@ -239,10 +286,10 @@ const EntryForm = ({ onSubmit }) => {
           {Array.from({ length: 14 }).map((_, i) => {
             const teaColors = ['#2A1F17','#35281E','#3C2C22','#4B3B2F'];
             const color = teaColors[Math.floor(Math.random() * teaColors.length)];
-            const x = 28 + Math.random() * 18;
+            const x = 30 + Math.random() * 12;
             const delay = Math.random() * 4;
             const size = 2 + Math.random() * 3;
-            const drift = -20 + Math.random() * 25;
+            const drift = -15 + Math.random() * 20;
             const duration = 5 + Math.random() * 4;
             return (
               <div

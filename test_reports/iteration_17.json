@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 17 - Frontend only. Validated all 7 requested behaviors after the 'continuous flowing stream' rebuild. Stream container (z-index 200) now mounts EXACTLY 164 children = 3 gradient stream-body columns (widths 6/10/6 px with blur(1px), linear-gradient #4B3B2F->#3C2C22->#2A1F17->transparent, animated via columnGrow) + 1 glow div (30px, blur(6px)) + 120 dense core particles + 40 edge scatter. Measured column lefts at 1920px viewport: 650.8 / 652.8 / 654.8 px (= 34% +/- 2px) and glow at 642.8 px (34% - 10px), matching spec. Particle sizes: core min=2.0px max=5.97px (spec 2 + Math.random()*4 -> 2-6); edge scatter min=1.53px max=4.45px (spec 1.5 + Math.random()*3 -> 1.5-4.5). 10 unique fill colors detected at z-200, all 9 spec hex codes + the bonus highlight #A97C48 (#2A1F17 #31241B #35281E #3C2C22 #3E2E22 #4B3B2F #6A4C2C #7A5C34 #5A3F25 #A97C48). The three columns indeed grow downward (heights observed mid-anim 33-65 px while transition runs over 2.8/3.2/3.0 s), producing the visible continuous pour. Logo fade chain (200/1900/3000ms) + Get Started button opacity 1 at ~3.3s confirmed. Headless video fallback at +3s triggers triggerDescent. Elevator transform mid-stage measured matrix(1,0,0,1,0,-153) with 'transform 2.2s cubic-bezier(0.4,0,0.2,1)'; after full chain transform settles at matrix(1,0,0,1,0,-1962) (= -200vh @1080 = -2160, observed past initial 2.2s+2.8s window). Form fades in, name-input + ENTER STORE clickable; submitting 'TestUser17' transitions to WelcomeScreen showing gold 'Welcome' + 'TestUser17'. Mobile 375x812: scrollWidth==clientWidth==375 at end of descent (no horizontal overflow). /#admin loads admin-password-input after a hard reload; password WEUSEDTOBECALLEDHAMLETTEA26 -> 'Welcome, Admin' toast + Admin Panel with Products/Reviews/Orders tabs and 250g/500g Estate Premium Tea listings.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/frontend/src/components/EntryForm.jsx"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Recurring from iter 13-16: chained setTimeouts in triggerDescent() (2200/4500/7000/10000 ms) are unguarded - if EntryForm unmounts mid-transition (e.g. user navigates to /#admin via URL change, or React strict-mode double-effect), setState fires on unmounted component. Store the 4 timer ids in a ref array and clearTimeout them in a useEffect cleanup.",
+    "Recurring: <video> still lacks onError/onStalled handlers. The +3s fallback only fires from .play() promise rejection; if the video reaches readyState>=2 then stalls mid-playback, user is stranded on the hero with no path forward. Add onError/onStalled -> triggerDescent().",
+    "Recurring: /#admin requires a hard page reload to mount AdminDashboard - no hashchange listener. Test had to call page.reload() after navigating with hash.",
+    "Recurring: nominatim.openstreetmap.org reverse-geocode call has no User-Agent / contact header (violates OSM Nominatim usage policy) and there is still no toast or fallback path when the user denies geolocation.",
+    "EntryForm.jsx is now 440 lines and inlines: 3 column divs + 1 glow div + 120-particle Array.from map + 40-edge Array.from map + 14-wisp Array.from map, with three near-duplicate particle factories. Approaching the 700-line guideline ceiling but already meriting extraction into a <Stream/> component (props: columnsConfig, coreCount, edgeCount, wispCount) to dedupe ~120 lines and make per-iteration tuning a one-prop change."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (skipped per request)",
+    "frontend": "100% (7/7 behaviors)"
+  },
+  "test_credentials": "Admin password WEUSEDTOBECALLEDHAMLETTEA26 at /#admin (hard reload required) - confirmed working.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 17 finalizes the 'continuous flowing stream' visual. Stream container at z-200 mounts 164 children = 3 stream-body gradient columns (6/10/6 px wide, blur(1px), linear-gradient #4B3B2F->#3C2C22->#2A1F17->transparent, columnGrow anim 2.8/3.2/3.0 s with delays 0/0.1/0.05 s, opacity 0.5/0.8/0.5) + 1 glow div (30px wide, blur(6px), columnGrow 3.5s) + 120 core particles (size 2-6 px, x 33-35.5%, 4 staggered waves of 30 each, delay = wave*0.6 + rnd*0.5) + 40 edge scatter (size 1.5-4.5 px, x = 34 +/- (1.5-7.5)%, delay 0.3-2.8 s). Stream container fade keyframe streamContainerFade 6s ease-out 1.5s. Timer chain unchanged: 2200 ms -> abyss; 4500 ms -> arriving (-200vh, 2.8s); 7000 ms -> form; 10000 ms -> wisps off. Headless video fallback fires triggerDescent() at +3s from .play() promise rejection. data-testids unchanged: entry-wrapper, hero-section, get-started-button, hero-video, abyss-section, form-section, name-input, entry-submit-button, admin-password-input, admin-login-button. Background #0C0B0A unchanged.",
+  "detailed_test_results": {
+    "behavior1_logo_and_button": "PASS - Logo fades on 200/1900 ms chain, phase->ready at 3000 ms, button parent opacity measured 1 at ~3.3s.",
+    "behavior2_click_starts_descent": "PASS - Clicking get-started-button calls video.play().catch() which in headless schedules triggerDescent at +3s; elevator transform observed transitioning at +3.5s.",
+    "behavior3_continuous_stream_columns": "PASS - 164 total children at z-200: 3 columns (6/10/6 px, blur(1px), linear-gradient, columnGrow anim, observed heights mid-anim 33-65 px), glow (30 px, blur(6px)), 120 core particles (size 2-5.97 px), 40 edge scatter (size 1.53-4.45 px). Column lefts 650.8/652.8/654.8 px and glow left 642.8 px @1920 width = 34% +/- 2 px / 34%-10px exactly per spec.",
+    "behavior4_elevator_descent": "PASS - Mid-descent transform matrix(1,0,0,1,0,-153) with 'transform 2.2s cubic-bezier(0.4,0,0.2,1)'. After 7s post-trigger, transform reached matrix(1,0,0,1,0,-1962) approaching -200vh (-2160 @1080).",
+    "behavior5_form_fades_in_and_submits": "PASS - name-input is_visible=true after descent, form rendered. Submitting 'TestUser17' transitions to WelcomeScreen showing gold 'Welcome' and 'TestUser17'.",
+    "behavior6_mobile_responsive_375x812": "PASS - documentElement.scrollWidth == clientWidth == 375 after full descent. No horizontal overflow.",
+    "behavior7_admin": "PASS - /#admin + hard reload -> admin-password-input. WEUSEDTOBECALLEDHAMLETTEA26 + admin-login-button -> 'Welcome, Admin' toast + Admin Panel with Products/Reviews/Orders tabs and 250g (Rs.200) / 500g (Rs.390) Estate Premium Tea products listed."
+  },
+  "rca_of_the_issue": "N/A - all 7 specified behaviors validated PASS. The stream-body gradient columns + glow + dense+edge particles all mount with the exact counts, widths, colors and animation parameters specified. No app bugs introduced by iteration 17."
+}
