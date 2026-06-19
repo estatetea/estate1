@@ -135,13 +135,11 @@ const EntryForm = ({ onSubmit }) => {
         <div className="h-screen h-[100dvh] bg-[#0C0B0A] relative overflow-hidden" data-testid="hero-section">
           <video
             ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover sm:object-position-center"
+            className="absolute inset-0 w-full h-full object-contain sm:object-cover"
             style={{
               opacity: showVideo ? 1 : 0,
               transition: 'opacity 1.2s ease-out',
-              objectPosition: 'center 35%',
-              imageRendering: 'auto',
-              backfaceVisibility: 'hidden',
+              objectPosition: 'center center',
             }}
             src={VIDEO_URL}
             preload="auto"
