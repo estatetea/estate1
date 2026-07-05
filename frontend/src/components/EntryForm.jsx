@@ -4,7 +4,7 @@ import { Label } from "./ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const VIDEO_URL = "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/z2zc6gmx_opening%20page.mp4";
+const VIDEO_URL = "/opening.mp4";
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png";
 const POUR_STARTS = 3.0; // seconds into video when hand starts pouring
 const DESCENT_TRIGGER = POUR_STARTS + 1.0; // 1 second after pour begins
@@ -42,18 +42,20 @@ const EntryForm = ({ onSubmit }) => {
 
   const handleGetStarted = () => {
     setPhase("video");
-    if (!locationAttempted.current) {
-      locationAttempted.current = true;
-      handleGetLocation();
-    }
+    // CRITICAL: play() must be the FIRST action after user tap on mobile
+    // iOS drops user gesture context if other APIs (geolocation) fire before play()
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
-        // Fallback if video can't play (mobile restrictions, etc)
         setTimeout(() => triggerDescent(), 2000);
       });
     } else {
       setTimeout(() => triggerDescent(), 2000);
+    }
+    // Location detection AFTER play() to preserve user gesture context
+    if (!locationAttempted.current) {
+      locationAttempted.current = true;
+      handleGetLocation();
     }
   };
 
