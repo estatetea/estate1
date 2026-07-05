@@ -120,7 +120,8 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  const showVideo = (phase === "ready" || phase === "video" || phase === "descending") && videoReady;
+  // Ready phase: show first frame only if preloaded. Video/descending phase: always show (mobile may not preload)
+  const showVideo = phase === "video" || phase === "descending" || (phase === "ready" && videoReady);
   const isDescending = phase === "descending" || phase === "form";
 
   return (
