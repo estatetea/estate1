@@ -49,9 +49,11 @@ const EntryForm = ({ onSubmit }) => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {
-        // Fallback if video can't play
-        setTimeout(() => triggerDescent(), 3000);
+        // Fallback if video can't play (mobile restrictions, etc)
+        setTimeout(() => triggerDescent(), 2000);
       });
+    } else {
+      setTimeout(() => triggerDescent(), 2000);
     }
   };
 
@@ -118,7 +120,8 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  const showVideo = (phase === "ready" || phase === "video") && videoReady;
+  // Show video: during ready phase only if loaded, during video/descending phase always (browser will display once playing)
+  const showVideo = phase === "video" || phase === "descending" || ((phase === "ready") && videoReady);
   const isDescending = phase === "descending" || phase === "form";
 
   return (
@@ -142,11 +145,16 @@ const EntryForm = ({ onSubmit }) => {
               transition: 'opacity 1.2s ease-out',
             }}
             src={VIDEO_URL}
-            preload="auto"
+            preload="metadata"
             muted
             playsInline
+            webkit-playsinline=""
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
+            onError={() => triggerDescent()}
+            onStalled={() => {
+              if (phase === "video") setTimeout(() => triggerDescent(), 2000);
+            }}
             data-testid="hero-video"
           />
 
