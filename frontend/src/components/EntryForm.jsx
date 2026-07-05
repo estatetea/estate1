@@ -120,8 +120,7 @@ const EntryForm = ({ onSubmit }) => {
     });
   };
 
-  // Show video: during ready phase only if loaded, during video/descending phase always (browser will display once playing)
-  const showVideo = phase === "video" || phase === "descending" || ((phase === "ready") && videoReady);
+  const showVideo = (phase === "ready" || phase === "video" || phase === "descending") && videoReady;
   const isDescending = phase === "descending" || phase === "form";
 
   return (
@@ -145,16 +144,11 @@ const EntryForm = ({ onSubmit }) => {
               transition: 'opacity 1.2s ease-out',
             }}
             src={VIDEO_URL}
-            preload="metadata"
+            preload="auto"
             muted
             playsInline
-            webkit-playsinline=""
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
-            onError={() => triggerDescent()}
-            onStalled={() => {
-              if (phase === "video") setTimeout(() => triggerDescent(), 2000);
-            }}
             data-testid="hero-video"
           />
 
