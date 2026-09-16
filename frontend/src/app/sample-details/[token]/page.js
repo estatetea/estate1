@@ -11,6 +11,7 @@ const initialForm = {
   phone: '',
   delivery_address: '',
   area_locality: '',
+  pincode: '',
   delivery_instructions: '',
 };
 
@@ -86,11 +87,17 @@ export default function SampleDetailsPage() {
       phone: form.phone.trim(),
       delivery_address: form.delivery_address.trim(),
       area_locality: form.area_locality.trim(),
+      pincode: form.pincode.trim(),
       delivery_instructions: form.delivery_instructions.trim() || null,
     };
 
-    if (!payload.contact_name || !payload.phone || !payload.delivery_address || !payload.area_locality) {
+    if (!payload.contact_name || !payload.phone || !payload.delivery_address || !payload.area_locality || !payload.pincode) {
       setError('Please fill in all required fields.');
+      return;
+    }
+
+    if (!/^[1-9][0-9]{5}$/.test(payload.pincode)) {
+      setError('Please enter a valid 6-digit PIN code.');
       return;
     }
 
@@ -153,7 +160,7 @@ export default function SampleDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">You’re all set.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve received your delivery details. Brew will be in touch with an estimated delivery window.
+                We’ve received your delivery details. We’ll be in touch with an estimated delivery window.
               </p>
               <div className="mt-8 h-px w-12 bg-[#D4AF37]" />
               <p className="mt-5 text-xs uppercase tracking-[0.22em] text-[#D4AF37]">Estate Tea</p>
@@ -181,7 +188,7 @@ export default function SampleDetailsPage() {
                     autoComplete="name"
                     maxLength={120}
                     required
-                    className="sample-input"
+                    className="sample-input bg-white text-black caret-black placeholder:text-black/40"
                   />
                 </Field>
 
@@ -195,7 +202,7 @@ export default function SampleDetailsPage() {
                     autoComplete="tel"
                     maxLength={40}
                     required
-                    className="sample-input"
+                    className="sample-input bg-white text-black caret-black placeholder:text-black/40"
                   />
                 </Field>
 
@@ -208,7 +215,7 @@ export default function SampleDetailsPage() {
                     rows={4}
                     maxLength={700}
                     required
-                    className="sample-input resize-none"
+                    className="sample-input resize-none bg-white text-black caret-black placeholder:text-black/40"
                   />
                 </Field>
 
@@ -220,7 +227,22 @@ export default function SampleDetailsPage() {
                     autoComplete="address-level2"
                     maxLength={180}
                     required
-                    className="sample-input"
+                    className="sample-input bg-white text-black caret-black placeholder:text-black/40"
+                  />
+                </Field>
+
+                <Field label="PIN code" required>
+                  <input
+                    name="pincode"
+                    value={form.pincode}
+                    onChange={updateField}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={6}
+                    pattern="[1-9][0-9]{5}"
+                    required
+                    className="sample-input bg-white text-black caret-black placeholder:text-black/40"
                   />
                 </Field>
 
@@ -232,7 +254,7 @@ export default function SampleDetailsPage() {
                     rows={3}
                     maxLength={500}
                     placeholder="Landmark, reception desk, preferred handover notes…"
-                    className="sample-input resize-none placeholder:text-white/25"
+                    className="sample-input resize-none bg-white text-black caret-black placeholder:text-black/40"
                   />
                 </Field>
 
