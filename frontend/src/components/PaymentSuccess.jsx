@@ -1,78 +1,8 @@
-import { CheckCircle, Mail, ShoppingBag } from "lucide-react";
-
-const PaymentSuccess = ({ data, navigate }) => {
-  const items = data?.items || [];
-  const total = data?.total;
-  const paymentId = data?.paymentId;
-  const customerEmail = data?.customerEmail;
-  const hasDetails = paymentId || total;
-
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
-      <header className="glass-surface border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
-          <img src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" alt="Estate Tea" className="w-10 h-10 sm:w-12 sm:h-12" />
-          <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
-        </div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-lg text-center fade-up">
-          <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37] flex items-center justify-center mb-6 sm:mb-8 payment-success-pulse" data-testid="success-icon">
-            <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-[#D4AF37]" />
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-light gold-text mb-3" data-testid="success-heading">Payment Successful</h1>
-          <p className="text-base sm:text-lg text-gray-400 mb-8 sm:mb-10 font-light">Thank you for choosing Estate Tea!</p>
-
-          {hasDetails && (
-            <div className="card-surface rounded-2xl p-5 sm:p-6 mb-6 sm:mb-8 text-left" data-testid="order-details-card">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-4">Order Summary</p>
-              <div className="space-y-3">
-                {items.map((item, i) => (
-                  <div key={i} className="flex justify-between text-sm sm:text-base">
-                    <span className="text-gray-300">{item.product_name} ({item.variant}) x{item.quantity}</span>
-                    <span className="text-[#D4AF37]">₹{item.price * item.quantity}</span>
-                  </div>
-                ))}
-                <div className="h-px bg-white/10 my-2" />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Total Paid</span>
-                  <span className="text-xl sm:text-2xl gold-text font-light">₹{total}</span>
-                </div>
-                {paymentId && (
-                  <>
-                    <div className="h-px bg-white/10 my-2" />
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">Payment ID</span>
-                      <span className="text-xs text-gray-400 font-mono">{paymentId}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/25 rounded-xl p-4 sm:p-5 mb-8 sm:mb-10 flex items-start gap-3 text-left" data-testid="invoice-notice">
-            <Mail className="w-5 h-5 text-[#D4AF37] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm sm:text-base text-white font-medium mb-1">Invoice sent to your email</p>
-              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-                {customerEmail ? `A confirmation invoice has been sent to ${customerEmail}. ` : "A confirmation invoice has been sent to the email you provided. "}
-                Your order will be delivered within 3-5 business days.
-              </p>
-            </div>
-          </div>
-
-          <button onClick={() => navigate('store')} data-testid="shop-again-button" className="w-full bg-[#D4AF37] hover:bg-[#FDE047] text-black font-light uppercase tracking-[0.2em] py-4 rounded-lg transition-colors text-sm sm:text-base touch-manipulation flex items-center justify-center gap-2">
-            <ShoppingBag className="w-4 h-4" />
-            Shop Again
-          </button>
-          <p className="text-xs text-gray-600 mt-6">We truly appreciate your support. Every cup carries a little love from our family to yours.</p>
-        </div>
-      </main>
-    </div>
-  );
+import { useEffect,useState } from "react";
+import { CheckCircle,Clock3,Mail,ShoppingBag } from "lucide-react";
+const PaymentSuccess=({data,navigate})=>{
+ const items=data?.items||[],total=data?.total,paymentId=data?.paymentId,orderId=data?.orderId,customerEmail=data?.customerEmail;const [verified,setVerified]=useState(Boolean(data?.paymentVerified));const [status,setStatus]=useState(data?.paymentStatus||'AWAITING_LEDGER_CONFIRMATION');
+ useEffect(()=>{if(!orderId||verified)return;let stopped=false,attempts=0;const poll=async()=>{attempts++;try{const r=await fetch(`/api/website-orders/${encodeURIComponent(orderId)}/status`,{cache:'no-store'});const d=await r.json();if(!stopped){setStatus(d.payment_status||d.order_status||status);if(d.payment_verified){setVerified(true);setStatus('PAID');return;}}}catch{}if(!stopped&&attempts<12)setTimeout(poll,2500);};poll();return()=>{stopped=true};},[orderId,verified]);
+ return <div className="min-h-screen bg-[#0a0a0a] flex flex-col"><header className="glass-surface border-b border-white/10"><div className="max-w-7xl mx-auto px-4 sm:px-6 py-4"><h2 className="text-2xl font-light gold-text">Estate Tea</h2></div></header><main className="flex-1 flex items-center justify-center p-4"><div className="w-full max-w-lg text-center fade-up"><div className="mx-auto w-24 h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37] flex items-center justify-center mb-8">{verified?<CheckCircle className="w-12 h-12 text-[#D4AF37]"/>:<Clock3 className="w-12 h-12 text-[#D4AF37]"/>}</div><h1 className="text-4xl font-light gold-text mb-3">{verified?'Payment Confirmed':'Payment Received'}</h1><p className="text-gray-400 mb-8">{verified?'Your Estate Tea order is confirmed.':'We received your payment and are completing the final secure verification.'}</p><div className="card-surface rounded-2xl p-6 mb-6 text-left"><p className="text-xs uppercase tracking-[.2em] text-gray-500 mb-4">Order Summary</p>{items.map((item,i)=><div key={i} className="flex justify-between text-sm py-2"><span className="text-gray-300">{item.product_name} ({item.variant}) x{item.quantity}</span><span className="text-[#D4AF37]">₹{item.price*item.quantity}</span></div>)}<div className="h-px bg-white/10 my-3"/><div className="flex justify-between"><span className="text-gray-400">Total</span><span className="text-xl gold-text">₹{total}</span></div>{orderId&&<div className="flex justify-between mt-3 text-xs"><span className="text-gray-500">Order ID</span><span className="font-mono text-gray-400">{orderId}</span></div>}{paymentId&&<div className="flex justify-between mt-2 text-xs"><span className="text-gray-500">Payment ID</span><span className="font-mono text-gray-400">{paymentId}</span></div>}</div><div className="bg-[#D4AF37]/10 border border-[#D4AF37]/25 rounded-xl p-5 mb-8 flex gap-3 text-left"><Mail className="w-5 h-5 text-[#D4AF37] flex-shrink-0"/><div>{verified?<><p className="text-sm text-white mb-1">Order confirmed</p><p className="text-xs text-gray-400">{customerEmail?`We’ll use ${customerEmail} for your order communication. `:''}Your order will be delivered within 3–5 business days.</p></>:<><p className="text-sm text-white mb-1">Final verification in progress</p><p className="text-xs text-gray-400">Steward and Ledger are independently checking the payment. You do not need to pay again. Current status: {status}.</p></>}</div></div><button onClick={()=>navigate('store')} className="w-full bg-[#D4AF37] hover:bg-[#FDE047] text-black uppercase tracking-[.2em] py-4 rounded-lg flex justify-center gap-2"><ShoppingBag className="w-4 h-4"/>Shop Again</button></div></main></div>;
 };
-
 export default PaymentSuccess;
