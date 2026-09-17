@@ -1,79 +1,21 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {Mic,MicOff,Volume2,Square} from 'lucide-react';
+import {Mic,MicOff,Volume2,Square,ChevronDown,ChevronUp} from 'lucide-react';
 import {toast} from 'sonner';
 import {Scribe,AudioFormat,CommitStrategy,RealtimeEvents} from '@elevenlabs/client';
 
 export default function AegisRealtimeVoice({token}){
-  const [state,setState]=useState('idle'),[turns,setTurns]=useState([]);
-  const connectionRef=useRef(null),audioRef=useRef(null),busyRef=useRef(false),primedAudioRef=useRef(null);
-  const headers={'Content-Type':'application/json',Authorization:`Bearer ${token}`};
-
-  const primeAudio=()=>{
-    try{
-      const audio=primedAudioRef.current||new Audio();
-      audio.playsInline=true;
-      audio.volume=1;
-      primedAudioRef.current=audio;
-      const p=audio.play();
-      if(p?.catch)p.catch(()=>{});
-      audio.pause();
-    }catch{}
-  };
-  const stopAudio=()=>{if(audioRef.current){audioRef.current.pause();if(audioRef.current.src)URL.revokeObjectURL(audioRef.current.src);audioRef.current=null}setState(s=>s==='speaking'||s==='preparing'?'idle':s)};
-  const stopListening=()=>{try{connectionRef.current?.close()}catch{}connectionRef.current=null;setState(s=>s==='listening'||s==='transcribing'?'idle':s)};
-  useEffect(()=>()=>{stopListening();stopAudio()},[]);
-
-  const speak=async text=>{
-    if(!text)return;
-    try{
-      stopAudio();setState('preparing');
-      const r=await fetch('/api/admin/aegis/voice',{method:'POST',headers,body:JSON.stringify({text})});
-      if(!r.ok)throw new Error('Aegis voice is unavailable');
-      const blob=await r.blob(),url=URL.createObjectURL(blob);
-      const audio=primedAudioRef.current||new Audio();
-      primedAudioRef.current=audio;audio.playsInline=true;audio.src=url;audioRef.current=audio;
-      audio.onended=()=>{URL.revokeObjectURL(url);audio.removeAttribute('src');audio.load();audioRef.current=null;setState('idle')};
-      audio.onerror=()=>{URL.revokeObjectURL(url);audioRef.current=null;setState('idle')};
-      setState('speaking');
-      await audio.play();
-    }catch(e){setState('idle');if(e?.name==='NotAllowedError')toast.error('iPhone blocked automatic audio. Tap Speak again once.');else toast.error(e.message||'Aegis voice is unavailable')}
-  };
-
-  const askAegis=async text=>{
-    text=String(text||'').trim();if(!text||busyRef.current)return;
-    busyRef.current=true;setState('thinking');setTurns(t=>[...t,{role:'owner',text}]);
-    try{
-      const r=await fetch('/api/admin/aegis/chat',{method:'POST',headers,body:JSON.stringify({message:text})});
-      const b=await r.json();if(!r.ok)throw new Error(b.detail||b.error||'Aegis could not respond');
-      const answer=String(b.response||'').trim();
-      if(answer)setTurns(t=>[...t,{role:'aegis',text:answer}]);
-      setState('idle');if(answer)await speak(answer);
-    }catch(e){setState('idle');toast.error(e.message||'Aegis could not respond')}finally{busyRef.current=false}
-  };
-
-  const start=async()=>{
-    if(state!=='idle')return;if(!navigator.mediaDevices?.getUserMedia)return toast.error('Microphone access is not available');
-    primeAudio();
-    try{
-      setState('connecting');
-      const tr=await fetch('/api/admin/aegis/transcribe-token',{method:'POST',headers});const tb=await tr.json();
-      if(!tr.ok||!tb.token)throw new Error(tb.error||tb.detail||'Realtime transcription is unavailable');
-      let committed='';
-      const connection=Scribe.connect({token:tb.token,modelId:'scribe_v2_realtime',audioFormat:AudioFormat.PCM_16000,commitStrategy:CommitStrategy.VAD,vadSilenceThresholdSecs:0.9,vadThreshold:0.4,minSpeechDurationMs:100,minSilenceDurationMs:100,languageCode:'en',keyterms:['Aegis','Estate Tea','Scout','Brew','Steward','Ledger','Muse','Nilgiris','Kotagiri'],microphone:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-      connectionRef.current=connection;
-      connection.on(RealtimeEvents.SESSION_STARTED,()=>setState('listening'));
-      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT,data=>{const text=String(data?.text||'').trim();if(text)setState('transcribing')});
-      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT,data=>{const text=String(data?.text||'').trim();if(!text)return;committed=[committed,text].filter(Boolean).join(' ').trim();try{connection.close()}catch{}connectionRef.current=null;askAegis(committed)});
-      connection.on(RealtimeEvents.ERROR,()=>{stopListening();setState('idle');toast.error('Realtime transcription had a problem. Please try again.')});
-    }catch(e){setState('idle');toast.error(e.message||'Could not start realtime voice')}
-  };
-
-  const active=state!=='idle';const lastAegis=[...turns].reverse().find(t=>t.role==='aegis');
-  return <div className="fixed bottom-4 right-4 z-[70] w-[min(360px,calc(100vw-2rem))] max-h-[46vh] overflow-hidden rounded-2xl border border-[#D4AF37]/25 bg-[#0c0c0c]/95 backdrop-blur-xl shadow-2xl p-4 text-white">
-    <div className="flex items-center justify-between gap-3"><div><p className="text-sm text-[#efbd63]">Talk to Aegis</p><p className="text-[10px] text-gray-500">ElevenLabs realtime · quick pause</p></div><button onClick={active?(state==='speaking'||state==='preparing'?stopAudio:stopListening):start} disabled={state==='thinking'||state==='connecting'} className={`w-11 h-11 rounded-full flex items-center justify-center ${active?'bg-red-400/10 text-red-300 border border-red-400/30':'bg-[#D4AF37] text-black'} disabled:opacity-40`}>{active?(state==='speaking'||state==='preparing'?<Square className="w-4 h-4"/>:<MicOff className="w-5 h-5"/>):<Mic className="w-5 h-5"/>}</button></div>
-    {state!=='idle'&&<p className="mt-3 text-[11px] text-gray-400">{state==='connecting'?'Opening microphone…':state==='listening'?'Listening…':state==='transcribing'?'Listening — pause when you’re finished…':state==='thinking'?'Aegis is thinking…':state==='preparing'?'Preparing voice…':state==='speaking'?'Aegis is speaking…':''}</p>}
-    {turns.length>0&&<div className="mt-3 max-h-52 overflow-y-auto pr-1 space-y-2">{turns.slice(-8).map((turn,i)=><div key={`${turn.role}-${i}`} className={`text-xs leading-relaxed ${turn.role==='owner'?'text-gray-300':'text-white'}`}><span className={turn.role==='aegis'?'text-[#efbd63]':'text-gray-500'}>{turn.role==='aegis'?'Aegis':'You'}:</span> {turn.text}</div>)}</div>}
-    {lastAegis&&<button onClick={()=>{primeAudio();speak(lastAegis.text)}} className="mt-3 flex items-center gap-1.5 text-[11px] text-[#efbd63]"><Volume2 className="w-3.5 h-3.5"/>Speak again</button>}
-  </div>;
+ const [state,setState]=useState('idle'),[turns,setTurns]=useState([]),[collapsed,setCollapsed]=useState(false);
+ const connectionRef=useRef(null),busyRef=useRef(false),ctxRef=useRef(null),sourceRef=useRef(null),requestRef=useRef(null);
+ const headers={'Content-Type':'application/json',Authorization:`Bearer ${token}`};
+ const unlockAudio=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;const ctx=ctxRef.current||new AC();ctxRef.current=ctx;if(ctx.state==='suspended')ctx.resume().catch(()=>{});const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);return ctx}catch{return null}};
+ const stopAudio=()=>{requestRef.current?.abort?.();requestRef.current=null;try{sourceRef.current?.stop()}catch{}sourceRef.current=null;setState(s=>s==='speaking'||s==='preparing'?'idle':s)};
+ const stopListening=()=>{try{connectionRef.current?.close()}catch{}connectionRef.current=null;setState(s=>s==='listening'||s==='transcribing'||s==='connecting'?'idle':s)};
+ useEffect(()=>()=>{stopListening();stopAudio();ctxRef.current?.close?.().catch(()=>{})},[]);
+ const speak=async text=>{if(!text)return;stopAudio();const controller=new AbortController();requestRef.current=controller;try{setState('preparing');const r=await fetch('/api/admin/aegis/voice',{method:'POST',headers,body:JSON.stringify({text}),signal:controller.signal});if(!r.ok)throw new Error('Aegis voice is unavailable');const bytes=await r.arrayBuffer();if(controller.signal.aborted)return;const ctx=unlockAudio();if(!ctx)throw new Error('Audio playback is unavailable');if(ctx.state==='suspended')await ctx.resume();const buffer=await ctx.decodeAudioData(bytes.slice(0));if(controller.signal.aborted)return;const src=ctx.createBufferSource();src.buffer=buffer;src.connect(ctx.destination);sourceRef.current=src;src.onended=()=>{if(sourceRef.current===src)sourceRef.current=null;setState('idle')};setState('speaking');src.start(0)}catch(e){if(e?.name==='AbortError')return;setState('idle');toast.error(e.message||'Aegis voice is unavailable')}finally{if(requestRef.current===controller)requestRef.current=null}};
+ const askAegis=async text=>{text=String(text||'').trim();if(!text||busyRef.current)return;busyRef.current=true;setState('thinking');setTurns(t=>[...t,{role:'owner',text}]);try{const r=await fetch('/api/admin/aegis/chat',{method:'POST',headers,body:JSON.stringify({message:text})});const b=await r.json();if(!r.ok)throw new Error(b.detail||b.error||'Aegis could not respond');const answer=String(b.response||'').trim();if(answer)setTurns(t=>[...t,{role:'aegis',text:answer}]);setState('idle');if(answer)await speak(answer)}catch(e){setState('idle');toast.error(e.message||'Aegis could not respond')}finally{busyRef.current=false}};
+ const start=async()=>{if(state!=='idle')return;if(!navigator.mediaDevices?.getUserMedia)return toast.error('Microphone access is not available');unlockAudio();try{setState('connecting');const tr=await fetch('/api/admin/aegis/transcribe-token',{method:'POST',headers});const tb=await tr.json();if(!tr.ok||!tb.token)throw new Error(tb.error||tb.detail||'Realtime transcription is unavailable');let committed='';const connection=Scribe.connect({token:tb.token,modelId:'scribe_v2_realtime',audioFormat:AudioFormat.PCM_16000,commitStrategy:CommitStrategy.VAD,vadSilenceThresholdSecs:0.9,vadThreshold:0.4,minSpeechDurationMs:100,minSilenceDurationMs:100,languageCode:'en',keyterms:['Aegis','Estate Tea','Scout','Brew','Steward','Ledger','Muse','Nilgiris','Kotagiri'],microphone:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});connectionRef.current=connection;connection.on(RealtimeEvents.SESSION_STARTED,()=>setState('listening'));connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT,d=>{if(String(d?.text||'').trim())setState('transcribing')});connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT,d=>{const text=String(d?.text||'').trim();if(!text)return;committed=[committed,text].filter(Boolean).join(' ').trim();try{connection.close()}catch{}connectionRef.current=null;askAegis(committed)});connection.on(RealtimeEvents.ERROR,()=>{stopListening();setState('idle');toast.error('Realtime transcription had a problem. Please try again.')})}catch(e){setState('idle');toast.error(e.message||'Could not start realtime voice')}};
+ const active=state!=='idle',last=[...turns].reverse().find(t=>t.role==='aegis');
+ if(collapsed)return <button onClick={()=>{unlockAudio();setCollapsed(false)}} className="fixed bottom-5 right-5 z-[70] w-14 h-14 rounded-full bg-[#D4AF37] text-black shadow-2xl flex items-center justify-center" aria-label="Open Aegis voice"><Mic className="w-6 h-6"/></button>;
+ return <div className="fixed bottom-4 right-4 z-[70] w-[min(360px,calc(100vw-2rem))] max-h-[48vh] overflow-hidden rounded-2xl border border-[#D4AF37]/25 bg-[#0c0c0c]/95 backdrop-blur-xl shadow-2xl p-4 text-white"><div className="flex items-center justify-between gap-3"><div><p className="text-sm text-[#efbd63]">Talk to Aegis</p><p className="text-[10px] text-gray-500">Realtime voice · quick pause</p></div><div className="flex items-center gap-2"><button onClick={()=>setCollapsed(true)} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-500"><ChevronDown className="w-4 h-4"/></button><button onClick={()=>{unlockAudio();active?(state==='speaking'||state==='preparing'?stopAudio:stopListening()):start()}} disabled={state==='thinking'||state==='connecting'} className={`w-11 h-11 rounded-full flex items-center justify-center ${active?'bg-red-400/10 text-red-300 border border-red-400/30':'bg-[#D4AF37] text-black'} disabled:opacity-40`}>{active?(state==='speaking'||state==='preparing'?<Square className="w-4 h-4"/>:<MicOff className="w-5 h-5"/>):<Mic className="w-5 h-5"/>}</button></div></div>{state!=='idle'&&<p className="mt-3 text-[11px] text-gray-400">{state==='connecting'?'Opening microphone…':state==='listening'?'Listening…':state==='transcribing'?'Listening — pause when finished…':state==='thinking'?'Aegis is thinking…':state==='preparing'?'Preparing voice…':'Aegis is speaking…'}</p>}{turns.length>0&&<div className="mt-3 max-h-52 overflow-y-auto pr-1 space-y-2">{turns.slice(-10).map((t,i)=><div key={i} className="text-xs leading-relaxed text-gray-300"><span className={t.role==='aegis'?'text-[#efbd63]':'text-gray-500'}>{t.role==='aegis'?'Aegis':'You'}:</span> {t.text}</div>)}</div>}{last&&<button onClick={()=>{unlockAudio();speak(last.text)}} className="mt-3 flex items-center gap-1.5 text-[11px] text-[#efbd63]"><Volume2 className="w-3.5 h-3.5"/>Speak again</button>}</div>;
 }
