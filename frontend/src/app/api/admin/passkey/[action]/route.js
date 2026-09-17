@@ -53,8 +53,6 @@ export async function GET(request,{params}) {
       authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'required',userVerification:'required'},
       supportedAlgorithmIDs:[-7,-257],
     });
-    // WebAuthn hints are advisory, but on supporting iOS/Safari versions this
-    // steers the ceremony toward this iPhone instead of hybrid/QR sign-in.
     options.hints=['client-device'];
     const response=NextResponse.json(options);
     response.cookies.set(CHALLENGE_COOKIE,pack({type:'register',challenge:options.challenge}),cookieOptions());
@@ -67,8 +65,6 @@ export async function GET(request,{params}) {
     const options=await generateAuthenticationOptions({
       rpID:RP_ID,userVerification:'required',allowCredentials:[{id:credential.id,transports:['internal']}],
     });
-    // Do not advertise hybrid transport: this owner app intentionally uses the
-    // local platform authenticator (Face ID / device passcode) only.
     options.hints=['client-device'];
     const response=NextResponse.json(options);
     response.cookies.set(CHALLENGE_COOKIE,pack({type:'auth',challenge:options.challenge}),cookieOptions());
@@ -80,6 +76,18 @@ export async function GET(request,{params}) {
 export async function POST(request,{params}) {
   const {action}=await params;
   if (!secret()) return jsonError('Admin authentication is not configured',503);
+
+  // Reset is deliberately owner-authenticated. It clears only Estate Tea's
+  // remembered WebAuthn credential so a deleted/replaced iPhone passkey can be
+  // enrolled again. It never touches Face ID data on the phone.
+  if (action==='reset') {
+    if (!authorized(request)) return jsonError('Owner authentication required',401);
+    const response=NextResponse.json({reset:true});
+    response.cookies.delete(CREDENTIAL_COOKIE);
+    response.cookies.delete(CHALLENGE_COOKIE);
+    return response;
+  }
+
   let body; try{body=await request.json()}catch{return jsonError('Invalid request')}
   const challenge=unpack(request.cookies.get(CHALLENGE_COOKIE)?.value);
 
