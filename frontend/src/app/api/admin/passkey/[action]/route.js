@@ -49,10 +49,13 @@ export async function GET(request,{params}) {
     const existing=credentialFrom(request);
     const options=await generateRegistrationOptions({
       rpName:RP_NAME,rpID:RP_ID,userName:'Estate Tea Owner',attestationType:'none',
-      excludeCredentials:existing?[{id:existing.id,transports:existing.transports||[]}]:[],
+      excludeCredentials:existing?[{id:existing.id,transports:['internal']}]:[],
       authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'required',userVerification:'required'},
       supportedAlgorithmIDs:[-7,-257],
     });
+    // WebAuthn hints are advisory, but on supporting iOS/Safari versions this
+    // steers the ceremony toward this iPhone instead of hybrid/QR sign-in.
+    options.hints=['client-device'];
     const response=NextResponse.json(options);
     response.cookies.set(CHALLENGE_COOKIE,pack({type:'register',challenge:options.challenge}),cookieOptions());
     return response;
@@ -62,8 +65,11 @@ export async function GET(request,{params}) {
     const credential=credentialFrom(request);
     if (!credential) return jsonError('Face ID is not enrolled on this device',404);
     const options=await generateAuthenticationOptions({
-      rpID:RP_ID,userVerification:'required',allowCredentials:[{id:credential.id,transports:credential.transports||[]}],
+      rpID:RP_ID,userVerification:'required',allowCredentials:[{id:credential.id,transports:['internal']}],
     });
+    // Do not advertise hybrid transport: this owner app intentionally uses the
+    // local platform authenticator (Face ID / device passcode) only.
+    options.hints=['client-device'];
     const response=NextResponse.json(options);
     response.cookies.set(CHALLENGE_COOKIE,pack({type:'auth',challenge:options.challenge}),cookieOptions());
     return response;
@@ -84,7 +90,7 @@ export async function POST(request,{params}) {
       const verification=await verifyRegistrationResponse({response:body,expectedChallenge:challenge.challenge,expectedOrigin:ORIGIN,expectedRPID:RP_ID,requireUserVerification:true,supportedAlgorithmIDs:[-7,-257]});
       if (!verification.verified || !verification.registrationInfo) return jsonError('Face ID registration could not be verified');
       const {credential,credentialDeviceType,credentialBackedUp}=verification.registrationInfo;
-      const saved={id:credential.id,publicKey:Buffer.from(credential.publicKey).toString('base64url'),counter:credential.counter,transports:credential.transports||body.response?.transports||[],deviceType:credentialDeviceType,backedUp:credentialBackedUp};
+      const saved={id:credential.id,publicKey:Buffer.from(credential.publicKey).toString('base64url'),counter:credential.counter,transports:['internal'],deviceType:credentialDeviceType,backedUp:credentialBackedUp};
       const response=NextResponse.json({verified:true});
       response.cookies.set(CREDENTIAL_COOKIE,pack(saved),cookieOptions(60*60*24*365));
       response.cookies.delete(CHALLENGE_COOKIE);
@@ -97,9 +103,9 @@ export async function POST(request,{params}) {
     if (!credential || !challenge || challenge.type!=='auth') return jsonError('Face ID authentication session expired');
     if (body.id!==credential.id) return jsonError('Unknown passkey',401);
     try {
-      const verification=await verifyAuthenticationResponse({response:body,expectedChallenge:challenge.challenge,expectedOrigin:ORIGIN,expectedRPID:RP_ID,requireUserVerification:true,credential:{id:credential.id,publicKey:new Uint8Array(Buffer.from(credential.publicKey,'base64url')),counter:credential.counter,transports:credential.transports||[]}});
+      const verification=await verifyAuthenticationResponse({response:body,expectedChallenge:challenge.challenge,expectedOrigin:ORIGIN,expectedRPID:RP_ID,requireUserVerification:true,credential:{id:credential.id,publicKey:new Uint8Array(Buffer.from(credential.publicKey,'base64url')),counter:credential.counter,transports:['internal']}});
       if (!verification.verified) return jsonError('Face ID could not be verified',401);
-      const updated={...credential,counter:verification.authenticationInfo.newCounter};
+      const updated={...credential,counter:verification.authenticationInfo.newCounter,transports:['internal']};
       const response=NextResponse.json({verified:true,token:ownerToken(),method:'passkey'});
       response.cookies.set(CREDENTIAL_COOKIE,pack(updated),cookieOptions(60*60*24*365));
       response.cookies.delete(CHALLENGE_COOKIE);
