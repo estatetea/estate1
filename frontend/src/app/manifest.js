@@ -3,7 +3,7 @@ export default function manifest() {
     name: 'Estate Tea AI',
     short_name: 'Estate Tea AI',
     description: 'Private Estate Tea owner command center',
-    start_url: '/#ai',
+    start_url: '/ai',
     scope: '/',
     display: 'standalone',
     background_color: '#0a0a0a',
