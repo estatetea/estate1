@@ -28,11 +28,22 @@ export default function AegisRealtimeVoice({token}){
  const stopListening=()=>{try{connectionRef.current?.close()}catch{}connectionRef.current=null;setState(s=>s==='listening'||s==='transcribing'||s==='connecting'?'idle':s)};
  const browserSpeak=text=>new Promise((resolve,reject)=>{try{if(!window.speechSynthesis)return reject(new Error('Audio playback is unavailable'));window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-IN';u.rate=0.96;u.pitch=1;u.onend=resolve;u.onerror=()=>reject(new Error('Audio playback failed'));setState('speaking');window.speechSynthesis.speak(u)}catch(e){reject(e)}});
  useEffect(()=>()=>{stopListening();stopAudio();ctxRef.current?.close?.().catch(()=>{})},[]);
- const speak=async text=>{if(!text)return;stopAudio();const controller=new AbortController();requestRef.current=controller;let objectUrl=null;try{setState('preparing');const r=await fetch('/api/admin/aegis/voice',{method:'POST',headers,body:JSON.stringify({text}),signal:controller.signal});if(!r.ok){const b=await r.json().catch(()=>({}));throw new Error(b.error||b.detail||'Aegis voice is unavailable')}const blob=await r.blob();if(controller.signal.aborted)return;
-  // First choice on iPhone: the persistent audio element that was unlocked by
-  // the original Talk/Speak tap. Safari handles MP3 through HTMLMediaElement
-  // more reliably than decodeAudioData.
-  const audio=audioRef.current||document.createElement('audio');audioRef.current=audio;audio.playsInline=true;objectUrl=URL.createObjectURL(blob);audio.src=objectUrl;audio.currentTime=0;
+ const speak=async text=>{if(!text)return;stopAudio();const controller=new AbortController();requestRef.current=controller;let objectUrl=null;try{setState('preparing');const r=await fetch('/api/admin/aegis/voice',{method:'POST',headers,body:JSON.stringify({text}),signal:controller.signal});if(!r.ok){const b=await r.json().catch(()=>({}));throw new Error(b.error||b.detail||'Aegis voice is unavailable')}// Start playback from the response stream when MediaSource supports MP3.
+  // This removes the old wait for the complete ElevenLabs file before Aegis speaks.
+  const audio=audioRef.current||document.createElement('audio');audioRef.current=audio;audio.playsInline=true;
+  if(r.body&&window.MediaSource&&MediaSource.isTypeSupported('audio/mpeg')){
+   const ms=new MediaSource();objectUrl=URL.createObjectURL(ms);audio.src=objectUrl;audio.currentTime=0;
+   await new Promise((resolve,reject)=>{ms.addEventListener('sourceopen',resolve,{once:true});ms.addEventListener('error',reject,{once:true})});
+   const sb=ms.addSourceBuffer('audio/mpeg'),reader=r.body.getReader();let started=false;
+   const append=chunk=>new Promise((resolve,reject)=>{const done=()=>{sb.removeEventListener('updateend',done);sb.removeEventListener('error',fail);resolve()};const fail=()=>{sb.removeEventListener('updateend',done);sb.removeEventListener('error',fail);reject(new Error('Audio stream failed'))};sb.addEventListener('updateend',done);sb.addEventListener('error',fail);sb.appendBuffer(chunk)});
+   audio.onended=()=>{setState('idle');if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}};
+   setState('speaking');
+   while(true){const {done,value}=await reader.read();if(done)break;if(controller.signal.aborted){reader.cancel();return}if(value?.length){await append(value);if(!started){started=true;await audio.play();audioUnlockedRef.current=true}}}
+   if(ms.readyState==='open'&&!sb.updating)ms.endOfStream();
+   return;
+  }
+  const blob=await r.blob();if(controller.signal.aborted)return;
+  objectUrl=URL.createObjectURL(blob);audio.src=objectUrl;audio.currentTime=0;
   audio.onended=()=>{setState('idle');if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}};
   audio.onerror=()=>{};
   try{setState('speaking');await audio.play();audioUnlockedRef.current=true;return}catch(mediaError){
