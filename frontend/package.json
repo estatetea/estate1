@@ -58,7 +58,8 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^13.0.0",
     "vaul": "^1.1.2",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4",
+    "web-push": "^3.6.7"
   },
   "scripts": {
     "dev": "next dev -p 3000",
@@ -67,8 +68,16 @@
     "prod": "next start -p 3000"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
