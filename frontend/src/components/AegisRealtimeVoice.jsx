@@ -9,7 +9,7 @@ export default function AegisRealtimeVoice({token}){
  const connectionRef=useRef(null),busyRef=useRef(false),ctxRef=useRef(null),sourceRef=useRef(null),requestRef=useRef(null);
  const headers={'Content-Type':'application/json',Authorization:`Bearer ${token}`};
  const unlockAudio=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;const ctx=ctxRef.current||new AC();ctxRef.current=ctx;if(ctx.state==='suspended')ctx.resume().catch(()=>{});const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);return ctx}catch{return null}};
- const stopAudio=()=>{requestRef.current?.abort?.();requestRef.current=null;try{sourceRef.current?.stop()}catch{}sourceRef.current=null;setState(s=>s==='speaking'||s==='preparing'?'idle':s)};
+ const stopAudio=()=>{requestRef.current?.abort?.();requestRef.current=null;try{sourceRef.current?.stop()}catch{}sourceRef.current=null;try{window.speechSynthesis?.cancel()}catch{}setState(s=>s==='speaking'||s==='preparing'?'idle':s)};
  const stopListening=()=>{try{connectionRef.current?.close()}catch{}connectionRef.current=null;setState(s=>s==='listening'||s==='transcribing'||s==='connecting'?'idle':s)};
  const browserSpeak=text=>new Promise((resolve,reject)=>{try{if(!window.speechSynthesis)return reject(new Error('Audio playback is unavailable'));window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-IN';u.rate=0.96;u.pitch=1;u.onend=resolve;u.onerror=()=>reject(new Error('Audio playback failed'));setState('speaking');window.speechSynthesis.speak(u)}catch(e){reject(e)}});
  useEffect(()=>()=>{stopListening();stopAudio();ctxRef.current?.close?.().catch(()=>{})},[]);
