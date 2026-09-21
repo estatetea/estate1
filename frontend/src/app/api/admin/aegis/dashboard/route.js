@@ -9,8 +9,6 @@ export async function GET(request) {
     const response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
     const payload = await response.json();
-    // Keep the owner UI resilient while Aegis rolls forward: never silently
-    // discard per-agent operational fields returned by the supervisor.
     const snap = payload?.snapshot || {};
     if (Array.isArray(snap.agents)) {
       snap.agents = snap.agents.map(agent => ({
@@ -24,5 +22,25 @@ export async function GET(request) {
     return NextResponse.json(payload, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } });
   } catch {
     return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
+  }
+}
+
+export async function PUT(request) {
+  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const { approval_id, action, edited_subject, edited_body, owner_note } = await request.json();
+    if (!approval_id || !['approve','reject','edit'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid approval decision' }, { status: 400 });
+    }
+    const response = await fetch(`${AEGIS_URL}/api/aegis/approvals/${encodeURIComponent(approval_id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ action, edited_subject, edited_body, owner_note }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    return NextResponse.json(payload, { status: response.status, headers: { 'Cache-Control': 'no-store' } });
+  } catch {
+    return NextResponse.json({ error: 'Approval service unavailable' }, { status: 502 });
   }
 }
