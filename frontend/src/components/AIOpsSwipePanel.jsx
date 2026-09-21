@@ -11,9 +11,9 @@ const CONTROLS={Aegis:['System oversight','Approval escalation','Incident visibi
 export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=false,onSetupFaceID,notifications=null}){
  const [section,setSection]=useState('home'),[data,setData]=useState(null),[sales,setSales]=useState(null),[inventory,setInventory]=useState(null),[loading,setLoading]=useState(false),[index,setIndex]=useState(0),[stock,setStock]=useState(''),[saving,setSaving]=useState(false),[controlling,setControlling]=useState(''),[mastering,setMastering]=useState(false),[chatAgent,setChatAgent]=useState('Aegis'),[chatText,setChatText]=useState(''),[chatTurns,setChatTurns]=useState([]),[chatSending,setChatSending]=useState(false),[testMode,setTestMode]=useState(false),[testKey,setTestKey]=useState(''),[testBusy,setTestBusy]=useState(false),[chatFiles,setChatFiles]=useState([]),[dictating,setDictating]=useState(false);
  const rail=useRef(null),chatFileRef=useRef(null),recognitionRef=useRef(null);const headers={'Content-Type':'application/json',Authorization:`Bearer ${token}`};
- const refresh=async()=>{setLoading(true);
-  // Agent connectivity depends only on Aegis. Do not keep every agent in
-  // "Connecting" while unrelated Sales/Inventory requests finish.
+ const refresh=async()=>{if(!data)setLoading(true);
+  // Keep the last trustworthy snapshot visible while refreshing. A background
+  // refresh must never throw the whole owner UI back into "Connecting".
   const aegis=fetch('/api/admin/aegis/dashboard',{headers,cache:'no-store'})
     .then(async r=>{if(r.ok)setData(await r.json())})
     .finally(()=>setLoading(false));
@@ -29,7 +29,7 @@ export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=fals
  const lifecycle=a=>String(a?.status||'').trim().toLowerCase();
  const istHour=()=>Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',hour12:false}).format(new Date()));
  const activeTask=a=>{const tasks=snap.agent_tasks||[];return tasks.find(t=>String(t.agent||'').toLowerCase()===a.agent.toLowerCase()&&['pending','received','assigned','working','in_progress','delegated','needs_owner'].includes(String(t.status||'').toLowerCase()))};
- const displayState=a=>{if(!data||loading||lifecycle(a)==='connecting')return 'connecting';if(a.enabled===false)return 'paused';if(activeTask(a)||a.working===true||lifecycle(a)==='working')return 'working';if(testMode)return 'online';if(a.agent==='Scout'&&istHour()>=20)return 'offline';if(a.service_reachable===true||['online','active','running','healthy','reachable_unverified'].includes(lifecycle(a)))return 'online';return lifecycle(a)==='idle'?'idle':'idle'};
+ const displayState=a=>{if(!data||lifecycle(a)==='connecting')return 'connecting';if(a.enabled===false)return 'paused';if(activeTask(a)||a.working===true||lifecycle(a)==='working')return 'working';if(testMode)return 'online';if(a.agent==='Scout'&&istHour()>=20)return 'offline';if(a.service_reachable===true||['online','active','running','healthy','reachable_unverified'].includes(lifecycle(a)))return 'online';return lifecycle(a)==='idle'?'idle':'idle'};
  const status=a=>({connecting:'Connecting…',paused:'Paused',working:'Working',online:'Online',offline:'Offline',idle:'Idle'})[displayState(a)]||'Connecting…';
  const statusTone=a=>{const s=displayState(a);if(s==='connecting')return {text:'text-gray-300',dot:'bg-gray-400 animate-pulse',glow:'shadow-[0_0_8px_rgba(156,163,175,.55)]'};if(s==='paused')return {text:'text-gray-400',dot:'bg-gray-500',glow:''};if(s==='offline')return {text:'text-red-300',dot:'bg-red-400',glow:'shadow-[0_0_8px_rgba(248,113,113,.8)]'};if(s==='idle')return {text:'text-yellow-300',dot:'bg-yellow-400',glow:'shadow-[0_0_8px_rgba(250,204,21,.75)]'};return {text:'text-emerald-300',dot:'bg-emerald-400',glow:'shadow-[0_0_8px_rgba(52,211,153,.8)]'}};
  const health=a=>displayState(a)==='connecting'?'Connecting…':a.health||a.health_status||(['online','active','running','healthy','working','idle'].includes(lifecycle(a))?'Healthy':a.enabled===false?'Paused':'Checking');
