@@ -6,44 +6,18 @@ const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.c
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
+    // Connectivity is intentionally independent from rich work/history. Never
+    // make the owner wait for task aggregation before showing agent state.
     let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { cache: 'no-store' });
-    // Deploys of the owner app and Aegis are independent. During a backend
-    // rollout, fall back to the established dashboard endpoint instead of
-    // breaking the whole owner app because /dashboard/fast is not live yet.
-    if (response.status === 404 || response.status === 405) {
-      response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
-    }
+    if (response.status === 404 || response.status === 405) response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable', upstream_status: response.status }, { status: 502 });
-    let payload = await response.json();
-    // The fast snapshot makes the app appear immediately, but it intentionally
-    // omits heavier task/progress/history data. Fetch the rich snapshot after
-    // connectivity is established so Today's focus, Daily progress and Recent
-    // work are real data rather than permanent empty placeholders.
-    if (response.url?.includes('/dashboard/fast')) {
-      try {
-        const rich = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
-        if (rich.ok) payload = await rich.json();
-      } catch {
-        // Keep the fast snapshot usable; the UI will show loading/checking
-        // states for rich fields until a later refresh succeeds.
-      }
-    }
-    const snap = payload?.snapshot || {};
-    if (Array.isArray(snap.agents)) {
-      snap.agents = snap.agents.map(agent => ({
-        ...agent,
-        recent_work: Array.isArray(agent.recent_work) ? agent.recent_work : [],
-        recent_activity: Array.isArray(agent.recent_activity) ? agent.recent_activity : [],
-        task_history: Array.isArray(agent.task_history) ? agent.task_history : [],
-        daily_progress: agent.daily_progress || { activity_count: 0, completed_count: 0, recent: [] },
-      }));
-    }
+    const payload = await response.json();
+    payload.rich_loaded = !response.url?.includes('/dashboard/fast');
     return NextResponse.json(payload, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } });
   } catch {
     return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
   }
 }
-
 export async function PUT(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
