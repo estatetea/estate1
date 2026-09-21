@@ -6,8 +6,14 @@ const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.c
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { cache: 'no-store' });
-    if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
+    let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { cache: 'no-store' });
+    // Deploys of the owner app and Aegis are independent. During a backend
+    // rollout, fall back to the established dashboard endpoint instead of
+    // breaking the whole owner app because /dashboard/fast is not live yet.
+    if (response.status === 404 || response.status === 405) {
+      response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
+    }
+    if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable', upstream_status: response.status }, { status: 502 });
     const payload = await response.json();
     const snap = payload?.snapshot || {};
     if (Array.isArray(snap.agents)) {
