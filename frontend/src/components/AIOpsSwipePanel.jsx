@@ -11,7 +11,17 @@ const CONTROLS={Aegis:['System oversight','Approval escalation','Incident visibi
 export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=false,onSetupFaceID,notifications=null}){
  const [section,setSection]=useState('home'),[data,setData]=useState(null),[sales,setSales]=useState(null),[inventory,setInventory]=useState(null),[loading,setLoading]=useState(false),[index,setIndex]=useState(0),[stock,setStock]=useState(''),[saving,setSaving]=useState(false),[controlling,setControlling]=useState(''),[mastering,setMastering]=useState(false),[chatAgent,setChatAgent]=useState('Aegis'),[chatText,setChatText]=useState(''),[chatTurns,setChatTurns]=useState([]),[chatSending,setChatSending]=useState(false),[testMode,setTestMode]=useState(false),[testKey,setTestKey]=useState(''),[testBusy,setTestBusy]=useState(false),[chatFiles,setChatFiles]=useState([]),[dictating,setDictating]=useState(false);
  const rail=useRef(null),chatFileRef=useRef(null),recognitionRef=useRef(null);const headers={'Content-Type':'application/json',Authorization:`Bearer ${token}`};
- const refresh=async()=>{setLoading(true);await Promise.allSettled([['/api/admin/aegis/dashboard',setData],['/api/admin/sales',setSales],['/api/admin/inventory',setInventory]].map(async([url,setter])=>{const r=await fetch(url,{headers,cache:'no-store'});if(r.ok)setter(await r.json())}));setLoading(false)};
+ const refresh=async()=>{setLoading(true);
+  // Agent connectivity depends only on Aegis. Do not keep every agent in
+  // "Connecting" while unrelated Sales/Inventory requests finish.
+  const aegis=fetch('/api/admin/aegis/dashboard',{headers,cache:'no-store'})
+    .then(async r=>{if(r.ok)setData(await r.json())})
+    .finally(()=>setLoading(false));
+  const secondary=Promise.allSettled([
+    ['/api/admin/sales',setSales],['/api/admin/inventory',setInventory]
+  ].map(async([url,setter])=>{const r=await fetch(url,{headers,cache:'no-store'});if(r.ok)setter(await r.json())}));
+  await Promise.allSettled([aegis,secondary]);
+ };
  useEffect(()=>{refresh()},[token]);useEffect(()=>{const v=inventory?.physical_kg??inventory?.inventory?.physical_kg;if(v!=null)setStock(String(v))},[inventory]);
  const snap=data?.snapshot||{},raw=snap.agents||[],activity=data?.recent_activity||[],inv=inventory||snap.inventory||{};
  useEffect(()=>{setTestMode(Boolean(snap.test_mode))},[snap.test_mode]);
