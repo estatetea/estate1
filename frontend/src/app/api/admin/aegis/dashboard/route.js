@@ -42,10 +42,15 @@ export async function PUT(request) {
       cache: 'no-store',
       body: JSON.stringify({ action, edited_subject, edited_body, owner_note }),
     });
-    const payload = await response.json().catch(() => ({}));
+    const raw = await response.text();
+    let payload = {};
+    try { payload = raw ? JSON.parse(raw) : {}; } catch {
+      payload = { error: response.ok ? 'Approval service returned an invalid response.' : `Approval service failed with HTTP ${response.status}.` };
+    }
+    if (!response.ok && !payload?.error && payload?.detail) payload.error = typeof payload.detail === 'string' ? payload.detail : 'Approval could not be completed.';
     return NextResponse.json(payload, { status: response.status, headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ error: 'Approval service unavailable' }, { status: 502 });
+  } catch (error) {
+    return NextResponse.json({ error: `Approval service unavailable: ${error?.message || 'connection failed'}` }, { status: 502 });
   }
 }
 
