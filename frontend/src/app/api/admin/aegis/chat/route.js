@@ -11,8 +11,10 @@ export async function POST(request){
   const actionableEmail=/\b(?:email|send|write|message|reply|respond|contact)\b/i.test(message)&&/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(message);
   const endpoint=actionableEmail?`${AEGIS_URL}/api/aegis/commands`:`${AEGIS_URL}/api/aegis/chat`;
   const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message}),cache:'no-store'});
-  const data=await r.json().catch(()=>({error:'Invalid Aegis response'}));
+  const raw=await r.text();
+  let data;try{data=raw?JSON.parse(raw):{}}catch{data={error:r.ok?'Aegis returned an unreadable response':`Aegis request failed (${r.status})`,detail:raw?.slice(0,500)}}
   if(actionableEmail&&r.ok){const result=data?.result||data;const approval=result?.draft?.approval||result?.draft?.draft?.approval;const suffix=approval?` Approval ${approval._id||''} is waiting for you.`:'';return NextResponse.json({...data,reply:(result?.message||'Brew prepared the owner-directed email.')+suffix},{status:r.status});}
+  if(!r.ok)return NextResponse.json({error:data?.detail||data?.error||`Aegis request failed (${r.status})`},{status:r.status});
   return NextResponse.json(data,{status:r.status});
  }catch{return NextResponse.json({error:'Aegis unavailable'},{status:502})}
 }
