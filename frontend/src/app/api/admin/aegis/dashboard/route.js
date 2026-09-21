@@ -14,7 +14,20 @@ export async function GET(request) {
       response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
     }
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable', upstream_status: response.status }, { status: 502 });
-    const payload = await response.json();
+    let payload = await response.json();
+    // The fast snapshot makes the app appear immediately, but it intentionally
+    // omits heavier task/progress/history data. Fetch the rich snapshot after
+    // connectivity is established so Today's focus, Daily progress and Recent
+    // work are real data rather than permanent empty placeholders.
+    if (response.url?.includes('/dashboard/fast')) {
+      try {
+        const rich = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
+        if (rich.ok) payload = await rich.json();
+      } catch {
+        // Keep the fast snapshot usable; the UI will show loading/checking
+        // states for rich fields until a later refresh succeeds.
+      }
+    }
     const snap = payload?.snapshot || {};
     if (Array.isArray(snap.agents)) {
       snap.agents = snap.agents.map(agent => ({
