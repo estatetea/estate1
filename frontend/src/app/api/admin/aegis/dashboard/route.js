@@ -48,3 +48,14 @@ export async function PUT(request) {
     return NextResponse.json({ error: 'Approval service unavailable' }, { status: 502 });
   }
 }
+
+export async function POST(request) {
+  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const input = await request.json();
+    const kind=String(input?.kind||'').trim(), item_id=String(input?.item_id||'').trim(), action=String(input?.action||'').trim();
+    if(!['sample','order'].includes(kind)||!item_id||action!=='mark_delivered') return NextResponse.json({error:'Invalid fulfilment action'},{status:400});
+    const response=await fetch(`${AEGIS_URL}/api/aegis/fulfilment/${encodeURIComponent(kind)}/${encodeURIComponent(item_id)}`,{method:'PUT',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({action})});
+    const payload=await response.json().catch(()=>({}));return NextResponse.json(payload,{status:response.status,headers:{'Cache-Control':'no-store'}});
+  } catch { return NextResponse.json({error:'Fulfilment service unavailable'},{status:502}); }
+}
