@@ -5,5 +5,13 @@ export async function GET(request){
  if(secret && request.headers.get('authorization')!==`Bearer ${secret}`)return NextResponse.json({error:'Unauthorized'},{status:401});
  const r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily?report_kind=end_of_day`,{method:'POST',cache:'no-store'});
  const data=await r.json().catch(()=>({}));
- return NextResponse.json(data,{status:r.status});
+ let notification={sent:0};
+ if(r.ok&&data?.report_id&&process.env.AEGIS_ALERT_SECRET){
+   try{
+     const origin=new URL(request.url).origin;
+     const push=await fetch(`${origin}/api/admin/aegis/notifications/send`,{method:'POST',headers:{'Content-Type':'application/json','x-aegis-alert-secret':process.env.AEGIS_ALERT_SECRET},body:JSON.stringify({severity:'info',title:'Aegis — End-of-day report ready',body:'Your Estate Tea daily report is ready to review.',tag:`aegis-report-${data.report_id}`,url:'/ai?section=reports'})});
+     notification=await push.json().catch(()=>({sent:0}));
+   }catch{notification={sent:0,error:'notification_failed'}}
+ }
+ return NextResponse.json({...data,notification},{status:r.status});
 }
