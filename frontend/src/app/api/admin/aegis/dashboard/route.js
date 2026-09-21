@@ -28,9 +28,13 @@ export async function GET(request) {
 export async function PUT(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const { approval_id, action, edited_subject, edited_body, owner_note } = await request.json();
-    if (!approval_id || !['approve','reject','edit'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid approval decision' }, { status: 400 });
+    const input = await request.json();
+    const approval_id = String(input?.approval_id || '').trim();
+    const action = String(input?.action || '').trim().toLowerCase();
+    const { edited_subject, edited_body, owner_note } = input || {};
+    if (!approval_id) return NextResponse.json({ error: 'Missing approval ID' }, { status: 400 });
+    if (!['approve','reject','edit'].includes(action)) {
+      return NextResponse.json({ error: `Invalid approval decision: ${action || 'missing action'}` }, { status: 400 });
     }
     const response = await fetch(`${AEGIS_URL}/api/aegis/approvals/${encodeURIComponent(approval_id)}`, {
       method: 'PUT',
