@@ -1,6 +1,13 @@
 import { verifyAdmin } from '@/lib/admin-auth';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export async function GET(request){
+ // Backward compatibility for an already-open older owner-app tab that still
+ // has the former direct download link. Do not expose a report without auth;
+ // return the owner to Reports, where the authenticated POST download is used.
+ const url=new URL('/ai?section=reports',request.url);
+ return Response.redirect(url,303);
+}
 export async function POST(request,{params}){
  if(!verifyAdmin(request))return new Response('Unauthorized',{status:401});
  const {reportId}=await params;
