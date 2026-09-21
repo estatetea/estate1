@@ -6,7 +6,7 @@ const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.c
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
+    const response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { cache: 'no-store' });
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
     const payload = await response.json();
     const snap = payload?.snapshot || {};
