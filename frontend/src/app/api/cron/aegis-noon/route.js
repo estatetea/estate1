@@ -5,6 +5,7 @@ export async function GET(request){
  if(secret && request.headers.get('authorization')!==`Bearer ${secret}`)return NextResponse.json({error:'Unauthorized'},{status:401});
  const r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily?report_kind=ongoing`,{method:'POST',cache:'no-store'});
  const data=await r.json().catch(()=>({}));
+ if(!r.ok)return NextResponse.json({...data,notification:{sent:0,error:'report_generation_failed'}},{status:r.status});
  let notification={sent:0};
  if(r.ok&&data?.report_id&&process.env.AEGIS_ALERT_SECRET){
    try{
@@ -13,5 +14,6 @@ export async function GET(request){
      notification=await push.json().catch(()=>({sent:0}));
    }catch{notification={sent:0,error:'notification_failed'}}
  }
+ if(!notification?.sent)return NextResponse.json({...data,notification,error:'report_created_but_realtime_notification_not_confirmed'},{status:503});
  return NextResponse.json({...data,notification},{status:r.status});
 }
