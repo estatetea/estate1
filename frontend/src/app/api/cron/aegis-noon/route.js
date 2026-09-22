@@ -10,10 +10,10 @@ export async function GET(request){
  if(r.ok&&data?.report_id&&process.env.AEGIS_ALERT_SECRET){
    try{
      const origin=new URL(request.url).origin;
-     const push=await fetch(`${origin}/api/admin/aegis/notifications/send`,{method:'POST',headers:{'Content-Type':'application/json','x-aegis-alert-secret':process.env.AEGIS_ALERT_SECRET},body:JSON.stringify({severity:'info',title:'Aegis — Noon report ready',body:'Your Estate Tea noon operational report is ready to review.',tag:`aegis-report-${data.report_id}`,url:'/ai?section=reports'})});
+     const push=await fetch(`${origin}/api/admin/aegis/notifications/send`,{method:'POST',headers:{'Content-Type':'application/json','x-aegis-alert-secret':process.env.AEGIS_ALERT_SECRET},body:JSON.stringify({severity:'critical',title:'Aegis — Noon report ready',body:'Your Estate Tea noon operational report is ready to review.',tag:`aegis-report-noon-${new Date().toISOString().slice(0,10)}`,url:'/ai?section=reports'})});
      notification=await push.json().catch(()=>({sent:0}));
    }catch{notification={sent:0,error:'notification_failed'}}
  }
- if(!notification?.sent)return NextResponse.json({...data,notification,error:'report_created_but_realtime_notification_not_confirmed'},{status:503});
+ if(!notification?.sent){console.error('AEGIS_REPORT_PUSH_FAILED',{report_id:data?.report_id,notification});return NextResponse.json({...data,notification,error:'report_created_but_realtime_notification_not_confirmed'},{status:503});}
  return NextResponse.json({...data,notification},{status:r.status});
 }
