@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
+const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 export async function POST(request){
  if(!verifyAdmin(request))return NextResponse.json({error:'Unauthorized'},{status:401});
@@ -8,7 +9,7 @@ export async function POST(request){
   const body=await request.json();
   const text=String(body?.text||'').trim();
   if(!text)return NextResponse.json({error:'Text is required'},{status:400});
-  const r=await fetch(`${AEGIS_URL}/api/aegis/voice/speak`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),cache:'no-store'});
+  const r=await fetch(`${AEGIS_URL}/api/aegis/voice/speak`,{method:'POST',headers:{'Content-Type':'application/json','x-internal-service-key':INTERNAL_KEY},body:JSON.stringify({text}),cache:'no-store'});
   if(!r.ok){const data=await r.json().catch(()=>({detail:'Aegis voice unavailable'}));return NextResponse.json({error:data.detail||'Aegis voice unavailable'},{status:r.status})}
   // Preserve Aegis/ElevenLabs streaming instead of buffering the entire MP3
   // inside Next.js. This lets the browser receive the first audio bytes immediately.
