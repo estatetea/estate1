@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
 const STEWARD_URL = (process.env.STEWARD_URL || 'https://estate-tea-steward.onrender.com').replace(/\/$/, '');
 
 export async function GET(request) {
@@ -18,7 +19,7 @@ export async function PUT(request) {
     const { physical_kg } = await request.json();
     if (!Number.isFinite(Number(physical_kg)) || Number(physical_kg) < 0) return NextResponse.json({ error: 'Invalid stock amount' }, { status: 400 });
     const r = await fetch(`${STEWARD_URL}/api/steward/inventory/set`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-internal-service-key': INTERNAL_KEY },
       body: JSON.stringify({ physical_kg: Number(physical_kg) }), cache: 'no-store'
     });
     const body = await r.json();
