@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 export async function GET(request){
  const secret=process.env.CRON_SECRET;
  if(secret && request.headers.get('authorization')!==`Bearer ${secret}`)return NextResponse.json({error:'Unauthorized'},{status:401});
- const r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily?report_kind=end_of_day`,{method:'POST',cache:'no-store'});
+ const r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily?report_kind=end_of_day`,{method:'POST',headers:{'x-internal-service-key':INTERNAL_KEY},cache:'no-store'});
  const data=await r.json().catch(()=>({}));
  if(!r.ok)return NextResponse.json({...data,notification:{sent:0,error:'report_generation_failed'}},{status:r.status});
  let notification={sent:0};
