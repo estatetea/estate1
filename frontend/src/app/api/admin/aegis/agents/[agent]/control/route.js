@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
+const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 
 export async function PUT(request,{params}){
@@ -8,7 +9,7 @@ export async function PUT(request,{params}){
  try{
   const {agent}=await params;
   const body=await request.json();
-  const response=await fetch(`${AEGIS_URL}/api/aegis/agents/${encodeURIComponent(agent)}/control`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+  const response=await fetch(`${AEGIS_URL}/api/aegis/agents/${encodeURIComponent(agent)}/control`,{method:'PUT',headers:{'Content-Type':'application/json','x-internal-service-key':INTERNAL_KEY},body:JSON.stringify(body),cache:'no-store'});
   const data=await response.json().catch(()=>({detail:'Aegis control unavailable'}));
   if(!response.ok)return NextResponse.json({error:data.detail||'Aegis control unavailable'},{status:response.status});
   return NextResponse.json(data);
