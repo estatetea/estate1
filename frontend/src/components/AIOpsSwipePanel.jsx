@@ -24,6 +24,9 @@ export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=fals
   await Promise.allSettled([aegis,secondary]);
  };
  useEffect(()=>{refresh()},[token]);useEffect(()=>{const v=inventory?.physical_kg??inventory?.inventory?.physical_kg;if(v!=null)setStock(String(v))},[inventory]);
+ // Restore the persisted owner↔Aegis thread after reload/re-login. Never overwrite
+ // messages already created in this browser session while history is loading.
+ useEffect(()=>{let alive=true;(async()=>{try{const r=await fetch('/api/admin/aegis/chat/history',{headers,cache:'no-store'});if(!r.ok||!alive)return;const b=await r.json();const rows=Array.isArray(b?.messages)?b.messages:[];const restored=rows.slice().reverse().filter(m=>m?.role==='user'||m?.role==='assistant').map(m=>({role:m.role==='user'?'owner':'agent',agent:'Aegis',text:String(m.content||'')}));if(alive&&restored.length)setChatTurns(t=>t.length?t:restored)}catch{}})();return()=>{alive=false}},[token]);
  const snap=data?.snapshot||{},richSnap=richData?.snapshot||{},raw=snap.agents||[],richRaw=richSnap.agents||[],activity=richData?.recent_activity||[],inv=inventory||snap.inventory||{};
  useEffect(()=>{setTestMode(Boolean(snap.test_mode))},[snap.test_mode]);
  const agents=useMemo(()=>NAMES.map(name=>({...((raw.find(a=>a.agent===name))||{agent:name,status:name==='Muse'?'standby':'connecting',enabled:true}),...((richRaw.find(a=>a.agent===name))||{})})),[raw,richRaw]);
