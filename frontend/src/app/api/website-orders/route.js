@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
-const STEWARD_URL=(process.env.STEWARD_URL||'https://estate-tea-steward.onrender.com').replace(/\/$/,'');
+const STEWARD_URL=(process.env.STEWARD_URL||'https://estate-tea-steward-git-main-jadenpbenjaminjb-4968s-projects.vercel.app').replace(/\/$/,'');
 export async function POST(request){
   try{
     const body=await request.json();
