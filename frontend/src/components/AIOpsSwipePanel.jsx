@@ -23,7 +23,7 @@ export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=fals
   ].map(async([url,setter,setterLoading])=>{try{const r=await fetch(url,{headers,cache:'no-store'});if(r.ok)setter(await r.json())}finally{setterLoading(false)}}));
   await Promise.allSettled([aegis,secondary]);
  };
- useEffect(()=>{refresh()},[token]);useEffect(()=>{const v=inventory?.physical_kg??inventory?.inventory?.physical_kg;if(v!=null)setStock(String(v))},[inventory]);
+ useEffect(()=>{refresh();const timer=setInterval(()=>{if(typeof document==='undefined'||document.visibilityState==='visible')refresh()},30000);return()=>clearInterval(timer)},[token]);useEffect(()=>{const v=inventory?.physical_kg??inventory?.inventory?.physical_kg;if(v!=null)setStock(String(v))},[inventory]);
  // Restore the persisted owner↔Aegis thread after reload/re-login. Never overwrite
  // messages already created in this browser session while history is loading.
  useEffect(()=>{let alive=true;(async()=>{try{const r=await fetch('/api/admin/aegis/chat/history',{headers,cache:'no-store'});if(!r.ok||!alive)return;const b=await r.json();const rows=Array.isArray(b?.messages)?b.messages:[];const restored=rows.slice().reverse().filter(m=>m?.role==='user'||m?.role==='assistant').map(m=>({role:m.role==='user'?'owner':'agent',agent:'Aegis',text:String(m.content||'')}));if(alive&&restored.length)setChatTurns(t=>t.length?t:restored)}catch{}})();return()=>{alive=false}},[token]);
