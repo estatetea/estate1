@@ -10,7 +10,10 @@ export async function POST(request){
   const message=String(body?.message||'').trim();
   if(!message)return NextResponse.json({error:'Message is required'},{status:400});
   const actionableEmail=/\b(?:email|send|write|message|reply|respond|contact)\b/i.test(message)&&/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(message);
-  const phone=/[+]?[0-9][0-9 ()-]{9,17}[0-9]/.test(message);\n  const actionableWhatsApp=/\\b(?:whatsapp|text|message|send|contact)\\b/i.test(message)&&phone;\n  const actionableContact=actionableEmail||actionableWhatsApp;\n  const endpoint=actionableContact?`${AEGIS_URL}/api/aegis/commands`:`${AEGIS_URL}/api/aegis/chat`;
+  const phone=/[+]?[0-9][0-9 ()-]{9,17}[0-9]/.test(message);
+  const actionableWhatsApp=/\b(?:whatsapp|text|message|send|contact)\b/i.test(message)&&phone;
+  const actionableContact=actionableEmail||actionableWhatsApp;
+  const endpoint=actionableContact?`${AEGIS_URL}/api/aegis/commands`:`${AEGIS_URL}/api/aegis/chat`;
   const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-internal-service-key':INTERNAL_KEY},body:JSON.stringify({message}),cache:'no-store'});
   const raw=await r.text();
   let data;try{data=raw?JSON.parse(raw):{}}catch{data={error:r.ok?'Aegis returned an unreadable response':`Aegis request failed (${r.status})`,detail:raw?.slice(0,500)}}
