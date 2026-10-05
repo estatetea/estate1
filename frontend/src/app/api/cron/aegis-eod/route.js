@@ -10,8 +10,8 @@ export async function GET(request){
  let notification={sent:0};
  if(r.ok&&data?.report_id&&process.env.AEGIS_ALERT_SECRET){
    try{
-     const origin=new URL(request.url).origin;
-     const push=await fetch(`${origin}/api/admin/aegis/notifications/send`,{method:'POST',headers:{'Content-Type':'application/json','x-aegis-alert-secret':process.env.AEGIS_ALERT_SECRET},body:JSON.stringify({severity:'critical',title:'Aegis — End-of-day report ready',body:'Your Estate Tea daily report is ready to review.',tag:`aegis-report-eod-${new Date().toISOString().slice(0,10)}`,url:'/ai?section=reports'})});
+     const configuredOrigin=(process.env.PUBLIC_APP_URL||process.env.NEXT_PUBLIC_SITE_URL||'https://estatetea.in').replace(/\/$/,'');
+     const push=await fetch(`${configuredOrigin}/api/admin/aegis/notifications/send`,{method:'POST',headers:{'Content-Type':'application/json','x-aegis-alert-secret':process.env.AEGIS_ALERT_SECRET},body:JSON.stringify({severity:'critical',title:'Aegis — End-of-day report ready',body:'Your Estate Tea daily report is ready to review.',tag:`aegis-report-eod-${new Date().toISOString().slice(0,10)}`,url:'/ai?section=reports'})});
      notification=await push.json().catch(()=>({sent:0}));
    }catch{notification={sent:0,error:'notification_failed'}}
  }
