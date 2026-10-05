@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || process.env.AEGIS_ALERT_SECRET || '';
+const AEGIS_TRUST_KEY = process.env.AEGIS_ALERT_SECRET || process.env.OWNER_CONTROL_KEY || process.env.INTERNAL_SERVICE_KEY || '';
 const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.com').replace(/\/$/, '');
 
 export async function GET(request) {
@@ -9,8 +9,8 @@ export async function GET(request) {
   try {
     // Connectivity is intentionally independent from rich work/history. Never
     // make the owner wait for task aggregation before showing agent state.
-    let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
-    if (response.status === 404 || response.status === 405) response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
+    let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { headers: { 'x-internal-service-key': AEGIS_TRUST_KEY }, cache: 'no-store' });
+    if (response.status === 404 || response.status === 405) response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { headers: { 'x-internal-service-key': AEGIS_TRUST_KEY }, cache: 'no-store' });
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable', upstream_status: response.status }, { status: 502 });
     const payload = await response.json();
     payload.rich_loaded = !response.url?.includes('/dashboard/fast');
@@ -32,7 +32,7 @@ export async function PUT(request) {
     }
     const response = await fetch(`${AEGIS_URL}/api/aegis/approvals/${encodeURIComponent(approval_id)}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-internal-service-key': INTERNAL_KEY },
+      headers: { 'Content-Type': 'application/json', 'x-internal-service-key': AEGIS_TRUST_KEY },
       cache: 'no-store',
       body: JSON.stringify({ action, edited_subject, edited_body, owner_note }),
     });
