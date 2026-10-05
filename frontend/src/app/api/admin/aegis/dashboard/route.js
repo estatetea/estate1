@@ -9,8 +9,8 @@ export async function GET(request) {
   try {
     // Connectivity is intentionally independent from rich work/history. Never
     // make the owner wait for task aggregation before showing agent state.
-    let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { cache: 'no-store' });
-    if (response.status === 404 || response.status === 405) response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { cache: 'no-store' });
+    let response = await fetch(`${AEGIS_URL}/api/aegis/dashboard/fast`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
+    if (response.status === 404 || response.status === 405) response = await fetch(`${AEGIS_URL}/api/aegis/dashboard`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
     if (!response.ok) return NextResponse.json({ error: 'Aegis unavailable', upstream_status: response.status }, { status: 502 });
     const payload = await response.json();
     payload.rich_loaded = !response.url?.includes('/dashboard/fast');
