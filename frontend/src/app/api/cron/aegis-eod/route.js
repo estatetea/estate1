@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
+const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||process.env.AEGIS_ALERT_SECRET||'';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 export async function GET(request){
  const secret=process.env.CRON_SECRET;
