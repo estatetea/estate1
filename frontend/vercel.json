@@ -2,8 +2,20 @@
   "framework": "nextjs",
   "crons": [
     {
+      "path": "/api/cron/aegis-orchestration",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/aegis-noon",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/aegis-orchestration",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/aegis-orchestration",
+      "schedule": "30 7 * * *"
     },
     {
       "path": "/api/cron/aegis-eod",
