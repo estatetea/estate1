@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
+const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 
 export async function GET(request){
@@ -11,7 +12,7 @@ export async function GET(request){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),1200);
   try{
-    const r=await fetch(`${AEGIS_URL}/api/aegis/voice/status`,{cache:'no-store',signal:controller.signal});
+    const r=await fetch(`${AEGIS_URL}/api/aegis/voice/status`,{headers:{'x-internal-service-key':INTERNAL_KEY},cache:'no-store',signal:controller.signal});
     if(r.ok){
       const data=await r.json().catch(()=>null);
       if(data?.configured) return NextResponse.json(data);
