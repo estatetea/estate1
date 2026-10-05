@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 
-const AEGIS_TRUST_KEY = process.env.AEGIS_ALERT_SECRET || process.env.OWNER_CONTROL_KEY || process.env.INTERNAL_SERVICE_KEY || '';
+const AEGIS_TRUST_KEY = process.env.AEGIS_ALERT_SECRET?.trim() || process.env.OWNER_CONTROL_KEY?.trim() || process.env.INTERNAL_SERVICE_KEY?.trim() || '';
 const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.com').replace(/\/$/, '');
 
 export async function GET(request) {
@@ -54,7 +54,7 @@ export async function POST(request) {
     const input = await request.json();
     const kind=String(input?.kind||'').trim(), item_id=String(input?.item_id||'').trim(), action=String(input?.action||'').trim();
     if(!['sample','order'].includes(kind)||!item_id||action!=='mark_delivered') return NextResponse.json({error:'Invalid fulfilment action'},{status:400});
-    const response=await fetch(`${AEGIS_URL}/api/aegis/fulfilment/${encodeURIComponent(kind)}/${encodeURIComponent(item_id)}`,{method:'PUT',headers:{'Content-Type':'application/json','x-internal-service-key':INTERNAL_KEY},cache:'no-store',body:JSON.stringify({action})});
+    const response=await fetch(`${AEGIS_URL}/api/aegis/fulfilment/${encodeURIComponent(kind)}/${encodeURIComponent(item_id)}`,{method:'PUT',headers:{'Content-Type':'application/json','x-internal-service-key': AEGIS_TRUST_KEY},cache:'no-store',body:JSON.stringify({action})});
     const payload=await response.json().catch(()=>({}));return NextResponse.json(payload,{status:response.status,headers:{'Cache-Control':'no-store'}});
   } catch { return NextResponse.json({error:'Fulfilment service unavailable'},{status:502}); }
 }
