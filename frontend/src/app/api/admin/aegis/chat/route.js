@@ -7,8 +7,8 @@ export async function POST(request){
  if(!verifyAdmin(request))return NextResponse.json({error:'Unauthorized'},{status:401});
  try{
   const body=await request.json();
-  const message=String(body?.message||'').trim();\n  const attachment_ids=Array.isArray(body?.attachment_ids)?body.attachment_ids.filter(Boolean).slice(0,10):[];
-  if(!message)return NextResponse.json({error:'Message is required'},{status:400});
+  const message=String(body?.message||'').trim();
+  const attachment_ids=Array.isArray(body?.attachment_ids)?body.attachment_ids.filter(Boolean).slice(0,10):[];
   const actionableEmail=/\b(?:email|send|write|message|reply|respond|contact)\b/i.test(message)&&/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(message);
   const phone=/[+]?[0-9][0-9 ()-]{9,17}[0-9]/.test(message);
   const actionableWhatsApp=/\b(?:whatsapp|text|message|send|contact)\b/i.test(message)&&phone;
