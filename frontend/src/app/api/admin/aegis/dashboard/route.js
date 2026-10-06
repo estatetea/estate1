@@ -25,7 +25,7 @@ export async function PUT(request) {
     const input = await request.json();
     const approval_id = String(input?.approval_id || '').trim();
     const action = String(input?.action || '').trim().toLowerCase();
-    const { edited_subject, edited_body, owner_note } = input || {};
+    const { edited_subject, edited_body, edited_recipient, owner_note } = input || {};
     if (!approval_id) return NextResponse.json({ error: 'Missing approval ID' }, { status: 400 });
     if (!['approve','reject','edit'].includes(action)) {
       return NextResponse.json({ error: `Invalid approval decision: ${action || 'missing action'}` }, { status: 400 });
@@ -34,7 +34,7 @@ export async function PUT(request) {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-internal-service-key': AEGIS_TRUST_KEY },
       cache: 'no-store',
-      body: JSON.stringify({ action, edited_subject, edited_body, owner_note }),
+      body: JSON.stringify({ action, edited_subject, edited_body, edited_recipient, owner_note }),
     });
     const raw = await response.text();
     let payload = {};
