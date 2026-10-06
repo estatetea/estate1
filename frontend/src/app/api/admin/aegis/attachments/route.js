@@ -11,3 +11,12 @@ export async function POST(request){
   return NextResponse.json(r.ok?data:{error:data.detail||'Attachment upload failed'},{status:r.status});
  }catch{return NextResponse.json({error:'Attachment upload failed'},{status:502})}
 }
+
+export async function GET(request){
+ if(!verifyAdmin(request))return NextResponse.json({error:'Unauthorized'},{status:401});
+ try{
+  const r=await fetch(`${AEGIS_URL}/api/aegis/attachments`,{headers:{'x-internal-service-key':INTERNAL_KEY},cache:'no-store'});
+  const data=await r.json().catch(()=>({detail:'Attachment lookup failed'}));
+  return NextResponse.json(r.ok?data:{error:data.detail||'Attachment lookup failed'},{status:r.status});
+ }catch{return NextResponse.json({error:'Attachment lookup failed'},{status:502})}
+}
