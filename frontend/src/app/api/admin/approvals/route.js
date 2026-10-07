@@ -1,22 +1,25 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/mongodb';
 import { verifyAdmin } from '@/lib/admin-auth';
 
-const PENDING = ['pending', 'pending_owner_approval', 'awaiting_owner_approval', 'AWAITING_OWNER_APPROVAL', 'approved_send_failed'];
+const AEGIS_TRUST_KEY = process.env.AEGIS_ALERT_SECRET?.trim() || process.env.OWNER_CONTROL_KEY?.trim() || process.env.INTERNAL_SERVICE_KEY?.trim() || '';
+const AEGIS_URL = (process.env.AEGIS_URL || 'https://estate-tea-aegis.onrender.com').replace(/\/$/, '');
 
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const db = await getDb();
-    const query = { status: { $in: PENDING } };
-    const collection = db.collection('brew_approvals');
-    const [count, rows] = await Promise.all([
-      collection.countDocuments(query),
-      collection.find(query).sort({ created_at: -1 }).limit(50).toArray(),
-    ]);
-    const items = rows.map(({ _id, ...row }) => ({ ...row, id: String(_id), approval_id: String(_id) }));
-    return NextResponse.json({ count, threshold: 3, alert_owner: count >= 3, items });
-  } catch {
-    return NextResponse.json({ error: 'Could not load approval queue' }, { status: 500 });
+    // One source of truth: Aegis and the owner UI must read the exact same Brew
+    // approval queue. A second direct-Mongo query can silently diverge by DB/env.
+    const response = await fetch(`${AEGIS_URL}/api/aegis/approvals`, {
+      headers: { 'x-internal-service-key': AEGIS_TRUST_KEY },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return NextResponse.json({ error: 'Approval queue unavailable', upstream_status: response.status }, { status: 502 });
+    }
+    const payload = await response.json();
+    const pending = payload?.pending || { count: 0, items: [] };
+    return NextResponse.json(pending, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } });
+  } catch (error) {
+    return NextResponse.json({ error: `Approval queue unavailable: ${error?.message || 'connection failed'}` }, { status: 502 });
   }
 }
