@@ -1,5 +1,6 @@
 import { verifyAdmin } from '@/lib/admin-auth';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
+const INTERNAL_KEY=process.env.AEGIS_ALERT_SECRET?.trim() || process.env.OWNER_CONTROL_KEY?.trim() || process.env.INTERNAL_SERVICE_KEY?.trim() || '';
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function GET(request){
  // Backward compatibility for an already-open older owner-app tab that still
@@ -11,10 +12,18 @@ export async function GET(request){
 export async function POST(request,{params}){
  if(!verifyAdmin(request))return new Response('Unauthorized',{status:401});
  const {reportId}=await params;
- const r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily`,{cache:'no-store'});
- const rows=await r.json().catch(()=>[]);
- const report=(Array.isArray(rows)?rows:[]).find(x=>x.report_id===reportId);
- if(!report)return new Response('Report not found',{status:404});
+ if(!/^[A-Za-z0-9_-]{1,100}$/.test(reportId))return new Response('Invalid report ID',{status:400});
+ if(!INTERNAL_KEY)return new Response('Report service authentication is not configured',{status:503});
+ let r;
+ try{
+  r=await fetch(`${AEGIS_URL}/api/aegis/reports/daily/${encodeURIComponent(reportId)}`,{headers:{'x-internal-service-key':INTERNAL_KEY},cache:'no-store'});
+ }catch(e){return new Response('Aegis report service is unavailable',{status:502});}
+ if(!r.ok){
+  const detail=await r.text().catch(()=>'');
+  return new Response(r.status===404?'Report not found in Aegis':`Aegis report request failed (${r.status}): ${detail.slice(0,200)}`,{status:r.status===404?404:502});
+ }
+ const report=await r.json().catch(()=>null);
+ if(!report||typeof report!=='object'||Array.isArray(report))return new Response('Invalid report data from Aegis',{status:502});
  const b=report.owner_brief||{},summary=report.summary||{},snap=report.snapshot||{};
  const n=b.numbers||{};
  const rawAgents=b.agent_sections?.length?b.agent_sections:(snap.agents||[]).map(a=>({agent:a.agent,focus:a.current_task||a.task,activity_count:a.daily_progress?.activity_count??report.recent_activity_by_agent?.[a.agent]??0,completed_count:a.daily_progress?.completed_count??0,work:a.daily_progress?.recent||a.recent_work||a.recent_activity||[]}));
