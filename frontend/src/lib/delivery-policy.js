@@ -1,6 +1,6 @@
 // Server-side delivery policy. Never expose the dispatch street address to clients.
 // The PIN identifies the dispatch area; precise road routing requires a private origin.
-export const DISPATCH_PINCODE = process.env.ESTATE_TEA_DISPATCH_PINCODE || '560007';
+export const DISPATCH_PINCODE = process.env.ESTATE_TEA_DISPATCH_PINCODE || '560077';
 export const LOCAL_DELIVERY_LIMIT_KM = 12;
 export const LOCAL_DELIVERY_BANDS = Object.freeze([
   { maxKm: 3, feeInr: 15 },
