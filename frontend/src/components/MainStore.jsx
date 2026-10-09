@@ -115,8 +115,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
   const productRef = useRef(null);
 
   const [variants, setVariants] = useState([
-    { id: "250g", weight: "250 grams", price: 200, in_stock: true },
-    { id: "500g", weight: "500 grams", price: 390, in_stock: true }
+    { id: "250g", weight: "250 grams", price: 180, in_stock: true },
+    { id: "500g", weight: "500 grams", price: 360, in_stock: true }
   ]);
 
   // Load product config from API (admin-managed)
