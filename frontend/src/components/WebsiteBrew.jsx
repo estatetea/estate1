@@ -18,7 +18,7 @@ export default function WebsiteBrew({ navigate }) {
   const [bulkQuantity, setBulkQuantity] = useState('10');
   const go = next => setStep(next);
   const chip = (label, next, subtle = false) => <button type="button" onClick={() => go(next)}
-    className={`rounded-full px-3 py-1.5 text-xs border transition-colors ${subtle ? 'border-transparent text-gray-400 hover:text-[#D4AF37]' : 'border-[#D4AF37]/35 text-[#e6d4a2] hover:bg-[#D4AF37]/10'}`}>{label}</button>;
+    className={`rounded-full px-3 py-1.5 text-xs border transition-colors ${subtle ? 'border-transparent text-gray-400 hover:text-[#D4AF37]' : 'border-[#D4AF37]/25 text-[#e6d4a2] hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/[0.06]'}`}>{label}</button>;
   return <div className="fixed bottom-5 right-5 z-[80] font-sans">
     {!open ? <button type="button" aria-label="Chat with Brew" onClick={() => setOpen(true)}
       className="flex items-center gap-2 rounded-full border border-[#D4AF37]/40 bg-[#14120f] px-4 py-3 text-[#D4AF37] shadow-xl">
@@ -32,12 +32,12 @@ export default function WebsiteBrew({ navigate }) {
       <div className="space-y-4 px-4 py-5 text-sm leading-7">
         {step === 'home' && <p>Welcome to Estate Tea. I'm Brew, and I'd be delighted to help you discover your next favourite cup. What would you like to explore?</p>}
         {step === 'explore' && <div className="space-y-4">
-          <div className="space-y-3 rounded-xl border border-[#D4AF37]/45 bg-[#D4AF37]/[0.055] px-4 py-4">
+          <div className="space-y-4 rounded-xl border border-[#D4AF37]/25 bg-gradient-to-b from-[#D4AF37]/[0.065] to-[#D4AF37]/[0.015] px-5 py-5 shadow-[inset_0_1px_0_rgba(212,175,55,0.08)]">
             <p>There's something special about a cup of tea that brings a little more to your everyday routine.</p>
             <p>Estate Tea brings you <strong className="text-[#e6d4a2]">premium black CTC tea powder from the Nilgiris</strong>, with a rich aroma, a beautifully full-bodied character and a refreshing finish.</p>
             <p>Made for those who appreciate a satisfying cup, whether it's a comforting morning chai or a quiet afternoon tea.</p>
           </div>
-          <p className="px-1 text-[#e6d4a2]">Would you like to explore our packet sizes and prices?</p>
+          <p className="px-1 pt-1 text-[13px] leading-6 tracking-[0.01em] text-[#e6d4a2]">Would you like to explore our packet sizes and prices?</p>
         </div>}
         {step === 'prices' && <><p>A little everyday luxury, in the size that suits you.</p>
           <div className="grid grid-cols-2 gap-2">
