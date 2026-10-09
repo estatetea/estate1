@@ -3,7 +3,7 @@ import { getDb } from '@/lib/mongodb';
 import { verifyAdmin } from '@/lib/admin-auth';
 
 const n = v => Number(v || 0);
-const paidState = value => ['paid','fulfilled','verified'].includes(String(value || '').toLowerCase());
+const paidState = value => ['paid','payment_verified','verified'].includes(String(value || '').toLowerCase());
 
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,8 +19,8 @@ export async function GET(request) {
       const source = String(o.source || o.sales_channel || '').toLowerCase();
       const isWebsite = source === 'website' || (!source && o.id && !o.order_id);
       const payment = o.order_id ? paymentByOrder.get(String(o.order_id)) : null;
-      const paymentVerified = Boolean(payment?.payment_verified) || paidState(payment?.status) || paidState(o.status);
-      const row = { ...o, payment_verified: paymentVerified, payment_status: payment?.status || null, sales_channel: isWebsite ? 'website' : 'ai_sales' };
+      const paymentVerified = Boolean(payment?.payment_verified) || paidState(payment?.status) || paidState(o.payment_status);
+      const row = { ...o, payment_verified: paymentVerified, payment_status: payment?.status || o.payment_status || 'unverified', fulfillment_status: o.fulfillment_status || o.delivery_status || o.status || 'unknown', sales_channel: isWebsite ? 'website' : 'ai_sales' };
       (isWebsite ? website : ai).push(row);
     }
     const summarize = rows => {
