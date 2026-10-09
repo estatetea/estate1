@@ -287,6 +287,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">
 
+        <section id="discover-tea" aria-label="Discover Estate Tea" className="scroll-mt-24">
         {/* Image Slideshow */}
         <div className="mb-8 sm:mb-12">
           <ImageSlideshow />
@@ -407,6 +408,10 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
           <RecipeModal type={recipeType} onClose={() => setRecipeType(null)} />
         )}
 
+        </section>
+
+        {/* Shop: packet size and quantity */}
+        <section id="shop-tea" aria-label="Choose tea packet size and quantity" className="scroll-mt-24">
         {/* Product Section */}
         <div ref={productRef} className="max-w-lg mx-auto mb-8 sm:mb-16 fade-up" data-testid="product-section">
           <div className="text-center mb-5 sm:mb-10">
@@ -485,6 +490,9 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
           </button>
         </div>
 
+        </section>
+
+        <section id="estate-story" aria-label="Estate Tea testimonials and story" className="scroll-mt-24">
         {/* Testimonials Section */}
         <div className="mb-12 sm:mb-16">
           <Testimonials />
@@ -505,6 +513,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </div>
           </div>
         </div>
+        </section>
       </main>
     </div>
   );
