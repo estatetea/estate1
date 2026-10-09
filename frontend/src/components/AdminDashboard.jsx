@@ -11,6 +11,7 @@ const AdminDashboard = ({ navigate }) => {
   const [products, setProducts] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [tab, setTab] = useState('products');
   const [editingPrice, setEditingPrice] = useState(null);
   const [newPrice, setNewPrice] = useState('');
@@ -246,7 +247,7 @@ const AdminDashboard = ({ navigate }) => {
               return (
               <div key={order.id || i} className="card-surface rounded-xl p-4 border border-white/5" data-testid={`admin-order-${i}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-white">{order.customer_name}</p>
+                  <button type="button" onClick={() => setSelectedOrder(order)} className="text-sm font-medium text-[#D4AF37] hover:underline text-left" title="View order details">{order.order_id || order.id || "Order reference unavailable"} — {order.recipient_name || order.customer_name || "Recipient not recorded"}</button>
                   <p className="text-sm gold-text">₹{total}</p>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
@@ -264,6 +265,7 @@ const AdminDashboard = ({ navigate }) => {
           </div>
         )}
       </div>
+      {selectedOrder && <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setSelectedOrder(null)}}><div role="dialog" aria-modal="true" aria-label="Order details" className="w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/20 bg-[#151515] p-5 space-y-4"><div className="flex justify-between gap-4 items-start"><div><p className="text-xs uppercase tracking-wider text-gray-400">Order details</p><h2 className="text-lg text-[#D4AF37] font-medium">{selectedOrder.order_id || selectedOrder.id || "Order reference unavailable"} — {selectedOrder.recipient_name || selectedOrder.customer_name || "Recipient not recorded"}</h2></div><button type="button" onClick={()=>setSelectedOrder(null)} aria-label="Close order details" className="text-gray-300 hover:text-white"><X className="w-5 h-5"/></button></div><dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">{[["Recipient",selectedOrder.recipient_name || selectedOrder.customer_name],["Customer",selectedOrder.customer_name],["Phone",selectedOrder.customer_phone || selectedOrder.phone],["Email",selectedOrder.customer_email || selectedOrder.email],["Delivery address",selectedOrder.delivery_address || selectedOrder.address],["PIN code",selectedOrder.pincode || selectedOrder.pin_code],["Delivery method",selectedOrder.delivery_method],["Delivery status",selectedOrder.delivery_status || selectedOrder.status],["Payment status",selectedOrder.payment_status],["Product",selectedOrder.product_name],["Pack",selectedOrder.variant],["Quantity",selectedOrder.quantity],["Unit price",selectedOrder.price != null ? "₹"+selectedOrder.price : null],["Delivery fee",selectedOrder.delivery_fee != null ? "₹"+selectedOrder.delivery_fee : null]].filter(([,v])=>v!==undefined&&v!==null&&v!=="").map(([label,value])=><div key={label}><dt className="text-xs text-gray-500">{label}</dt><dd className="text-white break-words">{String(value)}</dd></div>)}</dl><p className="text-xs text-gray-500">Only fields available in the existing order record are displayed. No pickup photos are required or stored by this view.</p>{selectedOrder.invoice_url && <a href={selectedOrder.invoice_url} target="_blank" rel="noopener noreferrer" className="inline-block text-[#D4AF37] underline">View invoice</a>}{!selectedOrder.invoice_url && <p className="text-xs text-gray-500">Invoice link not available in this order record.</p>}</div></div>}
     </div>
   );
 };
