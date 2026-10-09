@@ -109,7 +109,8 @@ const EntryForm = ({ onSubmit }) => {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (event) => {
+    event?.preventDefault();
     if (!name.trim()) {
       toast.error("Please enter your name");
       return;
@@ -229,7 +230,7 @@ const EntryForm = ({ onSubmit }) => {
               <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-300 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
             </div>
 
-            <form className="space-y-5 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-xs sm:text-sm uppercase tracking-widest text-gray-200">Your Name</Label>
                 <Input
@@ -257,9 +258,8 @@ const EntryForm = ({ onSubmit }) => {
               )}
 
               <button
-                type="button"
+                type="submit"
                 data-testid="entry-submit-button"
-                onClick={handleSubmit}
                 className="w-full bg-[#D4AF37] hover:bg-[#c5a030] active:bg-[#b89528] text-black font-light uppercase tracking-[0.2em] py-3.5 sm:py-4 rounded-lg transition-colors mt-6 sm:mt-8 text-sm sm:text-base touch-manipulation"
               >
                 Enter Store
