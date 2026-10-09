@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import EntryForm from '@/components/EntryForm';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import MainStore from '@/components/MainStore';
+import WebsiteBrew from '@/components/WebsiteBrew';
 import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
 import PaymentSuccess from '@/components/PaymentSuccess';
@@ -61,5 +62,5 @@ export default function App() {
     case 'payment-failed': content = <PaymentFailed data={pageData} navigate={navigate} />; break;
     default: content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />;
   }
-  return <><Toaster position="top-center" richColors />{content}</>;
+  return <><Toaster position="top-center" richColors />{content}{(page === 'store' || page === 'home') && <WebsiteBrew navigate={navigate} />}</>;
 }
