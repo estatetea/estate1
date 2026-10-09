@@ -31,10 +31,14 @@ export default function WebsiteBrew({ navigate }) {
       </header>
       <div className="space-y-4 px-4 py-5 text-sm leading-7">
         {step === 'home' && <p>Welcome to Estate Tea. I'm Brew, and I'd be delighted to help you discover your next favourite cup. What would you like to explore?</p>}
-        {step === 'explore' && <><p>There's something special about a cup of tea that brings a little more to your everyday routine.</p>
-          <p>Estate Tea brings you <strong className="text-[#e6d4a2]">premium black CTC tea powder from the Nilgiris</strong>, with a rich aroma, a beautifully full-bodied character and a refreshing finish.</p>
-          <p>Made for those who appreciate a satisfying cup, whether it's a comforting morning chai or a quiet afternoon tea.</p>
-          <p>Would you like to explore our packet sizes and prices?</p></>}
+        {step === 'explore' && <div className="space-y-4">
+          <div className="space-y-3 rounded-xl border border-[#D4AF37]/45 bg-[#D4AF37]/[0.055] px-4 py-4">
+            <p>There's something special about a cup of tea that brings a little more to your everyday routine.</p>
+            <p>Estate Tea brings you <strong className="text-[#e6d4a2]">premium black CTC tea powder from the Nilgiris</strong>, with a rich aroma, a beautifully full-bodied character and a refreshing finish.</p>
+            <p>Made for those who appreciate a satisfying cup, whether it's a comforting morning chai or a quiet afternoon tea.</p>
+          </div>
+          <p className="px-1 text-[#e6d4a2]">Would you like to explore our packet sizes and prices?</p>
+        </div>}
         {step === 'prices' && <><p>A little everyday luxury, in the size that suits you.</p>
           <div className="grid grid-cols-2 gap-2">
             {[['250 g','₹180'],['500 g','₹360']].map(([size,price]) => <div key={size} className="rounded-xl border border-white/10 bg-white/[.035] p-3">
