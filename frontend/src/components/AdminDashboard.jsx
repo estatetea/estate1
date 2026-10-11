@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Package, Star, Trash2, ArrowLeft, Check, X, RefreshCw, PackageCheck, Truck, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Lock, Package, Star, Trash2, ArrowLeft, Check, X, RefreshCw, PackageCheck, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const API = '/api';
@@ -390,7 +390,7 @@ const AdminDashboard = ({ navigate }) => {
                       <>
                         <div>
                           <label className="block text-xs text-gray-400 mb-1" htmlFor="delivery-method">Delivery method</label>
-                          <select id="delivery-method" value={deliveryDraft.deliveryMethod} onChange={e => setDeliveryDraft(prev => ({ ...prev, deliveryMethod: e.target.value }))} className="w-full rounded-lg bg-black border border-white/15 px-3 py-2.5 text-sm text-white">
+                          <select id="delivery-method" value={deliveryDraft.deliveryMethod} onChange={e => setDeliveryDraft(prev => ({ ...prev, deliveryMethod: e.target.value, ...(e.target.value === 'own_delivery' ? { courierName: '', trackingReference: '' } : {}) }))} className="w-full rounded-lg bg-black border border-white/15 px-3 py-2.5 text-sm text-white">
                             <option value="">Choose delivery method</option>
                             <option value="own_delivery">Estate Tea own delivery</option>
                             <option value="third_party_courier">Third-party courier (manually booked)</option>
