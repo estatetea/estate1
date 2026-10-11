@@ -14,6 +14,7 @@ export async function GET(request) {
   } catch {
     // Steward remains the authoritative source for AI-managed website and B2B orders.
   }
+  let stewardState = INTERNAL_KEY ? 'error' : 'not_configured';
   try {
     let stewardOrders = [];
     if (INTERNAL_KEY) {
@@ -22,6 +23,7 @@ export async function GET(request) {
           headers: { 'x-internal-service-key': INTERNAL_KEY },
           cache: 'no-store',
         });
+        stewardState = response.ok ? 'ok' : `http_${response.status}`;
         if (response.ok) {
           const rows = await response.json();
           if (Array.isArray(rows)) stewardOrders = rows.map(order => ({
@@ -41,8 +43,8 @@ export async function GET(request) {
     }
     const combined = [...stewardOrders, ...localOrders.map(order => ({ ...order, source: order.source || 'legacy' }))];
     combined.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
-    return NextResponse.json(combined.slice(0, 100), { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json(combined.slice(0, 100), { headers: { 'Cache-Control': 'no-store', 'X-Steward-Status': stewardState } });
   } catch {
-    return NextResponse.json(localOrders, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json(localOrders, { headers: { 'Cache-Control': 'no-store', 'X-Steward-Status': stewardState } });
   }
 }
