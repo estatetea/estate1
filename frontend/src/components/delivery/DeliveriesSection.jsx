@@ -14,7 +14,8 @@ export const DeliveriesSection = ({ token }) => {
       const res = await fetch('/api/admin/orders', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || `Could not load orders (${res.status}).`);
-      setOrders(data);
+      // Legacy rows are add-to-cart records, not orders; only Steward orders can be fulfilled.
+      setOrders(data.filter(o => o.source === 'steward'));
     } catch (e) {
       setError(e.message || 'Could not load orders.');
     } finally { setLoading(false); }
