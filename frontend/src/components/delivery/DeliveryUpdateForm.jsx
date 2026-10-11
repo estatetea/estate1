@@ -15,10 +15,13 @@ const draftFrom = order => ({
   proofReference: '',
 });
 
-function validate(d) {
+// Entering or leaving a failed/rescheduled state must record why and what happens next.
+const needsNote = (target, current) => EXCEPTION_STATUSES.includes(target) || EXCEPTION_STATUSES.includes(current);
+
+function validate(d, current) {
   if (!d.targetStatus) return 'Choose the next status.';
   if (d.targetStatus !== 'CANCELLED' && !d.deliveryMethod) return 'Choose a delivery method.';
-  if (EXCEPTION_STATUSES.includes(d.targetStatus) && !d.deliveryNote.trim()) return 'Add a note with the reason and the retry plan.';
+  if (needsNote(d.targetStatus, current) && !d.deliveryNote.trim()) return 'Add a note with the reason and the retry plan.';
   if (d.targetStatus === 'DELIVERED') {
     if (d.confirmationType === 'customer_confirmation' && !d.confirmationNote.trim()) return 'Record how the customer confirmed receipt.';
     if (d.confirmationType === 'proof_of_delivery' && !d.proofReference.trim() && !d.confirmationNote.trim()) return 'Record a proof reference or description.';
@@ -43,7 +46,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   }
 
   const save = async () => {
-    const problem = validate(draft);
+    const problem = validate(draft, order.delivery_status);
     if (problem) { setError(problem); return; }
     setSaving(true); setError(null);
     try {
@@ -133,8 +136,8 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
       )}
 
       {draft.targetStatus && (
-        <Field label={EXCEPTION_STATUSES.includes(draft.targetStatus) ? 'Reason and retry plan (required)' : 'Internal note (optional)'} id="delivery-note">
-          <textarea id="delivery-note" rows={2} value={draft.deliveryNote} onChange={e => set({ deliveryNote: e.target.value })} placeholder={EXCEPTION_STATUSES.includes(draft.targetStatus) ? 'e.g. Customer unavailable; retry tomorrow 11 AM' : 'Handover or packing note'} className={inputClass} data-testid="delivery-note-input" />
+        <Field label={needsNote(draft.targetStatus, order.delivery_status) ? 'Reason and retry plan (required)' : 'Internal note (optional)'} id="delivery-note">
+          <textarea id="delivery-note" rows={2} value={draft.deliveryNote} onChange={e => set({ deliveryNote: e.target.value })} placeholder={needsNote(draft.targetStatus, order.delivery_status) ? 'e.g. Customer unavailable; retry tomorrow 11 AM' : 'Handover or packing note'} className={inputClass} data-testid="delivery-note-input" />
         </Field>
       )}
 

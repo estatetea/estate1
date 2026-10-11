@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { StatusPill, PaymentPill } from './StatusPill';
 import { DeliveryProgress } from './DeliveryProgress';
@@ -36,7 +37,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
   }, [onClose]);
   const ref = orderNumber(order);
   const steward = order.source === 'steward';
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex justify-end bg-black/70 backdrop-blur-sm animate-in fade-in" onMouseDown={e => e.target === e.currentTarget && onClose()} data-testid="delivery-panel-overlay">
       <aside role="dialog" aria-modal="true" aria-label="Order delivery" className="mt-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-[#0b0b0a] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 sm:mt-0 sm:h-full sm:max-h-none sm:max-w-xl sm:rounded-none sm:border-y-0 sm:border-r-0 sm:slide-in-from-right-8" data-testid="delivery-panel">
         <header className="relative border-b border-white/[0.07] px-5 pb-5 pt-6 sm:px-7">
@@ -81,6 +82,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
           )}
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 };
