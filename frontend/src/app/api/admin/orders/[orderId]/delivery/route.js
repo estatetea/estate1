@@ -13,7 +13,7 @@ export async function PATCH(request, { params }) {
   try {
     const { orderId } = await params;
     const body = await request.json();
-    const response = await fetch(\`\${STEWARD_URL}/api/steward/orders/\${encodeURIComponent(orderId)}/delivery-status\`, {
+    const response = await fetch(`${STEWARD_URL}/api/steward/orders/${encodeURIComponent(orderId)}/delivery-status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
