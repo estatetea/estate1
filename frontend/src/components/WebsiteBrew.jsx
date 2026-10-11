@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { MessageCircle, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { OrderLookupResult } from './delivery/OrderLookupResult';
 
 const MENU = [
   ['explore', 'Explore Estate Tea'],
@@ -71,13 +72,7 @@ export default function WebsiteBrew({ navigate }) {
             <button type="submit" disabled={orderLookupLoading || !orderNumber.trim() || !orderEmail.trim()} className="w-full rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3 py-2.5 text-sm font-medium text-[#e6d4a2] disabled:opacity-50">{orderLookupLoading ? 'Checking order…' : 'Check order progress'}</button>
           </form>
           {orderLookup?.error && <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-200">{orderLookup.error}</p>}
-          {orderLookup && !orderLookup.error && <div className="space-y-2 rounded-lg border border-[#D4AF37]/25 bg-white/[.03] p-3">
-            <p className="font-semibold text-[#D4AF37]">Order {orderLookup.estate_order_number}</p>
-            <p className="text-xs text-gray-300">Order status: <strong>{orderLookup.order_status || 'Being processed'}</strong></p>
-            <p className="text-xs text-gray-300">Payment status: <strong>{orderLookup.payment_status || 'Awaiting confirmation'}</strong></p>
-            {orderLookup.created_at && <p className="text-xs text-gray-500">Placed: {new Date(orderLookup.created_at).toLocaleDateString('en-IN')}</p>}
-            <p className="text-xs text-gray-400">If you need help, contact Estate Tea and quote this order number.</p>
-          </div>}
+          {orderLookup && !orderLookup.error && <OrderLookupResult order={orderLookup} />}
           <p className="text-[11px] leading-5 text-gray-500">For your privacy, order details are only shown after your email is verified against the order.</p>
         </div>}
         {step === 'bulk' && <><p>Planning to serve Estate Tea on a larger scale? We welcome bulk enquiries from 10 kg onwards.</p>
