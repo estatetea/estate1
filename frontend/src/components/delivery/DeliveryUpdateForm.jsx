@@ -32,11 +32,12 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   const [error, setError] = useState(null);
   useEffect(() => { setDraft(draftFrom(order)); setError(null); }, [order]);
   const set = patch => setDraft(prev => ({ ...prev, ...patch }));
-  const options = nextStatuses(order);
+  const locked = !isPaymentVerified(order);
+  // Unpaid orders can only be cancelled (Steward re-checks the unpaid rule).
+  const options = nextStatuses(order).filter(s => !locked || s === 'CANCELLED');
+  const lockedNotice = locked && <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.04] p-4 text-sm text-amber-100" data-testid="delivery-locked-notice"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><p>Delivery is locked until payment is independently verified. Current payment status: <strong>{order.payment_status || order.status || 'unknown'}</strong>.</p></div>;
 
-  if (!isPaymentVerified(order)) {
-    return <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.04] p-4 text-sm text-amber-100" data-testid="delivery-locked-notice"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><p>Delivery is locked until payment is independently verified. Current payment status: <strong>{order.payment_status || order.status || 'unknown'}</strong>.</p></div>;
-  }
+  if (locked && !options.length) return lockedNotice;
   if (!options.length) {
     return <p className="rounded-xl border border-white/10 p-4 text-sm text-gray-400" data-testid="delivery-terminal-notice">{DELIVERY_LABELS[order.delivery_status]} is a final state. Corrections need an audited owner correction, not a status button.</p>;
   }
@@ -71,6 +72,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
 
   return (
     <div className="space-y-5" data-testid="delivery-update-form">
+      {lockedNotice}
       <div>
         <p className="mb-2.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">Move this order to</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
