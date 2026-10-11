@@ -13,7 +13,7 @@ export async function GET(request) {
     let stewardOrders = [];
     if (INTERNAL_KEY) {
       try {
-        const response = await fetch(\`\${STEWARD_URL}/api/steward/orders\`, {
+        const response = await fetch(`${STEWARD_URL}/api/steward/orders`, {
           headers: { 'x-internal-service-key': INTERNAL_KEY },
           cache: 'no-store',
         });
