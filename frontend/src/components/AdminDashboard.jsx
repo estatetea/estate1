@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { Lock, Package, Star, Trash2, ArrowLeft, Check, X, Truck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Lock, Package, Star, Trash2, ArrowLeft, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { DeliveryBoard } from "./delivery/DeliveryBoard";
 
 const API = '/api';
 
@@ -11,28 +10,11 @@ const AdminDashboard = ({ navigate }) => {
   const [logging, setLogging] = useState(false);
   const [products, setProducts] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersError, setOrdersError] = useState(null);
   const [tab, setTab] = useState('products');
   const [editingPrice, setEditingPrice] = useState(null);
   const [newPrice, setNewPrice] = useState('');
 
   const getHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
-
-  // Always re-read the authoritative backend state; never trust local edits as saved.
-  const loadOrders = useCallback(async () => {
-    if (!token) return;
-    setOrdersLoading(true); setOrdersError(null);
-    try {
-      const res = await fetch(`${API}/admin/orders`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || `Could not load orders (${res.status}).`);
-      setOrders(data);
-    } catch (e) {
-      setOrdersError(e.message || 'Could not load orders.');
-    } finally { setOrdersLoading(false); }
-  }, [token]);
 
   const handleLogin = async () => {
     setLogging(true);
@@ -53,8 +35,7 @@ const AdminDashboard = ({ navigate }) => {
     if (!token) return;
     fetch(`${API}/admin/products`, { headers: getHeaders() }).then(r => r.json()).then(setProducts).catch(() => {});
     fetch(`${API}/admin/testimonials`, { headers: getHeaders() }).then(r => r.json()).then(setTestimonials).catch(() => {});
-    loadOrders();
-  }, [token, loadOrders]);
+  }, [token]);
 
   const toggleStock = async (productId, currentStock) => {
     try {
@@ -151,7 +132,6 @@ const AdminDashboard = ({ navigate }) => {
           {[
             { id: 'products', label: 'Products', icon: Package },
             { id: 'testimonials', label: 'Reviews', icon: Star },
-            { id: 'orders', label: 'Deliveries', icon: Truck },
           ].map(t => (
             <button
               key={t.id}
@@ -251,9 +231,6 @@ const AdminDashboard = ({ navigate }) => {
         )}
 
         {/* Orders */}
-        {tab === 'orders' && (
-          <DeliveryBoard orders={orders} loading={ordersLoading} error={ordersError} headers={getHeaders()} reload={loadOrders} />
-        )}
       </div>
     </div>
   );
