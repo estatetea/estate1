@@ -25,6 +25,7 @@ const details = o => [
   ['Courier', o.courier_name],
   ['Tracking', o.tracking_reference],
   ['Delivered at', o.delivered_at ? formatWhen(o.delivered_at) : null],
+  ['Paid manually', o.manual_payment ? `${o.manual_payment.method.replace('_', ' ').toUpperCase()} · ₹${o.manual_payment.amount_received} · ref ${o.manual_payment.reference} · ${formatWhen(o.manual_payment.recorded_at)}` : null],
   ['Confirmation', o.delivery_confirmation_note],
   ['Proof ref', o.proof_of_delivery_reference],
 ].filter(([, v]) => v !== undefined && v !== null && v !== '');

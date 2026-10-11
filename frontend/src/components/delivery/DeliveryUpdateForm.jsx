@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Check, RefreshCw, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
+import { ManualPaymentForm } from './ManualPaymentForm';
 
 const draftFrom = order => ({
   targetStatus: '',
@@ -38,7 +39,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   const locked = !isPaymentVerified(order);
   // Unpaid orders can only be cancelled (Steward re-checks the unpaid rule).
   const options = nextStatuses(order).filter(s => !locked || s === 'CANCELLED');
-  const lockedNotice = locked && <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.04] p-4 text-sm text-amber-100" data-testid="delivery-locked-notice"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><p>Delivery is locked until payment is independently verified. Current payment status: <strong>{order.payment_status || order.status || 'unknown'}</strong>.</p></div>;
+  const lockedNotice = locked && <div className="space-y-3"><div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.04] p-4 text-sm text-amber-100" data-testid="delivery-locked-notice"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><p>Delivery is locked until payment is verified. Current payment status: <strong>{String(order.payment_status || order.status || 'unknown').replace(/_/g, ' ')}</strong>. If the customer paid by UPI, cash or bank transfer, mark it paid below.</p></div><ManualPaymentForm order={order} headers={headers} onSaved={onSaved} /></div>;
 
   if (locked && !options.length) return lockedNotice;
   if (!options.length) {
