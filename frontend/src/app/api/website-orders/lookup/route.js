@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
+import { STEWARD_URL } from '@/lib/steward';
 
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
-const STEWARD_URL = (process.env.STEWARD_RENDER_URL || 'https://estate-tea-steward.onrender.com').replace(/\/$/, '');
 
 export async function POST(request) {
   try {
