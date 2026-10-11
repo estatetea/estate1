@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { verifyAdmin } from '@/lib/admin-auth';
 
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
+const INTERNAL_KEY = process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || process.env.INTERNAL_SERVICE_KEY || '';
 const STEWARD_URL = (process.env.STEWARD_URL || process.env.STEWARD_RENDER_URL || 'https://estate-tea-steward.onrender.com').replace(/\/$/, '');
 
 export async function GET(request) {
