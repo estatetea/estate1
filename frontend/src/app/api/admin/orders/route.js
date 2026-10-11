@@ -7,9 +7,14 @@ const STEWARD_URL = (process.env.STEWARD_URL || process.env.STEWARD_RENDER_URL |
 
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let localOrders = [];
   try {
     const db = await getDb();
-    const localOrders = await db.collection('orders').find({}, { projection: { _id: 0 } }).sort({ timestamp: -1 }).limit(50).toArray();
+    localOrders = await db.collection('orders').find({}, { projection: { _id: 0 } }).sort({ timestamp: -1 }).limit(50).toArray();
+  } catch {
+    // Steward remains the authoritative source for AI-managed website and B2B orders.
+  }
+  try {
     let stewardOrders = [];
     if (INTERNAL_KEY) {
       try {
@@ -38,6 +43,6 @@ export async function GET(request) {
     combined.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
     return NextResponse.json(combined.slice(0, 100), { headers: { 'Cache-Control': 'no-store' } });
   } catch {
-    return NextResponse.json({ error: 'Could not load orders.' }, { status: 502 });
+    return NextResponse.json(localOrders, { headers: { 'Cache-Control': 'no-store' } });
   }
 }
