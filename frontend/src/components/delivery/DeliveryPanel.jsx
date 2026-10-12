@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import { StatusPill, PaymentPill } from './StatusPill';
 import { DeliveryProgress } from './DeliveryProgress';
 import { DeliveryUpdateForm } from './DeliveryUpdateForm';
@@ -37,6 +38,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   const ref = orderNumber(order);
+  const copyOrderNumber = async () => { if(!ref)return; try { await navigator.clipboard.writeText(ref); toast.success('Order number copied'); } catch { toast.error('Clipboard unavailable in this browser'); } };
   const steward = order.source === 'steward';
   return createPortal(
     <div className="fixed inset-0 z-[100] flex justify-end bg-black/70 backdrop-blur-sm animate-in fade-in" onMouseDown={e => e.target === e.currentTarget && onClose()} data-testid="delivery-panel-overlay">
@@ -44,7 +46,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
         <header className="relative border-b border-white/[0.07] px-5 pb-5 pt-6 sm:px-7">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(ellipse_at_top,rgba(212,175,55,0.12),transparent_70%)]" />
           <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full p-2 text-gray-500 transition-colors hover:bg-white/5 hover:text-white" data-testid="delivery-panel-close"><X className="h-5 w-5" /></button>
-          <p className={`font-mono text-sm tracking-[0.12em] ${ref ? 'text-[#D4AF37]' : 'italic text-gray-500'}`} data-testid="delivery-panel-order-number">{ref || 'Reference unavailable'}</p>
+          <div className="flex items-center gap-2"><p className="font-mono text-sm tracking-[0.12em] text-[#D4AF37]" data-testid="delivery-panel-order-number">{ref || 'Reference unavailable'}</p>{ref&&<button type="button" onClick={copyOrderNumber} aria-label="Copy permanent order number" title="Copy order number" className="rounded-md p-1.5 text-gray-500 hover:bg-white/[.05] hover:text-[#D5B56A]"><Copy className="h-3.5 w-3.5"/></button>}</div>
           <h2 className="mt-1 pr-10 font-['Cormorant_Garamond'] text-3xl font-light leading-tight text-white sm:text-4xl" data-testid="delivery-panel-recipient">{recipientName(order) || 'Recipient not recorded'}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {steward && <StatusPill status={order.delivery_status} fallback={statusLabel(order)} testId="delivery-panel-status" />}
