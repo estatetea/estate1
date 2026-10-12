@@ -11,7 +11,7 @@
   --owner-gold-strong: #e4c77f;
   --owner-gold-wash: rgba(213, 181, 106, .10);
   color: var(--owner-text);
-  background: var(--owner-bg);
+  background: var(--owner-bg) !important;
   min-height: 100vh;
 }
 .owner-command-center :where(button, input, textarea, select) { font: inherit; }
