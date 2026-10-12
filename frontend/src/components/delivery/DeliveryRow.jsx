@@ -13,7 +13,7 @@ export const DeliveryRow = ({ order, index, onOpen, compact = false }) => {
     <button
       type="button"
       onClick={() => onOpen(order)}
-      style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+      style={{ animationDelay: `${Math.min(index, 12) * 35}ms`, paddingTop: compact ? '0.55rem' : '1rem', paddingBottom: compact ? '0.55rem' : '1rem' }}
       className="group grid w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 border-b border-white/[0.06] px-4 text-left transition-colors duration-200 animate-in fade-in slide-in-from-bottom-1 fill-mode-both hover:bg-[#D4AF37]/[0.035] sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:px-5"
       data-testid={`delivery-row-${testRef}`}
     >
