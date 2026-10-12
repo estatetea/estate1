@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Mic,MicOff,Volume2,Square,ChevronDown,ChevronUp} from 'lucide-react';
 import {toast} from 'sonner';
-import {loadAegisHistory,sendAegisChat} from '@/lib/aegis-chat';
+import {loadAegisHistory,notifyAegisChatUpdated,sendAegisChat} from '@/lib/aegis-chat';
 import {Scribe,CommitStrategy,RealtimeEvents} from '@elevenlabs/client';
 
 export default function AegisRealtimeVoice({token}){
@@ -54,7 +54,7 @@ export default function AegisRealtimeVoice({token}){
     const ctx=unlockAudio();if(!ctx)throw mediaError;if(ctx.state==='suspended')await ctx.resume();
     const bytes=await blob.arrayBuffer();const buffer=await ctx.decodeAudioData(bytes.slice(0));if(controller.signal.aborted||generation!==playbackGenerationRef.current)return;const src=ctx.createBufferSource();src.buffer=buffer;src.connect(ctx.destination);sourceRef.current=src;src.onended=()=>{if(sourceRef.current===src)sourceRef.current=null;setState('idle');if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}};setState('speaking');src.start(0)
   }}catch(e){if(e?.name==='AbortError'||stoppedRef.current)return;if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}try{await browserSpeak(text);setState('idle')}catch{setState('idle');toast.error(e.message||'Aegis voice is unavailable')}}finally{if(requestRef.current===controller)requestRef.current=null}};
- const askAegis=async text=>{text=String(text||'').trim();if(!text||busyRef.current)return;busyRef.current=true;setState('thinking');setTurns(t=>[...t,{role:'owner',text}]);const chatController=new AbortController();chatRequestRef.current=chatController;try{const {answer}=await sendAegisChat({token,message:text,signal:chatController.signal});setTurns(t=>[...t,{role:'aegis',text:answer}]);setState('idle');await speak(answer)}catch(e){setState('idle');if(e?.name!=='AbortError')toast.error(e.message||'Aegis could not respond')}finally{if(chatRequestRef.current===chatController)chatRequestRef.current=null;busyRef.current=false}};
+ const askAegis=async text=>{text=String(text||'').trim();if(!text||busyRef.current)return;busyRef.current=true;setState('thinking');setTurns(t=>[...t,{role:'owner',text}]);const chatController=new AbortController();chatRequestRef.current=chatController;try{const {answer}=await sendAegisChat({token,message:text,signal:chatController.signal});setTurns(t=>[...t,{role:'aegis',text:answer}]);notifyAegisChatUpdated();setState('idle');await speak(answer)}catch(e){setState('idle');if(e?.name!=='AbortError')toast.error(e.message||'Aegis could not respond')}finally{if(chatRequestRef.current===chatController)chatRequestRef.current=null;busyRef.current=false}};
  const start=async()=>{if(state!=='idle')return;stoppedRef.current=false;if(!navigator.mediaDevices?.getUserMedia)return toast.error('Microphone access is not available');unlockAudio();let watchdog=null;try{setState('connecting');
  // Scribe owns the microphone stream. Avoid a separate getUserMedia open/close
  // cycle, which makes iPhone startup slower and can leave the SDK with no live stream.
