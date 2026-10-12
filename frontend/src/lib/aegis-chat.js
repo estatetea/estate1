@@ -26,7 +26,6 @@ export async function sendAegisChat({ token, message, attachment_ids = [], signa
     data.result?.reply || data.result?.response || ''
   ).trim();
   if (!answer) throw new Error('Aegis returned no readable response.');
-  notifyAegisChatUpdated();
   return { data, answer };
 }
 
