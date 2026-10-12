@@ -1,0 +1,87 @@
+/* Owner command-centre theme.
+   Deliberately scoped: public storefront, checkout and payment pages are not affected. */
+.owner-command-center {
+  --owner-bg: #101010;
+  --owner-panel: #171717;
+  --owner-panel-raised: #1c1c1c;
+  --owner-border: #34312b;
+  --owner-text: #f5f2eb;
+  --owner-muted: #a6a39b;
+  --owner-gold: #d5b56a;
+  --owner-gold-strong: #e4c77f;
+  --owner-gold-wash: rgba(213, 181, 106, .10);
+  color: var(--owner-text);
+  background: var(--owner-bg) !important;
+  min-height: 100vh;
+}
+.owner-command-center :where(button, input, textarea, select) { font: inherit; }
+.owner-command-center button { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease; }
+.owner-command-center button:focus-visible,
+.owner-command-center input:focus-visible,
+.owner-command-center textarea:focus-visible,
+.owner-command-center select:focus-visible {
+  outline: 2px solid var(--owner-gold);
+  outline-offset: 3px;
+}
+.owner-command-center button:disabled { cursor: not-allowed; }
+.owner-command-center aside button {
+  border-radius: 12px !important;
+  min-height: 42px;
+  letter-spacing: .01em;
+}
+.owner-command-center aside button:hover { background: rgba(255,255,255,.035); }
+.owner-command-center aside button[class*="border-[#d7a84b]"] {
+  background: var(--owner-gold-wash) !important;
+  border-color: rgba(213,181,106,.32) !important;
+  color: var(--owner-gold-strong) !important;
+  box-shadow: inset 2px 0 0 var(--owner-gold);
+}
+.owner-command-center article,
+.owner-command-center section,
+.owner-command-center main > div[class*="rounded-"] {
+  border-color: var(--owner-border);
+}
+.owner-command-center article[class*="bg-gradient-to-b"],
+.owner-command-center section[class*="bg-gradient-to-b"],
+.owner-command-center main > div[class*="bg-gradient-to-b"] {
+  background: linear-gradient(145deg, #191919 0%, #131313 100%);
+}
+.owner-command-center [class*="text-[#efbd63]"],
+.owner-command-center [class*="text-[#f1c66d]"],
+.owner-command-center [class*="text-[#dcb35e]"],
+.owner-command-center [class*="text-[#c99c43]"] { color: var(--owner-gold-strong) !important; }
+.owner-command-center [class*="border-[#d7a84b]"],
+.owner-command-center [class*="border-[#d8ad57]"] { border-color: rgba(213,181,106,.28) !important; }
+.owner-command-center [class*="bg-[#d7a84b]/10"],
+.owner-command-center [class*="bg-[#d7a84b]/[.04]"],
+.owner-command-center [class*="bg-[#d7a84b]/[.06]"] { background-color: var(--owner-gold-wash) !important; }
+.owner-command-center [class*="from-[#c9983c]"] {
+  background-image: linear-gradient(105deg, #d5b56a, #ead18e) !important;
+}
+.owner-command-center [class*="rounded-[28px]"],
+.owner-command-center [class*="rounded-[24px]"],
+.owner-command-center [class*="rounded-[34px]"] { border-radius: 20px !important; }
+.owner-command-center input,
+.owner-command-center textarea,
+.owner-command-center select {
+  color: var(--owner-text);
+  background-color: #111;
+  border-color: #3b3831;
+}
+.owner-command-center input::placeholder,
+.owner-command-center textarea::placeholder { color: #77746d; }
+.owner-command-center .owner-refresh-meta { color: #8e8b83; font-size: 11px; line-height: 1.5; }
+.owner-command-center .owner-refresh-meta[data-state="error"] { color: #fca5a5; }
+.owner-command-center .owner-refresh-meta[data-state="ok"] { color: #a7b6a3; }
+.owner-command-center img { -webkit-user-drag: none; }
+@media (min-width: 1024px) {
+  .owner-command-center aside { padding: 8px; border: 1px solid rgba(255,255,255,.055); border-radius: 16px; background: rgba(255,255,255,.018); }
+  .owner-command-center aside button { width: 100%; }
+}
+@media (max-width: 1023px) {
+  .owner-command-center aside { padding: 4px 0 8px; scrollbar-width: thin; }
+  .owner-command-center aside button { flex: 0 0 auto; background: rgba(255,255,255,.025); border-color: rgba(255,255,255,.055); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .owner-command-center *, .owner-command-center *::before, .owner-command-center *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
