@@ -24,14 +24,14 @@ export function LivePaymentTest({ headers }) {
       try {
         const r = await fetch(`/api/website-orders/${encodeURIComponent(run.order_id)}/status`, { cache: 'no-store' });
         const d = await r.json();
-        if (!stopped) setRun(x => ({ ...x, status: d.payment_status || d.status || x.status, verified: Boolean(d.payment_verified) }));
-        if (d.payment_verified) return;
+        if (!stopped) setRun(x => ({ ...x, status: d.payment_status || d.status || x.status, verified: Boolean(d.payment_verified), estate_order_number: d.estate_order_number || x.estate_order_number, email: d.confirmation_email }));
+        if (d.payment_verified && d.confirmation_email === 'sent') return;
       } catch { /* keep polling */ }
       if (!stopped && tries < 40) setTimeout(poll, 3000);
     };
     poll();
     return () => { stopped = true; };
-  }, [run?.paymentId, run?.verified, run?.order_id]);
+  }, [run?.paymentId, run?.order_id]);
 
   const start = async () => {
     setBusy(true);
@@ -77,6 +77,7 @@ export function LivePaymentTest({ headers }) {
       {row('Razorpay receipt', run.razorpay_receipt, true)}
       {row('Razorpay payment', run.paymentId, true)}
       {row('Status', run.verified ? 'PAID: verified by Steward and Ledger' : run.status)}
+      {run.verified && row('Confirmation email', run.email === 'sent' ? `Sent to ${email}` : run.email === 'failed' ? 'Not sent yet, retrying' : 'Sending…')}
       {run.estate_order_number && <p className="mt-2 text-[11px] text-gray-500">Check the website's order tracking with {run.estate_order_number} and {email}.</p>}
     </div>}
   </div>;

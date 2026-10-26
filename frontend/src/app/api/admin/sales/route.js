@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
@@ -16,6 +16,10 @@ export async function GET(request) {
     const r = await fetch(`${STEWARD_URL}/api/steward/orders?limit=1000`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
     const rows = await r.json().catch(() => null);
     if (!r.ok || !Array.isArray(rows)) return NextResponse.json({ error: 'Could not load sales from Steward' }, { status: 502 });
+    // Paid orders whose confirmation email hasn't gone out get retried after this response.
+    if (rows.some(o => o.payment_verified && o.confirmation_email?.status !== 'sent')) {
+      after(() => fetch(`${STEWARD_URL}/api/steward/confirmations/process`, { method: 'POST', headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' }).catch(() => {}));
+    }
     const website = [], ai = [];
     for (const o of rows) {
       if (String(o.source || '').toLowerCase() === 'owner_test') continue; // ₹1 live payment tests are not sales
@@ -33,6 +37,7 @@ export async function GET(request) {
         payment_verified: paid,
         delivery_status: o.delivery_status || null,
         created_at: o.created_at || null,
+        confirmation_email: o.confirmation_email?.status || null,
       };
       (channel === 'website' ? website : ai).push(row);
     }

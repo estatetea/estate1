@@ -68,7 +68,7 @@ export function SalesSection({ sales, loading }) {
           </div>
           <div className="text-right shrink-0">
             <p className="text-sm text-[#efbd63]">{rupees(r.total_amount)}</p>
-            <p className={`text-[10px] uppercase tracking-wider mt-1 ${r.payment_verified ? 'text-emerald-400' : 'text-amber-400'}`}>{r.payment_verified ? 'Paid' : 'Awaiting payment'}</p>
+            <p className={`text-[10px] uppercase tracking-wider mt-1 ${r.payment_verified ? 'text-emerald-400' : 'text-amber-400'}`}>{r.payment_verified ? 'Paid' : 'Awaiting payment'}</p>{r.payment_verified && <p className={`text-[10px] mt-0.5 ${r.confirmation_email === 'sent' ? 'text-gray-500' : 'text-amber-400'}`}>{r.confirmation_email === 'sent' ? 'Confirmation emailed' : 'Confirmation pending'}</p>}
           </div>
         </div>)}
       </div>
