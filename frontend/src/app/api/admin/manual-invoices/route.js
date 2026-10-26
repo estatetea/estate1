@@ -21,12 +21,12 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const quantity = Number(body.quantity);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email || ''))) return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
-  if (!['250g', '500g', '1kg'].includes(body.product_id)) return NextResponse.json({ error: 'Choose a packet size' }, { status: 400 });
+  if (!['250g', '500g', '1kg', 'test'].includes(body.product_id)) return NextResponse.json({ error: 'Choose a packet size' }, { status: 400 });
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) return NextResponse.json({ error: 'Enter a quantity between 1 and 500' }, { status: 400 });
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, {
       method: 'POST', headers, cache: 'no-store',
-      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
+      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), delivery_address: String(body.delivery_address || '').slice(0, 500), product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
     });
     const data = await r.json().catch(() => ({}));
     if (r.ok) return NextResponse.json(data, { status: r.status });

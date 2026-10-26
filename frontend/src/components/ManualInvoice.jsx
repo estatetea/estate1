@@ -6,6 +6,8 @@ const PACKS = [
   { id: '250g', label: '250 g', price: 180, kg: 0.25 },
   { id: '500g', label: '500 g', price: 360, kg: 0.5 },
   { id: '1kg', label: '1 kg', price: 720, kg: 1 },
+  // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.
+  { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
 const GST_RATE = 0.05;
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -19,7 +21,7 @@ function statusLabel(row) {
 
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', product_id: '250g', quantity: 1 });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', product_id: '250g', quantity: 1 });
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState([]);
   const [stock, setStock] = useState(null);
@@ -32,13 +34,13 @@ export function ManualInvoice({ headers }) {
   const auth = headers?.Authorization;
 
   const pack = PACKS.find(p => p.id === form.product_id) || PACKS[0];
-  const qty = Math.max(1, Math.floor(Number(form.quantity) || 1));
+  const qty = pack.test ? 1 : Math.max(1, Math.floor(Number(form.quantity) || 1));
   const subtotal = pack.price * qty;
-  const gst = Math.round(subtotal * GST_RATE * 100) / 100;
+  const gst = pack.test ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
   const total = subtotal + gst;
   const needKg = Math.round(pack.kg * qty * 1000) / 1000;
   // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
-  const stockLevel = !stock || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
+  const stockLevel = !stock || pack.test || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
 
   const load = useCallback(async () => {
     try {
@@ -72,7 +74,7 @@ export function ManualInvoice({ headers }) {
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
-      setForm(f => ({ ...f, name: '', email: '', phone: '', quantity: 1 }));
+      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', quantity: 1 }));
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -88,6 +90,7 @@ export function ManualInvoice({ headers }) {
       <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Customer name" className={input} />
       <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="Email address" className={input} />
       <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (for SMS)" className={input} />
+      <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address with PIN code (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
     </div>
     <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
       <label className="text-[11px] text-gray-500">Packet size
@@ -96,7 +99,7 @@ export function ManualInvoice({ headers }) {
         </select>
       </label>
       <label className="text-[11px] text-gray-500">Quantity
-        <input value={form.quantity} onChange={e => set('quantity', e.target.value)} type="number" min="1" max="500" inputMode="numeric" className={`${input} mt-1`} />
+ <input value={pack.test ? 1 : form.quantity} disabled={pack.test} onChange={e => set('quantity', e.target.value)} type="number" min="1" max="500" inputMode="numeric" className={`${input} mt-1`} />
       </label>
     </div>
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
@@ -126,7 +129,7 @@ export function ManualInvoice({ headers }) {
           const item = (row.items || [])[0] || {};
           return <div key={row.order_id} className="p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm text-white truncate">{row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
+              <p className="text-sm text-white truncate">{row.is_test && <span className="mr-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">TEST</span>}{row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
               <p className="text-xs text-gray-500 mt-0.5">{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}</p>
             </div>
             <p className={`text-[11px] text-right shrink-0 ${tone}`}>{label}</p>

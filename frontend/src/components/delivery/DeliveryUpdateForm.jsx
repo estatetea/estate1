@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, RefreshCw, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Check, RefreshCw, CheckCircle2, AlertCircle, Lock, Printer } from 'lucide-react';
+import { printBill } from '@/lib/print-bill';
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
@@ -75,7 +76,10 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
       const data = await res.json().catch(() => ({}));
       if (res.status === 409 && data.detail?.code === 'reserve_warning') { setReserveWarning(data.detail.message); return; }
       if (!res.ok) throw new Error((typeof data.detail === 'string' && data.detail) || data.error || `Update failed (${res.status}). Nothing was changed.`);
-      toast.success(`Saved: ${DELIVERY_LABELS[data.delivery_status] || data.delivery_status}`);
+      if (data.delivery_status === 'BEING_PACKAGED') {
+        // Packing is when the bill goes in the parcel.
+        toast.success('Saved: Being packaged', { duration: 15000, action: { label: 'Print bill', onClick: () => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message)) } });
+      } else toast.success(`Saved: ${DELIVERY_LABELS[data.delivery_status] || data.delivery_status}`);
       await onSaved();
     } catch (e) {
       setError(e.message || 'Could not save. Check your connection and retry.');
@@ -85,6 +89,9 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   return (
     <div className="space-y-5" data-testid="delivery-update-form">
       {lockedNotice}
+      {!locked && <button type="button" onClick={() => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message))}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.06] py-2.5 text-sm text-[#f1dc9c]" data-testid="print-bill">
+        <Printer className="h-4 w-4" />Print bill</button>}
       <div>
         <p className="mb-2.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">Move this order to</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
