@@ -26,9 +26,13 @@ export async function POST(request) {
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, {
       method: 'POST', headers, cache: 'no-store',
-      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), product_id: body.product_id, quantity }),
+      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
     });
     const data = await r.json().catch(() => ({}));
-    return NextResponse.json(r.ok ? data : { error: data.detail || data.error || 'Steward could not send the invoice' }, { status: r.status });
+    if (r.ok) return NextResponse.json(data, { status: r.status });
+    // Over-stock is a warning for the owner: pass the numbers through so the form can offer "Send anyway".
+    const detail = data.detail;
+    if (detail && typeof detail === 'object' && detail.code === 'stock_warning') return NextResponse.json({ error: detail.message, ...detail }, { status: 409 });
+    return NextResponse.json({ error: (typeof detail === 'string' && detail) || data.error || 'Steward could not send the invoice' }, { status: r.status });
   } catch { return NextResponse.json({ error: 'Could not reach Steward' }, { status: 502 }); }
 }

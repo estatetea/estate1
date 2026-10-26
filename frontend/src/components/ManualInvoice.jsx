@@ -3,9 +3,9 @@ import { toast } from 'sonner';
 
 // Same retail packs and prices as the store and Steward.
 const PACKS = [
-  { id: '250g', label: '250 g', price: 180 },
-  { id: '500g', label: '500 g', price: 360 },
-  { id: '1kg', label: '1 kg', price: 720 },
+  { id: '250g', label: '250 g', price: 180, kg: 0.25 },
+  { id: '500g', label: '500 g', price: 360, kg: 0.5 },
+  { id: '1kg', label: '1 kg', price: 720, kg: 1 },
 ];
 const GST_RATE = 0.05;
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -22,6 +22,9 @@ export function ManualInvoice({ headers }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', product_id: '250g', quantity: 1 });
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState([]);
+  const [sellable, setSellable] = useState(null);
+  // Set when Steward says this invoice is over stock; the owner can still send it.
+  const [stockWarning, setStockWarning] = useState(null);
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
   // The panel rebuilds `headers` every render; follow the login token so the list doesn't reload in a loop.
   const headersRef = useRef(headers);
@@ -33,28 +36,38 @@ export function ManualInvoice({ headers }) {
   const subtotal = pack.price * qty;
   const gst = Math.round(subtotal * GST_RATE * 100) / 100;
   const total = subtotal + gst;
+  const needKg = Math.round(pack.kg * qty * 1000) / 1000;
+  const overStock = sellable !== null && needKg > sellable;
 
   const load = useCallback(async () => {
     try {
       const r = await fetch('/api/admin/manual-invoices', { headers: headersRef.current, cache: 'no-store' });
       if (r.ok) setSent(await r.json());
+      const inv = await fetch('/api/admin/inventory', { headers: headersRef.current, cache: 'no-store' });
+      if (inv.ok) { const body = await inv.json(); if (Number.isFinite(Number(body.sellable_kg))) setSellable(Number(body.sellable_kg)); }
     } catch { /* keep the last list */ }
   }, [auth]);
   // Payments arrive from the customer's phone, so keep the list fresh while this is open.
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
 
-  const send = async () => {
+  const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
     setBusy(true);
     try {
-      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty }) });
+      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty, override_stock: overrideStock }) });
       const data = await r.json().catch(() => ({}));
+      if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
       if (!r.ok) throw new Error(data.error || 'Could not send the invoice');
+      setStockWarning(null);
+      if (overrideStock) toast.warning(`Sent over stock: ${data.estate_order_number} needs more tea than is recorded. Update Inventory before fulfilling it.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
       setForm(f => ({ ...f, name: '', email: '', phone: '', quantity: 1 }));
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
+
+  // A new pack or quantity needs a fresh check.
+  useEffect(() => { setStockWarning(null); }, [form.product_id, qty]);
 
   const input = 'w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-[#d7a84b]/40';
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
@@ -80,7 +93,16 @@ export function ManualInvoice({ headers }) {
       <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>
-    <button onClick={send} disabled={busy || !form.email} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(total)}`}</button>
+    {sellable !== null && <p className={`mt-2 text-xs ${overStock ? 'text-amber-400' : 'text-gray-500'}`}>Available to sell: {sellable} kg · this invoice needs {needKg} kg{overStock ? ' — above what can be fulfilled' : ''}</p>}
+    {stockWarning ? <div className="mt-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+      <p className="text-sm text-amber-300">Stock warning</p>
+      <p className="text-xs text-amber-200/80 mt-1">{stockWarning.message}</p>
+      <p className="text-xs text-gray-400 mt-1">Agents and the website can't sell past this. You can, and it will be marked as an over-stock invoice in the activity log.</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button onClick={() => setStockWarning(null)} disabled={busy} className="rounded-2xl border border-white/10 py-2.5 text-sm text-gray-300">Cancel</button>
+        <button onClick={() => send(true)} disabled={busy} className="rounded-2xl bg-amber-500 text-black py-2.5 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : 'Send anyway'}</button>
+      </div>
+    </div> : <button onClick={() => send(false)} disabled={busy || !form.email} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(total)}`}</button>}
     {sent.length > 0 && <div className="mt-5">
       <p className="text-xs uppercase tracking-[.14em] text-gray-500">Sent invoices</p>
       <div className="mt-2 divide-y divide-white/[.06] rounded-2xl border border-white/[.07]">
