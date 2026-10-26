@@ -34,7 +34,9 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   const [draft, setDraft] = useState(() => draftFrom(order));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  useEffect(() => { setDraft(draftFrom(order)); setError(null); }, [order]);
+  // Steward's protected-reserve warning: the owner can still go ahead.
+  const [reserveWarning, setReserveWarning] = useState(null);
+  useEffect(() => { setDraft(draftFrom(order)); setError(null); setReserveWarning(null); }, [order]);
   const set = patch => setDraft(prev => ({ ...prev, ...patch }));
   const locked = !isPaymentVerified(order);
   // Unpaid orders can only be cancelled (Steward re-checks the unpaid rule).
@@ -46,10 +48,10 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
     return <p className="rounded-xl border border-white/10 p-4 text-sm text-gray-400" data-testid="delivery-terminal-notice">{DELIVERY_LABELS[order.delivery_status]} is a final state. Corrections need an audited owner correction, not a status button.</p>;
   }
 
-  const save = async () => {
+  const save = async (overrideReserve = false) => {
     const problem = validate(draft, order.delivery_status);
     if (problem) { setError(problem); return; }
-    setSaving(true); setError(null);
+    setSaving(true); setError(null); setReserveWarning(null);
     try {
       const id = order.internal_order_id || order.order_id;
       const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/delivery`, {
@@ -63,10 +65,12 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
           delivery_confirmation_type: draft.targetStatus === 'DELIVERED' ? draft.confirmationType : null,
           delivery_confirmation_note: draft.confirmationNote || null,
           proof_of_delivery_reference: draft.proofReference || null,
+          override_reserve: overrideReserve,
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || data.error || `Update failed (${res.status}). Nothing was changed.`);
+      if (res.status === 409 && data.detail?.code === 'reserve_warning') { setReserveWarning(data.detail.message); return; }
+      if (!res.ok) throw new Error((typeof data.detail === 'string' && data.detail) || data.error || `Update failed (${res.status}). Nothing was changed.`);
       toast.success(`Saved: ${DELIVERY_LABELS[data.delivery_status] || data.delivery_status}`);
       await onSaved();
     } catch (e) {
@@ -85,7 +89,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
             const selected = draft.targetStatus === status;
             const exception = EXCEPTION_STATUSES.includes(status) || status === 'CANCELLED';
             return (
-              <button key={status} type="button" onClick={() => { set({ targetStatus: status }); setError(null); }}
+              <button key={status} type="button" onClick={() => { set({ targetStatus: status }); setError(null); setReserveWarning(null); }}
                 className={`flex min-h-[52px] items-center gap-3 rounded-xl border px-4 text-left text-sm transition-[background-color,border-color,transform] duration-200 active:scale-[0.98] ${selected ? (exception ? 'border-amber-300/60 bg-amber-300/10 text-amber-100' : 'border-[#D4AF37] bg-[#D4AF37]/[0.12] text-[#f1dc9c]') : 'border-white/10 text-gray-300 hover:border-white/25 hover:bg-white/[0.02]'}`}
                 data-testid={`delivery-status-${status.toLowerCase()}`}>
                 <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} />
@@ -148,12 +152,24 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
         </div>
       )}
 
-      <button type="button" onClick={save} disabled={saving || !draft.targetStatus}
+      {reserveWarning && (
+        <div role="alert" className="space-y-3 rounded-xl border border-amber-300/40 bg-amber-300/[0.06] p-4" data-testid="delivery-reserve-warning">
+          <p className="flex items-center gap-2 text-sm text-amber-200"><AlertCircle className="h-4 w-4 shrink-0" />Protected reserve</p>
+          <p className="text-xs leading-5 text-amber-100/80">{reserveWarning}</p>
+          <p className="text-[11px] leading-5 text-gray-400">Agents are stopped here. You can still go ahead; it's noted in the activity log.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setReserveWarning(null)} disabled={saving} className="h-10 rounded-lg border border-white/10 text-xs text-gray-300">Cancel</button>
+            <button type="button" onClick={() => save(true)} disabled={saving} className="h-10 rounded-lg bg-amber-400 text-xs font-semibold text-black disabled:opacity-50" data-testid="delivery-reserve-override">{saving ? 'Saving…' : `Save anyway · ${DELIVERY_LABELS[draft.targetStatus]}`}</button>
+          </div>
+        </div>
+      )}
+
+      {!reserveWarning && <button type="button" onClick={() => save(false)} disabled={saving || !draft.targetStatus}
         className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold tracking-wide text-black transition-[background-color,transform] hover:bg-[#e2c04d] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500"
         data-testid="save-delivery-status">
         {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {saving ? 'Saving…' : draft.targetStatus ? `Save · ${DELIVERY_LABELS[draft.targetStatus]}` : 'Choose a status'}
-      </button>
+      </button>}
       <p className="text-[11px] leading-5 text-gray-600">Owner-authenticated and audited. Customers are not notified yet — WhatsApp updates will be connected separately.</p>
     </div>
   );
