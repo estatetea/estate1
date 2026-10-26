@@ -43,5 +43,6 @@ export async function loadAegisHistory(token) {
       role: message.role === 'user' ? 'owner' : 'agent',
       agent: 'Aegis',
       text: String(message.content || ''),
+      brain: message.brain || null,
     }));
 }
