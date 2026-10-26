@@ -41,7 +41,7 @@ export function SalesSection({ sales, loading }) {
     const all = [...(sales?.website?.orders || []), ...(sales?.ai_sales?.orders || []), ...(sales?.manual?.orders || [])];
     const since = startOf(period);
     return all
-      .filter(r => channel === 'all' || r.sales_channel === channel)
+      .filter(r => channel === 'all' || (channel === 'manual' ? r.manual_invoice : r.sales_channel === channel))
       .filter(r => !since || (r.created_at && new Date(r.created_at) >= since))
       .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
   }, [sales, channel, period]);
@@ -49,7 +49,7 @@ export function SalesSection({ sales, loading }) {
 
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,.3)]">
     <h2 className="text-xl text-[#efbd63]">Sales</h2>
-    <p className="text-xs text-gray-500 mt-1">Website checkouts and agent sales, updated automatically from Steward.</p>
+    <p className="text-xs text-gray-500 mt-1">Website checkouts and agent sales, updated automatically from Steward.{sales?.rules?.manual_as_agent_sales ? ' Your manual invoices count as agent sales.' : ''}</p>
     <div className="mt-5 space-y-3"><Chips options={CHANNELS} value={channel} onChange={setChannel} /><Chips options={PERIODS} value={period} onChange={setPeriod} /></div>
     {sales?.error && <p className="mt-4 text-xs text-red-400">{sales.error}</p>}
     {loading && !sales ? <p className="mt-6 text-sm text-gray-500">Loading sales…</p> : <>
@@ -64,7 +64,7 @@ export function SalesSection({ sales, loading }) {
         {rows.slice(0, 50).map(r => <div key={r.order_id} className="p-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm text-white truncate">{r.customer || 'Customer'} <span className="text-gray-500">· {r.display_order_number}</span></p>
-            <p className="text-xs text-gray-500 mt-1">{r.sales_channel === 'website' ? 'Website' : r.sales_channel === 'manual' ? 'Manual invoice' : 'Agent sale'} · {Number(r.quantity_kg || 0)} kg · {r.created_at ? new Date(r.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) : 'time not recorded'}</p>
+            <p className="text-xs text-gray-500 mt-1">{r.sales_channel === 'website' ? 'Website' : r.manual_invoice ? (r.sales_channel === 'ai_sales' ? 'Agent sale · manual invoice' : 'Manual invoice') : 'Agent sale'} · {Number(r.quantity_kg || 0)} kg · {r.created_at ? new Date(r.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) : 'time not recorded'}</p>
           </div>
           <div className="text-right shrink-0">
             <p className="text-sm text-[#efbd63]">{rupees(r.total_amount)}</p>

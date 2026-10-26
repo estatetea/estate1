@@ -13,8 +13,14 @@ export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!INTERNAL_KEY) return NextResponse.json({ error: 'Steward connection is not configured' }, { status: 503 });
   try {
-    const r = await fetch(`${STEWARD_URL}/api/steward/orders?limit=1000`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
+    const headers = { 'x-internal-service-key': INTERNAL_KEY };
+    const [r, rulesRes] = await Promise.all([
+      fetch(`${STEWARD_URL}/api/steward/orders?limit=1000`, { headers, cache: 'no-store' }),
+      fetch(`${STEWARD_URL}/api/steward/sales-rules`, { headers, cache: 'no-store' }).catch(() => null),
+    ]);
     const rows = await r.json().catch(() => null);
+    // Owner rules set through Aegis, e.g. "count my manual invoices as agent sales".
+    const rules = rulesRes?.ok ? await rulesRes.json().catch(() => ({})) : {};
     if (!r.ok || !Array.isArray(rows)) return NextResponse.json({ error: 'Could not load sales from Steward' }, { status: 502 });
     // Paid orders whose confirmation email hasn't gone out get retried after this response.
     if (rows.some(o => o.payment_verified && o.confirmation_email?.status !== 'sent')) {
@@ -24,12 +30,13 @@ export async function GET(request) {
     for (const o of rows) {
       if (String(o.source || '').toLowerCase() === 'owner_test') continue; // ₹1 live payment tests are not sales
       const source = String(o.source || '').toLowerCase();
-      const channel = source === 'website' ? 'website' : source === 'manual' ? 'manual' : 'ai_sales';
+      const channel = source === 'website' ? 'website' : source === 'manual' && !rules.manual_as_agent_sales ? 'manual' : 'ai_sales';
       const paid = Boolean(o.payment_verified) || PAID.has(String(o.payment_status || '').toUpperCase()) || PAID.has(String(o.status || '').toUpperCase());
       const row = {
         order_id: o.order_id,
         display_order_number: o.display_order_number || o.estate_order_number || o.order_id,
         sales_channel: channel,
+        manual_invoice: source === 'manual',
         customer: o.business_name || o.customer_name || o.contact_name || null,
         email: o.email || null,
         quantity_kg: n(o.quantity_kg),
@@ -54,7 +61,7 @@ export async function GET(request) {
       };
     };
     return NextResponse.json(
-      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, manual: { summary: summarize(manual), orders: manual }, all: summarize([...website, ...ai, ...manual]), generated_at: new Date().toISOString() },
+      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, manual: { summary: summarize(manual), orders: manual }, all: summarize([...website, ...ai, ...manual]), rules: { manual_as_agent_sales: Boolean(rules.manual_as_agent_sales) }, generated_at: new Date().toISOString() },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {
