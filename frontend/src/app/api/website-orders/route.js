@@ -7,7 +7,10 @@ export async function POST(request){
     const r=await fetch(`${STEWARD_URL}/api/steward/website/orders`,{method:'POST',headers:{'Content-Type':'application/json','x-internal-service-key':INTERNAL_KEY},body:JSON.stringify(body),cache:'no-store'});
     const data=await r.json().catch(()=>({}));
     if (!r.ok) return NextResponse.json(data,{status:r.status});
-    // Reserve the permanent customer-facing ET number before checkout can launch payment.
+    // Steward now gets the ET number from Ledger before creating the Razorpay order.
+    const existing = data.estate_order_number || data.customer_order_number;
+    if (existing) return NextResponse.json({ ...data, estate_order_number: existing, customer_order_number: existing }, { status: r.status });
+    // Fallback for an older Steward: reserve the permanent ET number before checkout can launch payment.
     const ledgerKey = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
     if (!ledgerKey || !data.order_id) {
       return NextResponse.json({error:'Your order was created, but its confirmation number could not be secured yet. Please contact Estate Tea before attempting payment.'},{status:503});

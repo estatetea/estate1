@@ -18,6 +18,7 @@ export async function GET(request) {
     if (!r.ok || !Array.isArray(rows)) return NextResponse.json({ error: 'Could not load sales from Steward' }, { status: 502 });
     const website = [], ai = [];
     for (const o of rows) {
+      if (String(o.source || '').toLowerCase() === 'owner_test') continue; // ₹1 live payment tests are not sales
       const channel = String(o.source || '').toLowerCase() === 'website' ? 'website' : 'ai_sales';
       const paid = Boolean(o.payment_verified) || PAID.has(String(o.payment_status || '').toUpperCase()) || PAID.has(String(o.status || '').toUpperCase());
       const row = {
