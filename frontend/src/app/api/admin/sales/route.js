@@ -4,6 +4,8 @@ import { STEWARD_URL } from '@/lib/steward';
 
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '';
 const n = v => Number(v || 0);
+// Totals cover every order; only the most recent rows are sent, to keep mobile data low.
+const LIST_LIMIT = 150;
 const PAID = new Set(['PAID', 'FULFILLED', 'DELIVERED', 'PAYMENT_VERIFIED']);
 
 // Steward owns every real order: website checkouts (source "website") and agent/B2B sales
@@ -61,7 +63,7 @@ export async function GET(request) {
       };
     };
     return NextResponse.json(
-      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, manual: { summary: summarize(manual), orders: manual }, all: summarize([...website, ...ai, ...manual]), rules: { manual_as_agent_sales: Boolean(rules.manual_as_agent_sales) }, generated_at: new Date().toISOString() },
+      { website: { summary: summarize(website), orders: website.slice(0, LIST_LIMIT) }, ai_sales: { summary: summarize(ai), orders: ai.slice(0, LIST_LIMIT) }, manual: { summary: summarize(manual), orders: manual.slice(0, LIST_LIMIT) }, all: summarize([...website, ...ai, ...manual]), rules: { manual_as_agent_sales: Boolean(rules.manual_as_agent_sales) }, generated_at: new Date().toISOString() },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {

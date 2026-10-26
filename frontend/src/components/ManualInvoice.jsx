@@ -57,7 +57,7 @@ export function ManualInvoice({ headers }) {
     } catch { /* keep the last list */ }
   }, [auth]);
   // Payments arrive from the customer's phone, so keep the list fresh while this is open.
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, 30000); return () => clearInterval(t); }, [load]);
 
   const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');

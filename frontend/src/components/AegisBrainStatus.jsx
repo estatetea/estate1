@@ -24,6 +24,7 @@ export function AegisBrainStatus({ headers }) {
     {!status ? <p className="mt-4 text-sm text-gray-500">Checking…</p> : status.error ? <p className="mt-4 text-sm text-red-400">{status.error}</p> : <div className="mt-3 divide-y divide-white/[.06]">
       {row('Groq', status.groq_configured, status.brain_provider === 'groq' ? `main brain · ${status.model}` : '')}
       {row('Gemini', status.gemini_configured, status.brain_provider === 'gemini' ? `main brain · ${status.model}` : 'fallback')}
+      {status.groq_last_error?.at && <p className="pt-2 text-[11px] text-amber-400/90">Last Groq problem ({new Date(status.groq_last_error.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}): HTTP {status.groq_last_error.http_status}{status.groq_last_error.reason ? ` · ${status.groq_last_error.reason}` : ''}. Gemini answered instead.</p>}
       {usage && status.groq_configured && <p className="pt-2 text-[11px] text-gray-500">Groq today: {Number(usage.billable_tokens || 0).toLocaleString('en-IN')} of {Number(usage.hard_stop_tokens || 0).toLocaleString('en-IN')} tokens{usage.conservation_active ? ' · daily limit reached, Gemini is answering' : ''}</p>}
     </div>}
   </div>;
