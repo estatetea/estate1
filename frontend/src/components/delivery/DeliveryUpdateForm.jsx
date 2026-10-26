@@ -11,7 +11,9 @@ const draftFrom = order => ({
   courierName: order.courier_name || '',
   trackingReference: order.tracking_reference || '',
   deliveryNote: '',
-  confirmationType: order.delivery_confirmation_type || 'customer_confirmation',
+  // Orders with a code default to it; the customer reads it from their confirmation email.
+  confirmationType: order.delivery_confirmation_type || (order.has_delivery_code ? 'delivery_code' : 'customer_confirmation'),
+  deliveryCode: '',
   confirmationNote: '',
   proofReference: '',
 });
@@ -24,6 +26,7 @@ function validate(d, current) {
   if (d.targetStatus !== 'CANCELLED' && !d.deliveryMethod) return 'Choose a delivery method.';
   if (needsNote(d.targetStatus, current) && !d.deliveryNote.trim()) return 'Add a note with the reason and the retry plan.';
   if (d.targetStatus === 'DELIVERED') {
+    if (d.confirmationType === 'delivery_code' && !/^\d{4}$/.test(d.deliveryCode)) return 'Enter the 4-digit code the customer gives you.';
     if (d.confirmationType === 'customer_confirmation' && !d.confirmationNote.trim()) return 'Record how the customer confirmed receipt.';
     if (d.confirmationType === 'proof_of_delivery' && !d.proofReference.trim() && !d.confirmationNote.trim()) return 'Record a proof reference or description.';
   }
@@ -65,6 +68,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
           delivery_confirmation_type: draft.targetStatus === 'DELIVERED' ? draft.confirmationType : null,
           delivery_confirmation_note: draft.confirmationNote || null,
           proof_of_delivery_reference: draft.proofReference || null,
+          delivery_code: draft.targetStatus === 'DELIVERED' && draft.confirmationType === 'delivery_code' ? draft.deliveryCode : null,
           override_reserve: overrideReserve,
         }),
       });
@@ -124,16 +128,19 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
       {draft.targetStatus === 'DELIVERED' && (
         <div className="space-y-3 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.03] p-4 animate-in fade-in" data-testid="delivery-proof-section">
           <p className="flex items-center gap-2 text-sm text-[#e6d4a2]"><CheckCircle2 className="h-4 w-4" />Delivery evidence required</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[['customer_confirmation', 'Customer confirmed'], ['proof_of_delivery', 'Proof recorded']].map(([value, label]) => (
+          <div className={`grid gap-2 ${order.has_delivery_code ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {[...(order.has_delivery_code ? [['delivery_code', 'Delivery code']] : []), ['customer_confirmation', 'Customer confirmed'], ['proof_of_delivery', 'Proof recorded']].map(([value, label]) => (
               <button key={value} type="button" onClick={() => set({ confirmationType: value })}
                 className={`h-10 rounded-lg border text-xs transition-colors ${draft.confirmationType === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}
                 data-testid={`delivery-confirmation-${value}`}>{label}</button>
             ))}
           </div>
-          <Field label={draft.confirmationType === 'customer_confirmation' ? 'How and when did the customer confirm?' : 'Proof description'} id="delivery-confirmation-note">
+          {draft.confirmationType === 'delivery_code' ? <Field label="Code the customer gives you" id="delivery-code">
+            <input id="delivery-code" value={draft.deliveryCode} onChange={e => set({ deliveryCode: e.target.value.replace(/\D/g, '').slice(0, 4) })} inputMode="numeric" autoComplete="off" placeholder="••••" className={`${inputClass} text-center font-mono text-2xl tracking-[0.5em]`} data-testid="delivery-code-input" />
+            <p className="mt-1.5 text-[11px] text-gray-500">It's in their order confirmation email and on the order-tracking page.</p>
+          </Field> : <Field label={draft.confirmationType === 'customer_confirmation' ? 'How and when did the customer confirm?' : 'Proof description'} id="delivery-confirmation-note">
             <textarea id="delivery-confirmation-note" rows={2} value={draft.confirmationNote} onChange={e => set({ confirmationNote: e.target.value })} placeholder={draft.confirmationType === 'customer_confirmation' ? 'e.g. Confirmed by phone at 4:15 PM' : 'e.g. Handed to reception'} className={inputClass} data-testid="delivery-confirmation-note-input" />
-          </Field>
+          </Field>}
           {draft.confirmationType === 'proof_of_delivery' && (
             <Field label="Proof reference" id="proof-reference"><input id="proof-reference" value={draft.proofReference} onChange={e => set({ proofReference: e.target.value })} placeholder="Photo/file ref, receipt or courier POD" className={inputClass} data-testid="delivery-proof-reference-input" /></Field>
           )}

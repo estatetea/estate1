@@ -15,6 +15,11 @@ export const OrderLookupResult = ({ order }) => {
         ? <StatusPill status={order.delivery_status} testId="brew-order-delivery-status" />
         : <p className="text-xs text-gray-300" data-testid="brew-order-status">Order status: <strong>{order.order_status || 'Being processed'}</strong></p>}
       <DeliveryProgress status={order.delivery_status} testId="brew-order-progress" />
+      {order.delivery_code && <div className="rounded-xl border border-[#D4AF37]/30 bg-black/30 p-3 text-center" data-testid="brew-order-delivery-code">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Your delivery code</p>
+        <p className="mt-1 font-mono text-2xl tracking-[0.4em] text-[#efbd63]">{order.delivery_code}</p>
+        <p className="mt-1 text-[11px] text-gray-500">Share this code when your tea is handed over.</p>
+      </div>}
       <dl className="space-y-1 text-xs text-gray-400">
         <div><dt className="inline">Payment: </dt><dd className="inline text-gray-200" data-testid="brew-order-payment">{order.payment_status || 'Awaiting confirmation'}</dd></div>
         {order.delivery_method && <div><dt className="inline">Delivery: </dt><dd className="inline text-gray-200">{order.courier_name || METHOD_LABELS[order.delivery_method] || order.delivery_method}</dd></div>}
