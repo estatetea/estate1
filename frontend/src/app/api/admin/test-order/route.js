@@ -14,7 +14,7 @@ export async function POST(request) {
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/test-orders`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-internal-service-key': INTERNAL_KEY },
-      body: JSON.stringify({ email, name: String(name || 'Owner live test').slice(0, 120), owner_key: OWNER_KEY }), cache: 'no-store',
+      body: JSON.stringify({ email, name: String(name || '').trim().slice(0, 120), owner_key: OWNER_KEY }), cache: 'no-store',
     });
     const body = await r.json().catch(() => ({}));
     return NextResponse.json(body, { status: r.status, headers: { 'Cache-Control': 'no-store' } });

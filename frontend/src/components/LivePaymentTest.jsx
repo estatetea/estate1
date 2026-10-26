@@ -12,6 +12,7 @@ const loadRazorpay = () => new Promise(resolve => {
 // Runs the real live payment path for ₹1: Ledger ET number -> Razorpay order -> payment -> Steward + Ledger verification.
 export function LivePaymentTest({ headers }) {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [run, setRun] = useState(null);
 
@@ -37,7 +38,7 @@ export function LivePaymentTest({ headers }) {
     setBusy(true);
     try {
       if (!await loadRazorpay()) throw new Error('Could not load Razorpay checkout');
-      const r = await fetch('/api/admin/test-order', { method: 'POST', headers, body: JSON.stringify({ email }) });
+      const r = await fetch('/api/admin/test-order', { method: 'POST', headers, body: JSON.stringify({ email, name }) });
       const order = await r.json();
       if (!r.ok) throw new Error(order.error || order.detail || 'Could not create the test order');
       if (!order.razorpay_order_id) throw new Error('Steward did not create a Razorpay order');
@@ -45,7 +46,7 @@ export function LivePaymentTest({ headers }) {
       const rzp = new window.Razorpay({
         key: order.razorpay_key_id, amount: 100, currency: 'INR', name: 'Estate Tea',
         description: `Live payment test${order.estate_order_number ? ` · Order ${order.estate_order_number}` : ''}`,
-        order_id: order.razorpay_order_id, prefill: { email },
+        order_id: order.razorpay_order_id, prefill: { email, ...(name ? { name } : {}) },
         notes: { estate_tea_order_id: order.order_id, estate_order_number: order.estate_order_number || '' },
         theme: { color: '#D4AF37' },
         modal: { ondismiss: () => setBusy(false) },
@@ -67,7 +68,8 @@ export function LivePaymentTest({ headers }) {
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
     <h2 className="text-xl text-[#efbd63]">Live payment test (₹1)</h2>
     <p className="text-xs text-gray-500 mt-1">Runs a real ₹1 Razorpay payment through Ledger and Steward so you can see the ET order number end to end. It reserves no stock and is left out of sales. Refund the ₹1 from your Razorpay dashboard afterwards.</p>
-    <div className="mt-4 flex gap-2">
+    <input value={name} onChange={e => setName(e.target.value)} placeholder="Recipient's name (used in the email greeting)" className="mt-4 w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-[#d7a84b]/40" />
+    <div className="mt-2 flex gap-2">
       <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Email for the Razorpay receipt" className="min-w-0 flex-1 rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-[#d7a84b]/40" />
       <button onClick={start} disabled={busy || !email} className="rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black px-5 text-xs font-medium disabled:opacity-50">{busy ? 'Working…' : 'Pay ₹1'}</button>
     </div>
