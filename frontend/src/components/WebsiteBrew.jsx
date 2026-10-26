@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageCircle, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { OrderLookupResult } from './delivery/OrderLookupResult';
 
@@ -21,7 +21,23 @@ export default function WebsiteBrew({ navigate }) {
   const [orderEmail, setOrderEmail] = useState('');
   const [orderLookup, setOrderLookup] = useState(null);
   const [orderLookupLoading, setOrderLookupLoading] = useState(false);
+  const [bulkState, setBulkState] = useState('idle'); // idle | sending | sent | error message
+  const [stock, setStock] = useState(null);
   const go = next => setStep(next);
+  // Prices follow live stock (the same Steward check the store uses).
+  useEffect(() => {
+    if (step !== 'prices' || stock) return;
+    fetch('/api/products', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then(rows => setStock(Object.fromEntries((rows || []).map(p => [p.product_id, p.in_stock])))).catch(() => {});
+  }, [step, stock]);
+  const sendBulk = async () => {
+    setBulkState('sending');
+    try {
+      const r = await fetch('/api/enquiries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: bulkName, contact: bulkContact, quantity_kg: Number(bulkQuantity) }) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Could not send your enquiry');
+      setBulkState('sent');
+    } catch (e) { setBulkState(e.message); }
+  };
   const chip = (label, next, subtle = false) => <button type="button" onClick={() => go(next)}
     className={`rounded-full px-3 py-1.5 text-xs border transition-colors ${subtle ? 'border-transparent text-gray-400 hover:text-[#D4AF37]' : 'border-[#D4AF37]/25 text-[#e6d4a2] hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/[0.06]'}`}>{label}</button>;
   return <div className="fixed bottom-5 right-5 z-[80] font-sans">
@@ -46,8 +62,9 @@ export default function WebsiteBrew({ navigate }) {
         </div>}
         {step === 'prices' && <><p>A little everyday luxury, in the size that suits you.</p>
           <div className="grid grid-cols-2 gap-2">
-            {[['250 g','₹180'],['500 g','₹360']].map(([size,price]) => <div key={size} className="rounded-xl border border-white/10 bg-white/[.035] p-3">
-              <p className="text-xs text-gray-400">Estate Tea</p><p className="font-medium">{size}</p><p className="text-lg text-[#D4AF37]">{price}</p></div>)}
+            {[['250g','250 g','₹180'],['500g','500 g','₹360']].map(([id,size,price]) => <div key={size} className="rounded-xl border border-white/10 bg-white/[.035] p-3">
+              <p className="text-xs text-gray-400">Estate Tea</p><p className="font-medium">{size}</p><p className="text-lg text-[#D4AF37]">{price}</p>
+              {stock && <p className={`mt-1 text-[11px] ${stock[id] === false ? 'text-red-300' : 'text-emerald-300'}`}>{stock[id] === false ? 'Out of stock right now' : 'In stock'}</p>}</div>)}
           </div><p>Would you like to place an order?</p></>}
         {step === 'order' && <><p>Wonderful. Choose your preferred packet size and quantity in our store, then complete your delivery details through Estate Tea's secure checkout.</p>
           <p className="text-xs text-gray-400">Our retail packets are available in 250 g and 500 g sizes.</p></>}
@@ -76,17 +93,19 @@ export default function WebsiteBrew({ navigate }) {
           <p className="text-[11px] leading-5 text-gray-500">For your privacy, order details are only shown after your email is verified against the order.</p>
         </div>}
         {step === 'bulk' && <><p>Planning to serve Estate Tea on a larger scale? We welcome bulk enquiries from 10 kg onwards.</p>
-          <p className="text-xs text-gray-400">You can prepare an enquiry below. No order or price is confirmed until our team reviews it.</p>
+          {bulkState === 'sent' ? <p className="rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] p-3 text-[#e6d4a2]">Thank you, {bulkName.split(' ')[0]}. Your enquiry for {bulkQuantity} kg has reached the Estate Tea team, and we'll get back to you at {bulkContact} shortly.</p> : <>
+          <p className="text-xs text-gray-400">Leave your details and our team will get back to you with pricing. Nothing is confirmed until we speak.</p>
           <label className="block text-xs text-gray-400">Name<input value={bulkName} onChange={e=>setBulkName(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 p-2 text-white"/></label>
-          <label className="block text-xs text-gray-400">Contact<input value={bulkContact} onChange={e=>setBulkContact(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 p-2 text-white"/></label>
-          <label className="block text-xs text-gray-400">Quantity (kg)<input type="number" min="10" value={bulkQuantity} onChange={e=>setBulkQuantity(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 p-2 text-white"/></label></>}
+          <label className="block text-xs text-gray-400">Email or phone<input value={bulkContact} onChange={e=>setBulkContact(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 p-2 text-white"/></label>
+          <label className="block text-xs text-gray-400">Quantity (kg)<input type="number" min="10" value={bulkQuantity} onChange={e=>setBulkQuantity(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 p-2 text-white"/></label>
+          {!['idle','sending','sent'].includes(bulkState) && <p className="text-xs text-red-300">{bulkState}</p>}</>}</>}
         {step === 'later' && <p>Of course. Take your time exploring Estate Tea. Whenever you're ready, I'll be here to help.</p>}
         <div className="flex flex-wrap gap-1.5 pt-2">
           {step === 'home' && MENU.map(([id,label])=><span key={id}>{chip(label,id)}</span>)}
           {step === 'explore' && <>{chip('Yes, show prices →','prices')}{chip('Not now','later',true)}</>}
           {step === 'prices' && <>{chip('Place an order →','order')}{chip('Maybe later','later',true)}</>}
           {step === 'order' && <button type="button" onClick={()=>{setOpen(false);document.getElementById('shop-tea')?.scrollIntoView({behavior:'smooth',block:'start'});}} className="rounded-full border border-[#D4AF37]/35 px-3 py-1.5 text-xs text-[#e6d4a2] hover:bg-[#D4AF37]/10">Explore packets in store <ArrowRight size={12} className="inline"/></button>}
-          {step === 'bulk' && <button type="button" disabled={!bulkName.trim() || !bulkContact.trim() || !(Number(bulkQuantity)>=10)} onClick={()=>{const body=`Estate Tea bulk enquiry\nName: ${bulkName}\nContact: ${bulkContact}\nQuantity: ${bulkQuantity} kg`;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(body).then(()=>window.alert('Enquiry copied. Please share it with Estate Tea through your preferred contact channel.')).catch(()=>window.prompt('Copy your enquiry:',body));}else{window.prompt('Copy your enquiry:',body);}}} className="rounded-full border border-[#D4AF37]/35 px-3 py-1.5 text-xs text-[#e6d4a2] disabled:opacity-40">Copy bulk enquiry</button>}
+          {step === 'bulk' && bulkState !== 'sent' && <button type="button" disabled={bulkState === 'sending' || !bulkName.trim() || !bulkContact.trim() || !(Number(bulkQuantity)>=10)} onClick={sendBulk} className="rounded-full bg-[#D4AF37] px-3.5 py-1.5 text-xs font-medium text-black disabled:opacity-40">{bulkState === 'sending' ? 'Sending…' : 'Send enquiry'}</button>}
           {step !== 'home' && <button type="button" onClick={()=>go('home')} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-gray-400 hover:text-[#D4AF37]"><ArrowLeft size={12}/> Main menu</button>}
         </div>
       </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '@/lib/mongodb';
 import { clientKey, createLimiter } from '@/lib/rate-limit';
+import { forwardEnquiry } from '@/lib/enquiries';
 
 // Reviews are public and unauthenticated; cap how many one visitor can post.
 const limiter = createLimiter('testimonials', { windowMs: 60 * 60 * 1000, lockMs: 60 * 60 * 1000, maxFailures: 3 });
@@ -45,6 +46,8 @@ export async function POST(request) {
     };
     await db.collection('testimonials').insertOne({ ...testimonial });
     limiter.fail(key);
+    // Let the owner know a new review went up (Aegis announces it; it also shows in Inbox → Enquiries).
+    await forwardEnquiry({ kind: 'review', name: testimonial.user_name, message: testimonial.text, rating: testimonial.rating }).catch(() => {});
     return NextResponse.json(testimonial);
   } catch (error) {
     console.error('Testimonial error:', error);
