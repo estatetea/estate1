@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Check, RefreshCw, CheckCircle2, AlertCircle, Lock, Printer } from 'lucide-react';
-import { printBill } from '@/lib/print-bill';
+import { printBill, autoPrintOn, openPrintWindow } from '@/lib/print-bill';
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
@@ -56,6 +56,8 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
     const problem = validate(draft, order.delivery_status);
     if (problem) { setError(problem); return; }
     setSaving(true); setError(null); setReserveWarning(null);
+    // Automatic printing: open the print window now, inside the tap, and fill it once the save succeeds.
+    const printWindow = draft.targetStatus === 'BEING_PACKAGED' && autoPrintOn() ? openPrintWindow() : null;
     try {
       const id = order.internal_order_id || order.order_id;
       const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/delivery`, {
@@ -74,14 +76,19 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 409 && data.detail?.code === 'reserve_warning') { setReserveWarning(data.detail.message); return; }
+      if (res.status === 409 && data.detail?.code === 'reserve_warning') { printWindow?.close(); setReserveWarning(data.detail.message); return; }
+      if (!res.ok) printWindow?.close();
       if (!res.ok) throw new Error((typeof data.detail === 'string' && data.detail) || data.error || `Update failed (${res.status}). Nothing was changed.`);
-      if (data.delivery_status === 'BEING_PACKAGED') {
+      if (data.delivery_status === 'BEING_PACKAGED' && printWindow) {
+        printBill(order.internal_order_id || order.order_id, headers, printWindow).catch(e => toast.error(e.message));
+        toast.success('Saved: Being packaged. Printing the bill…');
+      } else if (data.delivery_status === 'BEING_PACKAGED') {
         // Packing is when the bill goes in the parcel.
         toast.success('Saved: Being packaged. If automatic printing is on, the bill is on its way to your printer.', { duration: 15000, action: { label: 'Print bill', onClick: () => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message)) } });
       } else toast.success(`Saved: ${DELIVERY_LABELS[data.delivery_status] || data.delivery_status}`);
       await onSaved();
     } catch (e) {
+      printWindow?.close();
       setError(e.message || 'Could not save. Check your connection and retry.');
     } finally { setSaving(false); }
   };
