@@ -22,7 +22,7 @@ export async function GET(request) {
     const review = report.needs_review?.length ? ` ${report.needs_review.length} invoice(s) to double-check.` : '';
     await fetch(new URL('/api/admin/aegis/notifications/send', request.url), {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-aegis-alert-secret': process.env.AEGIS_ALERT_SECRET || '' },
-      body: JSON.stringify({ title: `Estate Tea: GST report for ${label}`, body: `${report.invoices || 0} invoices · GST to pay ${inr(s.total_gst)} (CGST ${inr(s.cgst)}, SGST ${inr(s.sgst)}, IGST ${inr(s.igst)}) on sales of ${inr(s.taxable_value)}.${review} Download it from Team → Reports.`, severity: 'info', tag: `gst-${month}`, url: '/ai' }),
+      body: JSON.stringify({ title: `Estate Tea: GST report for ${label}`, body: `${report.invoices || 0} invoices · GST on sales ${inr(s.total_gst)}, less ${inr(s.gst_credit_from_purchases)} already paid on purchases = net GST to pay ${inr(s.net_gst_payable)} (sales ${inr(s.taxable_value)}).${review} Download it from Team → Reports.`, severity: 'info', tag: `gst-${month}`, url: '/ai' }),
     }).catch(() => {});
     return NextResponse.json({ ok: true, month, summary: s });
   } catch { return NextResponse.json({ error: 'Could not reach Ledger' }, { status: 502 }); }

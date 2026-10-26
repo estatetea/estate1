@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
+import { TeaPurchases } from './TeaPurchases';
 
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const thisMonth = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 7);
@@ -9,6 +10,7 @@ export function GstReport({ headers }) {
   const [month, setMonth] = useState(thisMonth());
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
   const auth = headers?.Authorization;
   useEffect(() => {
     let alive = true;
@@ -17,7 +19,7 @@ export function GstReport({ headers }) {
       .then(async r => { const b = await r.json().catch(() => ({})); if (!r.ok) throw new Error(b.error || 'GST report unavailable'); return b; })
       .then(b => { if (alive) setReport(b); }).catch(e => { if (alive) setError(e.message); });
     return () => { alive = false; };
-  }, [month, auth]);
+  }, [month, auth, refresh]);
 
   const download = async () => {
     const r = await fetch(`/api/admin/gst?month=${month}&format=csv`, { headers: { Authorization: auth } });
@@ -29,7 +31,7 @@ export function GstReport({ headers }) {
 
   const s = report?.summary;
   const tile = (label, value) => <div className="rounded-xl border border-white/[.06] bg-black/20 p-3"><p className="text-[9px] uppercase tracking-wider text-gray-600">{label}</p><p className="mt-1 text-lg text-[#efbd63]">{value}</p></div>;
-  return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
+  return <div className="space-y-4"><div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div><h2 className="text-xl text-[#efbd63]">GST report</h2><p className="mt-1 text-xs text-gray-500">From Ledger's invoices · HSN 0902 · 5% (CGST + SGST in Tamil Nadu, IGST outside). Ledger only records it; no money is moved.</p>
         {report && <p className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${report.final ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-gray-400'}`}>{report.final ? `Final · closed ${new Date(report.closed_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}` : 'Running total · closes on the 1st'}</p>}</div>
@@ -42,13 +44,20 @@ export function GstReport({ headers }) {
     {!report && !error && <p className="mt-4 text-sm text-gray-500">Loading…</p>}
     {report && <>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {tile('Invoices', report.invoices)}{tile('Taxable value', rupees(s.taxable_value))}{tile('GST to pay', rupees(s.total_gst))}{tile('Invoice total', rupees(s.invoice_total))}
+        {tile('Invoices', report.invoices)}{tile('Taxable value', rupees(s.taxable_value))}{tile('GST on sales', rupees(s.total_gst))}{tile('Invoice total', rupees(s.invoice_total))}
       </div>
       <p className="mt-3 text-xs text-gray-400">CGST {rupees(s.cgst)} · SGST {rupees(s.sgst)} · IGST {rupees(s.igst)}</p>
+      {'net_gst_payable' in s && <div className="mt-3 space-y-1 rounded-xl border border-white/[.06] p-3 text-sm">
+        <div className="flex justify-between text-gray-400"><span>GST on sales</span><span>{rupees(s.total_gst)}</span></div>
+        <div className="flex justify-between text-gray-400"><span>Less: GST already paid on purchases</span><span>− {rupees(s.gst_credit_from_purchases)}</span></div>
+        <div className="flex justify-between border-t border-white/[.06] pt-1 text-white"><span>Net GST to pay</span><span className="text-[#efbd63]">{rupees(s.net_gst_payable)}</span></div>
+        {s.credit_carried_forward > 0 && <p className="text-[11px] text-emerald-300">{rupees(s.credit_carried_forward)} extra credit carries forward to next month.</p>}
+      </div>}
       {report.needs_review?.length > 0 && <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
         <p className="text-xs text-amber-300">{report.needs_review.length} invoice{report.needs_review.length === 1 ? '' : 's'} to double-check</p>
         {report.needs_review.slice(0, 6).map(r => <p key={r.invoice_no} className="mt-1 text-[11px] text-gray-400">{r.invoice_no}: {r.note}</p>)}
       </div>}
     </>}
-  </div>;
+  </div>
+  <TeaPurchases headers={headers} month={month} onChange={() => setRefresh(n => n + 1)} /></div>;
 }
