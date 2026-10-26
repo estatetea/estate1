@@ -31,7 +31,8 @@ export function GstReport({ headers }) {
   const tile = (label, value) => <div className="rounded-xl border border-white/[.06] bg-black/20 p-3"><p className="text-[9px] uppercase tracking-wider text-gray-600">{label}</p><p className="mt-1 text-lg text-[#efbd63]">{value}</p></div>;
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
     <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><h2 className="text-xl text-[#efbd63]">GST report</h2><p className="mt-1 text-xs text-gray-500">From Ledger's invoices · HSN 0902 · 5% (CGST + SGST in Tamil Nadu, IGST outside)</p></div>
+      <div><h2 className="text-xl text-[#efbd63]">GST report</h2><p className="mt-1 text-xs text-gray-500">From Ledger's invoices · HSN 0902 · 5% (CGST + SGST in Tamil Nadu, IGST outside). Ledger only records it; no money is moved.</p>
+        {report && <p className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${report.final ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-gray-400'}`}>{report.final ? `Final · closed ${new Date(report.closed_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}` : 'Running total · closes on the 1st'}</p>}</div>
       <div className="flex items-center gap-2">
         <input type="month" value={month} max={thisMonth()} onChange={e => e.target.value && setMonth(e.target.value)} className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white" />
         <button onClick={download} disabled={!report?.invoices} className="flex items-center gap-1.5 rounded-xl bg-[#efbd63] px-3 py-2 text-xs font-medium text-black disabled:opacity-40"><Download className="h-3.5 w-3.5" />CSV</button>
@@ -41,7 +42,7 @@ export function GstReport({ headers }) {
     {!report && !error && <p className="mt-4 text-sm text-gray-500">Loading…</p>}
     {report && <>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {tile('Invoices', report.invoices)}{tile('Taxable value', rupees(s.taxable_value))}{tile('GST', rupees(s.total_gst))}{tile('Invoice total', rupees(s.invoice_total))}
+        {tile('Invoices', report.invoices)}{tile('Taxable value', rupees(s.taxable_value))}{tile('GST to pay', rupees(s.total_gst))}{tile('Invoice total', rupees(s.invoice_total))}
       </div>
       <p className="mt-3 text-xs text-gray-400">CGST {rupees(s.cgst)} · SGST {rupees(s.sgst)} · IGST {rupees(s.igst)}</p>
       {report.needs_review?.length > 0 && <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
