@@ -22,7 +22,7 @@ export function ManualInvoice({ headers }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', product_id: '250g', quantity: 1 });
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState([]);
-  const [sellable, setSellable] = useState(null);
+  const [stock, setStock] = useState(null);
   // Set when Steward says this invoice is over stock; the owner can still send it.
   const [stockWarning, setStockWarning] = useState(null);
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
@@ -37,14 +37,23 @@ export function ManualInvoice({ headers }) {
   const gst = Math.round(subtotal * GST_RATE * 100) / 100;
   const total = subtotal + gst;
   const needKg = Math.round(pack.kg * qty * 1000) / 1000;
-  const overStock = sellable !== null && needKg > sellable;
+  // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
+  const stockLevel = !stock || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
 
   const load = useCallback(async () => {
     try {
       const r = await fetch('/api/admin/manual-invoices', { headers: headersRef.current, cache: 'no-store' });
       if (r.ok) setSent(await r.json());
       const inv = await fetch('/api/admin/inventory', { headers: headersRef.current, cache: 'no-store' });
-      if (inv.ok) { const body = await inv.json(); if (Number.isFinite(Number(body.sellable_kg))) setSellable(Number(body.sellable_kg)); }
+      if (inv.ok) {
+        const body = await inv.json();
+        if (Number.isFinite(Number(body.sellable_kg))) setStock({
+          sellable: Number(body.sellable_kg),
+          reserve: Number(body.protected_reserve_kg || 0),
+          // On hand after open orders, protected reserve included.
+          onHand: Math.max(0, Math.round((Number(body.physical_kg || 0) - Number(body.committed_kg || 0)) * 1000) / 1000),
+        });
+      }
     } catch { /* keep the last list */ }
   }, [auth]);
   // Payments arrive from the customer's phone, so keep the list fresh while this is open.
@@ -59,7 +68,9 @@ export function ManualInvoice({ headers }) {
       if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
       if (!r.ok) throw new Error(data.error || 'Could not send the invoice');
       setStockWarning(null);
-      if (overrideStock) toast.warning(`Sent over stock: ${data.estate_order_number} needs more tea than is recorded. Update Inventory before fulfilling it.`);
+      if (overrideStock) toast.warning(stockLevel === 'shortfall'
+        ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
+        : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
       setForm(f => ({ ...f, name: '', email: '', phone: '', quantity: 1 }));
       load();
@@ -93,11 +104,15 @@ export function ManualInvoice({ headers }) {
       <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>
-    {sellable !== null && <p className={`mt-2 text-xs ${overStock ? 'text-amber-400' : 'text-gray-500'}`}>Available to sell: {sellable} kg · this invoice needs {needKg} kg{overStock ? ' — above what can be fulfilled' : ''}</p>}
+    {stock && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
+      Available to sell: {stock.sellable} kg (+ {stock.reserve} kg protected reserve) · this invoice needs {needKg} kg
+      {stockLevel === 'reserve' && ' — dips into your protected reserve'}
+      {stockLevel === 'shortfall' && ` — more than the ${stock.onHand} kg in stock`}
+    </p>}
     {stockWarning ? <div className="mt-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
-      <p className="text-sm text-amber-300">Stock warning</p>
+      <p className="text-sm text-amber-300">{stockWarning.kind === 'reserve' ? 'Protected reserve' : 'Not enough stock'}</p>
       <p className="text-xs text-amber-200/80 mt-1">{stockWarning.message}</p>
-      <p className="text-xs text-gray-400 mt-1">Agents and the website can't sell past this. You can, and it will be marked as an over-stock invoice in the activity log.</p>
+      <p className="text-xs text-gray-400 mt-1">Agents and the website are stopped here. You can still send it; it's noted in the activity log.</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button onClick={() => setStockWarning(null)} disabled={busy} className="rounded-2xl border border-white/10 py-2.5 text-sm text-gray-300">Cancel</button>
         <button onClick={() => send(true)} disabled={busy} className="rounded-2xl bg-amber-500 text-black py-2.5 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : 'Send anyway'}</button>
