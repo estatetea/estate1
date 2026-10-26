@@ -28,3 +28,21 @@ export async function PUT(request) {
     return NextResponse.json(body, { status: r.status });
   } catch { return NextResponse.json({ error: 'Could not update Steward inventory' }, { status: 502 }); }
 }
+
+// Owner stock changes from the web app: { action: 'receive' | 'remove', quantity_kg, note }.
+export async function POST(request) {
+  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!OWNER_KEY) return NextResponse.json({ error: 'Steward owner connection is not configured' }, { status: 503 });
+  try {
+    const { action, quantity_kg, note } = await request.json();
+    const quantity = Number(quantity_kg);
+    if (!['receive', 'remove'].includes(action)) return NextResponse.json({ error: 'Unknown stock action' }, { status: 400 });
+    if (!Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ error: 'Enter a stock amount above zero' }, { status: 400 });
+    const r = await fetch(`${STEWARD_URL}/api/steward/inventory/${action}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-internal-service-key': INTERNAL_KEY },
+      body: JSON.stringify({ quantity_kg: quantity, note: String(note || '').slice(0, 300), owner_key: OWNER_KEY }), cache: 'no-store'
+    });
+    const body = await r.json().catch(() => ({}));
+    return NextResponse.json(body, { status: r.status });
+  } catch { return NextResponse.json({ error: 'Could not update Steward inventory' }, { status: 502 }); }
+}

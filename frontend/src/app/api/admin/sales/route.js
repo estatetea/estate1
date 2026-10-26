@@ -1,38 +1,56 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/mongodb';
 import { verifyAdmin } from '@/lib/admin-auth';
+import { STEWARD_URL } from '@/lib/steward';
 
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '';
 const n = v => Number(v || 0);
-const paidState = value => ['paid','payment_verified','verified'].includes(String(value || '').toLowerCase());
+const PAID = new Set(['PAID', 'FULFILLED', 'DELIVERED', 'PAYMENT_VERIFIED']);
 
+// Steward owns every real order: website checkouts (source "website") and agent/B2B sales
+// that Brew hands over (source "ai_sales"). The local `orders` collection only holds old
+// add-to-cart records, so it is deliberately not counted as sales.
 export async function GET(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!INTERNAL_KEY) return NextResponse.json({ error: 'Steward connection is not configured' }, { status: 503 });
   try {
-    const db = await getDb();
-    const [raw, paymentRows] = await Promise.all([
-      db.collection('orders').find({}, { projection: { _id: 0 } }).sort({ created_at: -1, timestamp: -1 }).limit(500).toArray(),
-      db.collection('payments').find({}, { projection: { _id: 0, order_id: 1, payment_verified: 1, status: 1 } }).toArray(),
-    ]);
-    const paymentByOrder = new Map(paymentRows.filter(p => p.order_id).map(p => [String(p.order_id), p]));
+    const r = await fetch(`${STEWARD_URL}/api/steward/orders?limit=1000`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
+    const rows = await r.json().catch(() => null);
+    if (!r.ok || !Array.isArray(rows)) return NextResponse.json({ error: 'Could not load sales from Steward' }, { status: 502 });
     const website = [], ai = [];
-    for (const o of raw) {
-      const source = String(o.source || o.sales_channel || '').toLowerCase();
-      const isWebsite = source === 'website' || (!source && o.id && !o.order_id);
-      const payment = o.order_id ? paymentByOrder.get(String(o.order_id)) : null;
-      const paymentVerified = Boolean(payment?.payment_verified) || paidState(payment?.status) || paidState(o.payment_status);
-      const row = { ...o, payment_verified: paymentVerified, payment_status: payment?.status || o.payment_status || 'unverified', fulfillment_status: o.fulfillment_status || o.delivery_status || o.status || 'unknown', sales_channel: isWebsite ? 'website' : 'ai_sales' };
-      (isWebsite ? website : ai).push(row);
+    for (const o of rows) {
+      const channel = String(o.source || '').toLowerCase() === 'website' ? 'website' : 'ai_sales';
+      const paid = Boolean(o.payment_verified) || PAID.has(String(o.payment_status || '').toUpperCase()) || PAID.has(String(o.status || '').toUpperCase());
+      const row = {
+        order_id: o.order_id,
+        display_order_number: o.display_order_number || o.estate_order_number || o.order_id,
+        sales_channel: channel,
+        customer: o.business_name || o.customer_name || o.contact_name || null,
+        email: o.email || null,
+        quantity_kg: n(o.quantity_kg),
+        total_amount: n(o.total_amount),
+        status: o.status || null,
+        payment_verified: paid,
+        delivery_status: o.delivery_status || null,
+        created_at: o.created_at || null,
+      };
+      (channel === 'website' ? website : ai).push(row);
     }
-    const summarize = rows => {
-      const paid = rows.filter(x => x.payment_verified);
+    const summarize = list => {
+      const paid = list.filter(x => x.payment_verified);
+      const round = v => Math.round(v * 100) / 100;
       return {
-        orders: rows.length,
+        orders: list.length,
         paid_orders: paid.length,
-        revenue: Math.round(paid.reduce((sum, x) => sum + n(x.total_amount || (n(x.price) * n(x.quantity || 1))), 0) * 100) / 100,
-        booked_value: Math.round(rows.reduce((sum, x) => sum + n(x.total_amount || (n(x.price) * n(x.quantity || 1))), 0) * 100) / 100,
-        items_or_kg: rows.reduce((sum, x) => sum + n(x.quantity_kg ?? x.quantity ?? 0), 0),
+        revenue: round(paid.reduce((sum, x) => sum + x.total_amount, 0)),
+        booked_value: round(list.reduce((sum, x) => sum + x.total_amount, 0)),
+        items_or_kg: round(list.reduce((sum, x) => sum + x.quantity_kg, 0)),
       };
     };
-    return NextResponse.json({ website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, all: summarize([...website, ...ai]) });
-  } catch { return NextResponse.json({ error: 'Could not load sales' }, { status: 500 }); }
+    return NextResponse.json(
+      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, all: summarize([...website, ...ai]), generated_at: new Date().toISOString() },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch {
+    return NextResponse.json({ error: 'Could not reach Steward' }, { status: 502 });
+  }
 }
