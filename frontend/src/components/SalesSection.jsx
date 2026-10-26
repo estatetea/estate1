@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-const CHANNELS = [['all', 'All sales'], ['website', 'Website'], ['ai_sales', 'Agent sales']];
+const CHANNELS = [['all', 'All sales'], ['website', 'Website'], ['ai_sales', 'Agent sales'], ['manual', 'Manual invoices']];
 const PERIODS = [['today', 'Today'], ['week', '7 days'], ['month', '30 days'], ['all', 'All time']];
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -38,7 +38,7 @@ export function SalesSection({ sales, loading }) {
   const [period, setPeriod] = useState('today');
 
   const rows = useMemo(() => {
-    const all = [...(sales?.website?.orders || []), ...(sales?.ai_sales?.orders || [])];
+    const all = [...(sales?.website?.orders || []), ...(sales?.ai_sales?.orders || []), ...(sales?.manual?.orders || [])];
     const since = startOf(period);
     return all
       .filter(r => channel === 'all' || r.sales_channel === channel)
@@ -64,7 +64,7 @@ export function SalesSection({ sales, loading }) {
         {rows.slice(0, 50).map(r => <div key={r.order_id} className="p-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm text-white truncate">{r.customer || 'Customer'} <span className="text-gray-500">· {r.display_order_number}</span></p>
-            <p className="text-xs text-gray-500 mt-1">{r.sales_channel === 'website' ? 'Website' : 'Agent sale'} · {Number(r.quantity_kg || 0)} kg · {r.created_at ? new Date(r.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) : 'time not recorded'}</p>
+            <p className="text-xs text-gray-500 mt-1">{r.sales_channel === 'website' ? 'Website' : r.sales_channel === 'manual' ? 'Manual invoice' : 'Agent sale'} · {Number(r.quantity_kg || 0)} kg · {r.created_at ? new Date(r.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) : 'time not recorded'}</p>
           </div>
           <div className="text-right shrink-0">
             <p className="text-sm text-[#efbd63]">{rupees(r.total_amount)}</p>

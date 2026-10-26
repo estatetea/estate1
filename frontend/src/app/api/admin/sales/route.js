@@ -20,10 +20,11 @@ export async function GET(request) {
     if (rows.some(o => o.payment_verified && o.confirmation_email?.status !== 'sent')) {
       after(() => fetch(`${STEWARD_URL}/api/steward/confirmations/process`, { method: 'POST', headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' }).catch(() => {}));
     }
-    const website = [], ai = [];
+    const website = [], ai = [], manual = [];
     for (const o of rows) {
       if (String(o.source || '').toLowerCase() === 'owner_test') continue; // ₹1 live payment tests are not sales
-      const channel = String(o.source || '').toLowerCase() === 'website' ? 'website' : 'ai_sales';
+      const source = String(o.source || '').toLowerCase();
+      const channel = source === 'website' ? 'website' : source === 'manual' ? 'manual' : 'ai_sales';
       const paid = Boolean(o.payment_verified) || PAID.has(String(o.payment_status || '').toUpperCase()) || PAID.has(String(o.status || '').toUpperCase());
       const row = {
         order_id: o.order_id,
@@ -39,7 +40,7 @@ export async function GET(request) {
         created_at: o.created_at || null,
         confirmation_email: o.confirmation_email?.status || null,
       };
-      (channel === 'website' ? website : ai).push(row);
+      (channel === 'website' ? website : channel === 'manual' ? manual : ai).push(row);
     }
     const summarize = list => {
       const paid = list.filter(x => x.payment_verified);
@@ -53,7 +54,7 @@ export async function GET(request) {
       };
     };
     return NextResponse.json(
-      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, all: summarize([...website, ...ai]), generated_at: new Date().toISOString() },
+      { website: { summary: summarize(website), orders: website }, ai_sales: { summary: summarize(ai), orders: ai }, manual: { summary: summarize(manual), orders: manual }, all: summarize([...website, ...ai, ...manual]), generated_at: new Date().toISOString() },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {
