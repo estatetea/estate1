@@ -1,5 +1,5 @@
 {
-  "summary": "Iteration 12 — Frontend-only testing of Estate Tea landing flow additions: (1) blurred gradient seams between hero/form during slide and (2) second wave of 25 form-settling grains overlaying the login page. All 8 specified behaviors verified PASS on desktop (1920x1080) and mobile (375x812). Admin /#admin login still works with WEUSEDTOBECALLEDHAMLETTEA26.",
+  "summary": "Iteration 12 — Frontend-only testing of Estate Tea landing flow additions: (1) blurred gradient seams between hero/form during slide and (2) second wave of 25 form-settling grains overlaying the login page. All 8 specified behaviors verified PASS on desktop (1920x1080) and mobile (375x812). Admin /#admin login still works with [REDACTED].",
   "backend_issues": {
     "critical": [],
     "minor": []
@@ -25,7 +25,7 @@
     "backend": "N/A (skipped per request)",
     "frontend": "100% (8/8 behaviors validated)"
   },
-  "test_credentials": "Admin password: WEUSEDTOBECALLEDHAMLETTEA26 at /#admin — confirmed working (Welcome, Admin toast + Products/Reviews/Orders tabs + Estate Premium Tea 250g ₹200 / 500g ₹390 IN STOCK).",
+  "test_credentials": "Admin password: [REDACTED] at /#admin — confirmed working (Welcome, Admin toast + Products/Reviews/Orders tabs + Estate Premium Tea 250g ₹200 / 500g ₹390 IN STOCK).",
   "seed_data_creation": "None",
   "retest_needed": false,
   "should_main_agent_self_test": true,
@@ -41,6 +41,6 @@
     "test7_form_rendered_after_slide": "PASS — Welcome H2 (gold #D4AF37), PREMIUM TEA EXPERIENCE subtitle, YOUR NAME label, name-input, entry-submit-button (ENTER STORE) all rendered and visible. Form card opacity 1 with 30px backdrop blur.",
     "test8_form_submission_to_welcome": "PASS — entered 'TestUser', clicked ENTER STORE → body contains 'TestUser', welcome screen rendered.",
     "test9_mobile_375x812_no_overflow": "PASS — scrollWidth=clientWidth=375 at landing, during slide (3.5s after click), and at done phase. Form card fully fits within viewport. Both gradient overlays + form grains render correctly on mobile (visual confirmed via screenshot).",
-    "test10_admin_dashboard": "PASS — direct navigation to /#admin renders admin-password-input. Entering WEUSEDTOBECALLEDHAMLETTEA26 + clicking admin-login-button → 'Welcome, Admin' toast + Products tab shows Estate Premium Tea 250g ₹200 IN STOCK and 500g ₹390 IN STOCK. Reviews + Orders tabs present."
+    "test10_admin_dashboard": "PASS — direct navigation to /#admin renders admin-password-input. Entering [REDACTED] + clicking admin-login-button → 'Welcome, Admin' toast + Products tab shows Estate Premium Tea 250g ₹200 IN STOCK and 500g ₹390 IN STOCK. Reviews + Orders tabs present."
   }
 }

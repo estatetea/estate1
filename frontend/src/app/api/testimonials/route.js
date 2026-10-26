@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { getDb } from '@/lib/mongodb';
+import { clientKey, createLimiter } from '@/lib/rate-limit';
 
-async function getDb() {
-  const { MongoClient } = await import('mongodb');
-  const uri = process.env.MONGO_URL;
-  if (!uri) throw new Error('MONGO_URL env var not set');
-  const client = new MongoClient(uri);
-  await client.connect();
-  return client.db(process.env.DB_NAME || 'estate_tea');
-}
+// Reviews are public and unauthenticated; cap how many one visitor can post.
+const limiter = createLimiter('testimonials', { windowMs: 60 * 60 * 1000, lockMs: 60 * 60 * 1000, maxFailures: 3 });
 
 export async function GET() {
   try {
@@ -26,23 +22,32 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const key = clientKey(request);
+    const locked = limiter.lockedFor(key);
+    if (locked) {
+      return NextResponse.json({ error: 'Thanks! You have already shared a few reviews. Please try again later.' }, { status: 429, headers: { 'Retry-After': String(locked) } });
+    }
     const { name, text, rating } = await request.json();
-    if (!name || !text) {
+    const userName = String(name || '').trim();
+    const reviewText = String(text || '').trim();
+    if (!userName || !reviewText) {
       return NextResponse.json({ error: 'Name and review are required' }, { status: 400 });
     }
+    const stars = Math.round(Number(rating));
 
     const db = await getDb();
     const testimonial = {
       id: uuidv4(),
-      user_name: (name || '').slice(0, 50),
-      text: (text || '').slice(0, 500),
-      rating: Math.min(5, Math.max(1, rating || 5)),
+      user_name: userName.slice(0, 50),
+      text: reviewText.slice(0, 500),
+      rating: Number.isFinite(stars) ? Math.min(5, Math.max(1, stars)) : 5,
       created_at: new Date().toISOString()
     };
     await db.collection('testimonials').insertOne({ ...testimonial });
+    limiter.fail(key);
     return NextResponse.json(testimonial);
   } catch (error) {
     console.error('Testimonial error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Could not save your review. Please try again.' }, { status: 500 });
   }
 }

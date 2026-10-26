@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import { LEDGER_URL, STEWARD_URL } from '@/lib/steward';
 const INTERNAL_KEY=process.env.INTERNAL_SERVICE_KEY||process.env.OWNER_CONTROL_KEY||'';
-const STEWARD_URL=(process.env.STEWARD_URL||'https://estate-tea-steward-git-main-jadenpbenjaminjb-4968s-projects.vercel.app').replace(/\/$/,'');
 export async function POST(request){
   try{
     const body=await request.json();
@@ -9,11 +9,10 @@ export async function POST(request){
     if (!r.ok) return NextResponse.json(data,{status:r.status});
     // Reserve the permanent customer-facing ET number before checkout can launch payment.
     const ledgerKey = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
-    const ledgerUrl = (process.env.LEDGER_URL || 'https://estate-tea-ledger.onrender.com').replace(/\/$/, '');
     if (!ledgerKey || !data.order_id) {
       return NextResponse.json({error:'Your order was created, but its confirmation number could not be secured yet. Please contact Estate Tea before attempting payment.'},{status:503});
     }
-    const numbered = await fetch(`${ledgerUrl}/api/ledger/orders/${encodeURIComponent(data.order_id)}/reserve-number`, {
+    const numbered = await fetch(`${LEDGER_URL}/api/ledger/orders/${encodeURIComponent(data.order_id)}/reserve-number`, {
       method:'POST',
       headers:{'x-internal-service-key':ledgerKey},
       cache:'no-store',

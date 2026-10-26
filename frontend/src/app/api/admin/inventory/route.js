@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
+import { STEWARD_URL } from '@/lib/steward';
 
-const STEWARD_URL = (process.env.STEWARD_URL || 'https://estate-tea-steward-git-main-jadenpbenjaminjb-4968s-projects.vercel.app').replace(/\/$/, '');
 const OWNER_KEY = process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '';
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || OWNER_KEY;
 

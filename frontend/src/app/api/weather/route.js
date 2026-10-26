@@ -26,16 +26,21 @@ function getTeaRecommendation(temperature) {
 export async function POST(request) {
   try {
     const { place, latitude, longitude } = await request.json();
-    let lat = latitude, lon = longitude, cityName = place;
+    let lat = latitude == null ? null : Number(latitude);
+    let lon = longitude == null ? null : Number(longitude);
+    let cityName = String(place || '').slice(0, 100);
+    // Only real coordinates reach the upstream URL; anything else falls back to a place search.
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) lat = lon = null;
 
     if (lat == null || lon == null) {
-      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en`);
+      if (!cityName) throw new Error("No location");
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en`);
       const geoData = await geoRes.json();
       const results = geoData.results;
       if (!results || results.length === 0) throw new Error("City not found");
       lat = results[0].latitude;
       lon = results[0].longitude;
-      cityName = results[0].name || place;
+      cityName = results[0].name || cityName;
     }
 
     const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`);

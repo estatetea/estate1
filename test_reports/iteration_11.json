@@ -23,7 +23,7 @@
     "backend": "N/A (skipped per request)",
     "frontend": "100% (8/8 behaviors validated)"
   },
-  "test_credentials": "Admin password: WEUSEDTOBECALLEDHAMLETTEA26 at /#admin — confirmed working (Welcome, Admin toast + Products/Reviews/Orders tabs rendered)",
+  "test_credentials": "Admin password: [REDACTED] at /#admin — confirmed working (Welcome, Admin toast + Products/Reviews/Orders tabs rendered)",
   "seed_data_creation": "None",
   "retest_needed": false,
   "should_main_agent_self_test": true,

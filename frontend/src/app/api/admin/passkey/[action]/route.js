@@ -6,6 +6,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
+import { issueAdminToken, verifyAdmin } from '@/lib/admin-auth';
 
 export const runtime = 'nodejs';
 
@@ -16,13 +17,7 @@ const CREDENTIAL_COOKIE = 'estate_ai_passkey';
 const CHALLENGE_COOKIE = 'estate_ai_passkey_challenge';
 
 function secret() { return process.env.ADMIN_PASSWORD || ''; }
-function ownerToken() { return secret() ? crypto.createHmac('sha256', secret()).update('estate-tea-admin').digest('hex') : ''; }
-function authorized(request) {
-  const expected = ownerToken();
-  const supplied = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
-  if (!expected || supplied.length !== expected.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
-}
+function authorized(request) { return verifyAdmin(request); }
 function sign(value) { return crypto.createHmac('sha256', secret()).update(value).digest('base64url'); }
 function pack(data) { const value=Buffer.from(JSON.stringify(data)).toString('base64url'); return `${value}.${sign(value)}`; }
 function unpack(raw) {
@@ -114,7 +109,7 @@ export async function POST(request,{params}) {
       const verification=await verifyAuthenticationResponse({response:body,expectedChallenge:challenge.challenge,expectedOrigin:ORIGIN,expectedRPID:RP_ID,requireUserVerification:true,credential:{id:credential.id,publicKey:new Uint8Array(Buffer.from(credential.publicKey,'base64url')),counter:credential.counter,transports:['internal']}});
       if (!verification.verified) return jsonError('Face ID could not be verified',401);
       const updated={...credential,counter:verification.authenticationInfo.newCounter,transports:['internal']};
-      const response=NextResponse.json({verified:true,token:ownerToken(),method:'passkey'});
+      const response=NextResponse.json({verified:true,token:issueAdminToken(),method:'passkey'});
       response.cookies.set(CREDENTIAL_COOKIE,pack(updated),cookieOptions(60*60*24*365));
       response.cookies.delete(CHALLENGE_COOKIE);
       return response;
