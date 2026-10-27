@@ -19,4 +19,13 @@ export async function printBill(orderId, headers, w = openPrintWindow()) {
     const html = await r.text();
     w.document.open(); w.document.write(html); w.document.close();
   } catch (e) { w.close(); throw e; }
+  // Also hand the bill window a PDF copy for its "Brother app" button (phones without AirPrint).
+  try {
+    const p = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/bill-pdf`, { headers, cache: 'no-store' });
+    if (p.ok && !w.closed) {
+      const name = (p.headers.get('content-disposition') || '').match(/filename="([^"]+)"/)?.[1] || `${orderId}.pdf`;
+      w.__billPdf = new File([await p.blob()], name, { type: 'application/pdf' });
+      w.dispatchEvent(new Event('billpdf'));
+    }
+  } catch { /* the Print button still works without the PDF */ }
 }
