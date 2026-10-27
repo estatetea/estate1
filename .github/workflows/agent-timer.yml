@@ -1,0 +1,41 @@
+# Aegis's clock while he runs on Vercel (until he moves back to always-on Render).
+# Every 5 minutes: one Aegis round (health, stuck work, Brew's duties, scheduled slots).
+# 10:00 and 10:10 IST Mon-Fri: Aegis sends Scout to research 2 businesses (4 a day, 20 a week).
+name: Agent timer
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+    - cron: "30 4 * * 1-5"
+    - cron: "40 4 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "aegis or scout"
+        default: "aegis"
+jobs:
+  aegis-round:
+    if: github.event.schedule == '*/5 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.job != 'scout')
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Run one Aegis round
+        env:
+          AEGIS_TICK_KEY: ${{ secrets.AEGIS_TICK_KEY }}
+        run: |
+          code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 290 -X POST \
+            -H "x-aegis-tick-key: $AEGIS_TICK_KEY" https://estate-tea-aegis.vercel.app/api/aegis/orchestration/run)
+          echo "Aegis answered HTTP $code"; head -c 600 /tmp/out.json; echo
+          [ "$code" -lt 500 ]
+  scout-research:
+    if: github.event.schedule == '30 4 * * 1-5' || github.event.schedule == '40 4 * * 1-5' || (github.event_name == 'workflow_dispatch' && inputs.job == 'scout')
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Aegis sends Scout to research
+        env:
+          AEGIS_TICK_KEY: ${{ secrets.AEGIS_TICK_KEY }}
+        run: |
+          code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 295 -X POST \
+            -H "x-aegis-tick-key: $AEGIS_TICK_KEY" "https://estate-tea-aegis.vercel.app/api/aegis/scout/run?max_businesses=2")
+          echo "Aegis answered HTTP $code"; head -c 1200 /tmp/out.json; echo
+          [ "$code" -lt 500 ]
