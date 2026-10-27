@@ -10,7 +10,7 @@ const PACKS = [
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
 const GST_RATE = 0.05;
-const OWN_DELIVERY_FEE = 15; // Steward has the final say; this is for the preview
+const OWN_DELIVERY_FEE = 10; // Steward has the final say; this is for the preview
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 function statusLabel(row) {
