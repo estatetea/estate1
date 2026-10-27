@@ -10,11 +10,11 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "aegis or scout"
+        description: "aegis, scout or kick"
         default: "aegis"
 jobs:
   aegis-round:
-    if: github.event.schedule == '*/5 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.job != 'scout')
+    if: github.event.schedule == '*/5 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'aegis')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
@@ -39,3 +39,18 @@ jobs:
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 295 -X POST \
             -H "x-aegis-tick-key: $AEGIS_TICK_KEY" "https://estate-tea-aegis.vercel.app/api/aegis/scout/run?max_businesses=2")
           if [ "$code" = 200 ]; then echo "::notice::Scout run: $(head -c 300 /tmp/out.json | tr -d '\n')"; else echo "::error::Aegis answered HTTP $code: $(head -c 300 /tmp/out.json | tr -d '\n')"; exit 1; fi
+  kick-test:
+    # Same call cron-job.org makes: must answer within 30 seconds while the round carries on.
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'kick'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Start a round the quick way
+        env:
+          AEGIS_TICK_KEY: ${{ secrets.AEGIS_TICK_KEY }}
+        run: |
+          start=$(date +%s)
+          code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 30 -X POST \
+            -H "x-aegis-tick-key: $AEGIS_TICK_KEY" https://estate-tea-aegis.vercel.app/api/aegis/orchestration/kick)
+          took=$(( $(date +%s) - start ))
+          if [ "$code" = 200 ]; then echo "::notice::Kick answered HTTP 200 in ${took}s"; else echo "::error::Kick answered HTTP $code in ${took}s: $(head -c 300 /tmp/out.json | tr -d '\n')"; exit 1; fi
