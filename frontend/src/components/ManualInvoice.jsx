@@ -10,6 +10,7 @@ const PACKS = [
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
 const GST_RATE = 0.05;
+const OWN_DELIVERY_FEE = 15; // Steward has the final say; this is for the preview
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 function statusLabel(row) {
@@ -21,7 +22,9 @@ function statusLabel(row) {
 
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', product_id: '250g', quantity: 1 });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1 });
+  // Steward's distance check for the PIN: which delivery options apply.
+  const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState([]);
   const [stock, setStock] = useState(null);
@@ -35,7 +38,11 @@ export function ManualInvoice({ headers }) {
 
   const pack = PACKS.find(p => p.id === form.product_id) || PACKS[0];
   const qty = pack.test ? 1 : Math.max(1, Math.floor(Number(form.quantity) || 1));
-  const subtotal = pack.price * qty;
+  const teaTotal = pack.price * qty;
+  const ownFee = quote?.own_delivery_fee ?? OWN_DELIVERY_FEE;
+  const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? Math.max(0, Number(form.courier_fee) || 0) : 0;
+  // Delivery is charged with the tea, so GST applies to both.
+  const subtotal = teaTotal + deliveryFee;
   const gst = pack.test ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
   const total = subtotal + gst;
   const needKg = Math.round(pack.kg * qty * 1000) / 1000;
@@ -63,6 +70,7 @@ export function ManualInvoice({ headers }) {
 
   const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
+    if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the courier will cost');
     setBusy(true);
     try {
       const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty, override_stock: overrideStock }) });
@@ -74,10 +82,27 @@ export function ManualInvoice({ headers }) {
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
-      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', quantity: 1 }));
+      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1 }));
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
+
+  // Measure the distance once a full PIN is typed, and pick the delivery that applies.
+  useEffect(() => {
+    const pin = form.pincode.replace(/\D/g, '');
+    if (pin.length !== 6) { setQuote(null); return; }
+    let live = true;
+    setQuote({ loading: true });
+    fetch(`/api/admin/delivery-quote?pincode=${pin}`, { headers: headersRef.current, cache: 'no-store' })
+      .then(r => r.json()).then(q => {
+        if (!live) return;
+        setQuote(q);
+        if (q.found) setForm(f => ({ ...f, delivery_method: q.local ? 'own_delivery' : 'third_party_courier' }));
+      }).catch(() => live && setQuote({ found: false, message: "Couldn't measure the distance, so choose the delivery yourself.", own_delivery_allowed: true, courier_allowed: true }));
+    return () => { live = false; };
+  }, [form.pincode]);
+  const ownAllowed = !quote || quote.loading || quote.own_delivery_allowed !== false;
+  const courierAllowed = !quote?.found || quote.courier_allowed;
 
   // A new pack or quantity needs a fresh check.
   useEffect(() => { setStockWarning(null); }, [form.product_id, qty]);
@@ -90,7 +115,18 @@ export function ManualInvoice({ headers }) {
       <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Customer name" className={input} />
       <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="Email address" className={input} />
       <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (for SMS)" className={input} />
-      <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address with PIN code (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
+      <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
+      <input value={form.pincode} onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="PIN code" className={input} />
+      <p className={`self-center text-xs ${quote?.found === false ? 'text-amber-400' : 'text-gray-400'}`}>{quote?.loading ? 'Measuring the distance…' : quote?.message || 'Type the PIN to measure the distance.'}</p>
+    </div>
+    <div className="mt-2">
+      <p className="text-[11px] text-gray-500">Delivery</p>
+      <div className="mt-1 grid grid-cols-3 gap-2">
+        {[['own_delivery', `Estate Tea · ${rupees(ownFee)}`, ownAllowed], ['third_party_courier', 'Courier', courierAllowed], ['', 'No charge', true]].filter(o => o[2]).map(([value, label]) =>
+          <button key={value || 'none'} type="button" onClick={() => set('delivery_method', value)}
+            className={`rounded-2xl border px-2 py-2.5 text-xs ${form.delivery_method === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
+      </div>
+      {form.delivery_method === 'third_party_courier' && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the courier will cost (₹)" className={`${input} mt-2`} />}
     </div>
     <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
       <label className="text-[11px] text-gray-500">Packet size
@@ -103,7 +139,8 @@ export function ManualInvoice({ headers }) {
       </label>
     </div>
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
-      <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(subtotal)}</span></div>
+      <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(teaTotal)}</span></div>
+      {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'courier'})</span><span>{rupees(deliveryFee)}</span></div>}
       <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>

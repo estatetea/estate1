@@ -5,6 +5,9 @@ import { printBill } from '@/lib/print-bill';
 
 // The bill belongs to the parcel once it's packed and ready to go; the laptop prints it at that step.
 const BILL_STAGES = ['READY_FOR_DISPATCH', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+// The delivery method is set once (on the invoice, or the first time it's needed); Steward needs it from Ready on.
+const METHOD_STAGES = ['READY_FOR_DISPATCH', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+const METHOD_LABELS = { own_delivery: 'Estate Tea delivery', third_party_courier: 'Third-party courier' };
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
@@ -27,7 +30,7 @@ const needsNote = (target, current) => EXCEPTION_STATUSES.includes(target) || EX
 
 function validate(d, current) {
   if (!d.targetStatus) return 'Choose the next status.';
-  if (d.targetStatus !== 'CANCELLED' && !d.deliveryMethod) return 'Choose a delivery method.';
+  if (METHOD_STAGES.includes(d.targetStatus) && !d.deliveryMethod) return 'Choose a delivery method.';
   if (needsNote(d.targetStatus, current) && !d.deliveryNote.trim()) return 'Add a note with the reason and the retry plan.';
   if (d.targetStatus === 'DELIVERED') {
     if (d.confirmationType === 'delivery_code' && !/^\d{4}$/.test(d.deliveryCode)) return 'Enter the 4-digit code the customer gives you.';
@@ -40,10 +43,11 @@ function validate(d, current) {
 export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   const [draft, setDraft] = useState(() => draftFrom(order));
   const [saving, setSaving] = useState(false);
+  const [changingMethod, setChangingMethod] = useState(false);
   const [error, setError] = useState(null);
   // Steward's protected-reserve warning: the owner can still go ahead.
   const [reserveWarning, setReserveWarning] = useState(null);
-  useEffect(() => { setDraft(draftFrom(order)); setError(null); setReserveWarning(null); }, [order]);
+  useEffect(() => { setDraft(draftFrom(order)); setError(null); setReserveWarning(null); setChangingMethod(false); }, [order]);
   const set = patch => setDraft(prev => ({ ...prev, ...patch }));
   const locked = !isPaymentVerified(order);
   // Unpaid orders can only be cancelled (Steward re-checks the unpaid rule).
@@ -116,7 +120,19 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
         </div>
       </div>
 
-      {draft.targetStatus && draft.targetStatus !== 'CANCELLED' && (
+      {order.delivery_method && !changingMethod && draft.targetStatus && draft.targetStatus !== 'CANCELLED' && (
+        <div className="flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm" data-testid="delivery-method-fixed">
+          <span className="text-gray-300">{METHOD_LABELS[order.delivery_method] || order.delivery_method}{Number(order.delivery_fee) > 0 && <span className="text-gray-500"> · ₹{Number(order.delivery_fee)} charged</span>}</span>
+          <button type="button" onClick={() => setChangingMethod(true)} className="text-xs text-[#d7a84b]">Change</button>
+        </div>
+      )}
+      {draft.targetStatus === 'OUT_FOR_DELIVERY' && order.delivery_method === 'third_party_courier' && !changingMethod && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 animate-in fade-in">
+          <Field label="Courier / service" id="courier-name-fixed"><input id="courier-name-fixed" value={draft.courierName} onChange={e => set({ courierName: e.target.value })} placeholder="e.g. Porter" className={inputClass} /></Field>
+          <Field label="Tracking / booking ref" id="tracking-reference-fixed"><input id="tracking-reference-fixed" value={draft.trackingReference} onChange={e => set({ trackingReference: e.target.value })} placeholder="Optional" className={inputClass} /></Field>
+        </div>
+      )}
+      {draft.targetStatus && draft.targetStatus !== 'CANCELLED' && (changingMethod || (!order.delivery_method && METHOD_STAGES.includes(draft.targetStatus))) && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-1">
           <Field label="Delivery method" id="delivery-method">
             <div className="grid grid-cols-2 gap-2">

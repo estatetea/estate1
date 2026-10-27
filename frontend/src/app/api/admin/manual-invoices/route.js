@@ -26,7 +26,7 @@ export async function POST(request) {
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, {
       method: 'POST', headers, cache: 'no-store',
-      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), delivery_address: String(body.delivery_address || '').slice(0, 500), product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
+      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), delivery_address: String(body.delivery_address || '').slice(0, 500), pincode: String(body.pincode || '').replace(/\D/g, '').slice(0, 6), delivery_method: ['own_delivery', 'third_party_courier'].includes(body.delivery_method) ? body.delivery_method : '', courier_fee: Math.max(0, Number(body.courier_fee) || 0), product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
     });
     const data = await r.json().catch(() => ({}));
     if (r.ok) return NextResponse.json(data, { status: r.status });
