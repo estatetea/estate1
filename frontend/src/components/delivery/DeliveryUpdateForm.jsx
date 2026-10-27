@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Check, RefreshCw, CheckCircle2, AlertCircle, Lock, Printer } from 'lucide-react';
-import { printBill, autoPrintOn, openPrintWindow } from '@/lib/print-bill';
+import { printBill } from '@/lib/print-bill';
+
+// The bill belongs to the parcel once it's packed and ready to go; the laptop prints it at that step.
+const BILL_STAGES = ['READY_FOR_DISPATCH', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
@@ -56,8 +59,6 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
     const problem = validate(draft, order.delivery_status);
     if (problem) { setError(problem); return; }
     setSaving(true); setError(null); setReserveWarning(null);
-    // Automatic printing: open the print window now, inside the tap, and fill it once the save succeeds.
-    const printWindow = draft.targetStatus === 'BEING_PACKAGED' && autoPrintOn() ? openPrintWindow() : null;
     try {
       const id = order.internal_order_id || order.order_id;
       const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/delivery`, {
@@ -76,19 +77,14 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 409 && data.detail?.code === 'reserve_warning') { printWindow?.close(); setReserveWarning(data.detail.message); return; }
-      if (!res.ok) printWindow?.close();
+      if (res.status === 409 && data.detail?.code === 'reserve_warning') { setReserveWarning(data.detail.message); return; }
       if (!res.ok) throw new Error((typeof data.detail === 'string' && data.detail) || data.error || `Update failed (${res.status}). Nothing was changed.`);
-      if (data.delivery_status === 'BEING_PACKAGED' && printWindow) {
-        printBill(order.internal_order_id || order.order_id, headers, printWindow).catch(e => toast.error(e.message));
-        toast.success('Saved: Being packaged. Printing the bill…');
-      } else if (data.delivery_status === 'BEING_PACKAGED') {
-        // Packing is when the bill goes in the parcel.
-        toast.success('Saved: Being packaged. If automatic printing is on, the bill is on its way to your printer.', { duration: 15000, action: { label: 'Print bill', onClick: () => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message)) } });
+      if (data.delivery_status === 'READY_FOR_DISPATCH') {
+        // The laptop print helper picks this up within a minute; nothing opens on this screen.
+        toast.success('Saved: Ready for dispatch. The bill will print on the laptop printer within a minute.', { duration: 8000 });
       } else toast.success(`Saved: ${DELIVERY_LABELS[data.delivery_status] || data.delivery_status}`);
       await onSaved();
     } catch (e) {
-      printWindow?.close();
       setError(e.message || 'Could not save. Check your connection and retry.');
     } finally { setSaving(false); }
   };
@@ -96,11 +92,10 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
   return (
     <div className="space-y-5" data-testid="delivery-update-form">
       {lockedNotice}
-      {!locked && <button type="button" onClick={() => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message))}
+      {BILL_STAGES.includes(order.delivery_status) && <button type="button" onClick={() => printBill(order.internal_order_id || order.order_id, headers).catch(e => toast.error(e.message))}
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.06] py-2.5 text-sm text-[#f1dc9c]" data-testid="print-bill">
         <Printer className="h-4 w-4" />Print bill</button>}
-      {order.bill_print?.status === 'sent' && <p className="-mt-3 text-center text-[11px] text-emerald-400">Bill sent to your printer automatically</p>}
-      {['failed', 'gave_up'].includes(order.bill_print?.status) && <p className="-mt-3 text-center text-[11px] text-amber-400">Automatic printing didn't go through. Use Print bill.</p>}
+      {order.helper_print?.printed_at && <p className="-mt-3 text-center text-[11px] text-emerald-400">Bill printed on the laptop printer at {new Date(order.helper_print.printed_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</p>}
       <div>
         <p className="mb-2.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">Move this order to</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
