@@ -25,7 +25,7 @@ jobs:
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 290 -X POST \
             -H "x-aegis-tick-key: $AEGIS_TICK_KEY" https://estate-tea-aegis.vercel.app/api/aegis/orchestration/run)
           echo "Aegis answered HTTP $code"; head -c 600 /tmp/out.json; echo
-          [ "$code" -lt 500 ]
+          [ "$code" = 200 ]
   scout-research:
     if: github.event.schedule == '30 4 * * 1-5' || github.event.schedule == '40 4 * * 1-5' || (github.event_name == 'workflow_dispatch' && inputs.job == 'scout')
     runs-on: ubuntu-latest
@@ -38,4 +38,4 @@ jobs:
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 295 -X POST \
             -H "x-aegis-tick-key: $AEGIS_TICK_KEY" "https://estate-tea-aegis.vercel.app/api/aegis/scout/run?max_businesses=2")
           echo "Aegis answered HTTP $code"; head -c 1200 /tmp/out.json; echo
-          [ "$code" -lt 500 ]
+          [ "$code" = 200 ]
