@@ -22,10 +22,10 @@ jobs:
         env:
           AEGIS_TICK_KEY: ${{ secrets.AEGIS_TICK_KEY }}
         run: |
+          [ -n "$AEGIS_TICK_KEY" ] || { echo "::error::AEGIS_TICK_KEY secret is empty or missing"; exit 1; }
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 290 -X POST \
             -H "x-aegis-tick-key: $AEGIS_TICK_KEY" https://estate-tea-aegis.vercel.app/api/aegis/orchestration/run)
-          echo "Aegis answered HTTP $code"; head -c 600 /tmp/out.json; echo
-          [ "$code" = 200 ]
+          if [ "$code" = 200 ]; then echo "::notice::Aegis round ran (HTTP 200)"; else echo "::error::Aegis answered HTTP $code: $(head -c 300 /tmp/out.json | tr -d '\n')"; exit 1; fi
   scout-research:
     if: github.event.schedule == '30 4 * * 1-5' || github.event.schedule == '40 4 * * 1-5' || (github.event_name == 'workflow_dispatch' && inputs.job == 'scout')
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
         env:
           AEGIS_TICK_KEY: ${{ secrets.AEGIS_TICK_KEY }}
         run: |
+          [ -n "$AEGIS_TICK_KEY" ] || { echo "::error::AEGIS_TICK_KEY secret is empty or missing"; exit 1; }
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' --max-time 295 -X POST \
             -H "x-aegis-tick-key: $AEGIS_TICK_KEY" "https://estate-tea-aegis.vercel.app/api/aegis/scout/run?max_businesses=2")
-          echo "Aegis answered HTTP $code"; head -c 1200 /tmp/out.json; echo
-          [ "$code" = 200 ]
+          if [ "$code" = 200 ]; then echo "::notice::Scout run: $(head -c 300 /tmp/out.json | tr -d '\n')"; else echo "::error::Aegis answered HTTP $code: $(head -c 300 /tmp/out.json | tr -d '\n')"; exit 1; fi
