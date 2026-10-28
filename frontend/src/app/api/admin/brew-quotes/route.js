@@ -17,7 +17,7 @@ export async function POST(request) {
     const r = await fetch(`${BREW_URL}/brew/relationships/${id}/quote-decision`, {
       method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', 'x-owner-key': OWNER_KEY },
-      body: JSON.stringify({ decision: body.decision }),
+      body: JSON.stringify({ decision: body.decision, ...(Number(body.total_inr) > 0 ? { total_inr: Math.round(Number(body.total_inr) * 100) / 100 } : {}) }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return NextResponse.json({ error: data.detail || data.error || 'Brew could not act on the quote' }, { status: r.status });
