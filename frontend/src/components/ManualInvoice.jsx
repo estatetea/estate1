@@ -10,6 +10,7 @@ const PACKS = [
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
 const GST_RATE = 0.05;
+const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const OWN_DELIVERY_FEE = 10; // Steward has the final say; this is for the preview
 const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -22,7 +23,7 @@ function statusLabel(row) {
 
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1 });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1, customer_type: 'home', business_name: '', gstin: '' });
   // Steward's distance check for the PIN: which delivery options apply.
   const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -71,6 +72,8 @@ export function ManualInvoice({ headers }) {
   const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
     if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the courier will cost');
+    if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
+    if (form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('A business invoice needs a valid 15-character GSTIN');
     setBusy(true);
     try {
       const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty, override_stock: overrideStock }) });
@@ -82,7 +85,7 @@ export function ManualInvoice({ headers }) {
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
-      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1 }));
+      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1, customer_type: 'home', business_name: '', gstin: '' }));
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -111,8 +114,20 @@ export function ManualInvoice({ headers }) {
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
     <h2 className="text-xl text-[#efbd63]">Send an invoice</h2>
     <p className="text-xs text-gray-500 mt-1">Razorpay emails and texts the customer a payment link. Ledger gives it an ET order number, and once it's paid the customer gets Estate Tea's confirmation with a tracking link.</p>
-    <div className="mt-4 grid gap-2 sm:grid-cols-2">
-      <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Customer name" className={input} />
+    <div className="mt-4 grid grid-cols-2 gap-2">
+      {[['home', 'Home'], ['business', 'Business']].map(([value, label]) =>
+        <button key={value} type="button" onClick={() => set('customer_type', value)}
+          className={`rounded-2xl border px-2 py-2.5 text-xs ${form.customer_type === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
+    </div>
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      {form.customer_type === 'business' && <>
+        <input value={form.business_name} onChange={e => set('business_name', e.target.value)} placeholder="Business name (on the tax invoice)" className={input} />
+        <div>
+          <input value={form.gstin} onChange={e => set('gstin', e.target.value.toUpperCase().replace(/\s/g, '').slice(0, 15))} placeholder="GSTIN (required)" className={`${input} font-mono ${form.gstin && !GSTIN.test(form.gstin) ? 'border-amber-500/60' : ''}`} />
+          {form.gstin && !GSTIN.test(form.gstin) && <p className="mt-1 px-1 text-[11px] text-amber-400">GSTIN is 15 characters, like 29AAGCB7383J1Z4.</p>}
+        </div>
+      </>}
+      <input value={form.name} onChange={e => set('name', e.target.value)} placeholder={form.customer_type === 'business' ? 'Contact person' : 'Customer name'} className={input} />
       <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="Email address" className={input} />
       <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (for SMS)" className={input} />
       <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
@@ -166,8 +181,8 @@ export function ManualInvoice({ headers }) {
           const item = (row.items || [])[0] || {};
           return <div key={row.order_id} className="p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm text-white truncate">{row.is_test && <span className="mr-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">TEST</span>}{row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
-              <p className="text-xs text-gray-500 mt-0.5">{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}</p>
+              <p className="text-sm text-white truncate">{row.is_test && <span className="mr-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">TEST</span>}{row.business_name || row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
+              <p className="text-xs text-gray-500 mt-0.5">{row.gstin && <span className="font-mono">GSTIN {row.gstin} · </span>}{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}</p>
             </div>
             <p className={`text-[11px] text-right shrink-0 ${tone}`}>{label}</p>
           </div>;
