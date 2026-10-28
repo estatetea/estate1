@@ -1,3 +1,4 @@
+import PolicyPage from '@/components/PolicyPage';
 // Estate Tea's privacy policy: what we collect from customers, why, who helps us process it, and how to have it removed.
 export const metadata = {
   title: 'Privacy Policy · Estate Tea',
@@ -26,7 +27,7 @@ const sections = [
     'We do not sell or rent your personal information to anyone.',
   ]],
   ['Who helps us', [
-    'We use trusted service providers who process information only to provide their service to us: Razorpay (payments and invoices), Resend (sending and receiving email), Meta / WhatsApp Business (WhatsApp messages), Vercel (hosting our website and systems), MongoDB Atlas (our database), and AI services that help our team draft replies and run our internal assistant: Google (Gemini), Groq and ElevenLabs (voice), with OpenAI used only if we switch it on. A person at Estate Tea reviews every reply before it is sent to you. Couriers receive your name, phone number and address when they deliver your order.',
+    'We use trusted service providers who process information only to provide their service to us: Razorpay (payments and invoices), Resend (sending and receiving email), Meta / WhatsApp Business (WhatsApp messages), Vercel (hosting our website and systems), MongoDB Atlas (our database), and AI services that help our team draft replies and run our internal assistant: Google (Gemini), Groq and ElevenLabs (voice), with OpenAI used only if we switch it on. A person at Estate Tea oversees these replies, and anything about payments, problems or refunds is always handled by a person. Couriers receive your name, phone number and address when they deliver your order.',
     'We may share information if the law requires it, for example with tax authorities.',
   ]],
   ['How long we keep it', [
@@ -45,27 +46,5 @@ const sections = [
 ];
 
 export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
-      <header className="glass-surface border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-2xl font-light gold-text">Estate Tea</a>
-          <a href="/" className="text-xs uppercase tracking-[.2em] text-gray-400 hover:text-[#D4AF37]">Shop</a>
-        </div>
-      </header>
-      <main className="flex-1 px-4 sm:px-6">
-        <article className="mx-auto max-w-2xl py-12">
-          <p className="text-xs uppercase tracking-[.25em] text-[#D4AF37]">Estate Tea</p>
-          <h1 className="mt-2 text-4xl font-light gold-text">Privacy Policy</h1>
-          <p className="mt-3 text-xs text-gray-500">Last updated {UPDATED}</p>
-          {sections.map(([title, paras]) => (
-            <section key={title} className="mt-10">
-              <h2 className="text-lg text-white">{title}</h2>
-              {paras.map((p, i) => <p key={i} className="mt-3 text-sm leading-7 text-gray-300">{p}</p>)}
-            </section>
-          ))}
-        </article>
-      </main>
-    </div>
-  );
+  return <PolicyPage title="Privacy Policy" updated={UPDATED} sections={sections} />;
 }

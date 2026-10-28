@@ -1,3 +1,4 @@
+import { PolicyFooter } from '@/components/PolicyPage';
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
@@ -515,6 +516,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         </div>
         </section>
       </main>
+      <PolicyFooter />
     </div>
   );
 };
