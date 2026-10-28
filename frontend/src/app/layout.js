@@ -10,8 +10,8 @@ export const metadata = {
     title: 'Estate Tea AI',
   },
   icons: {
-    icon: '/estate-tea-ai-icon.svg',
-    apple: '/estate-tea-ai-icon.svg',
+    icon: [{ url: '/estate-tea-favicon.png', sizes: '48x48', type: 'image/png' }, { url: '/estate-tea-icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/estate-tea-apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 
