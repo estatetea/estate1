@@ -182,7 +182,7 @@ export function ManualInvoice({ headers }) {
           return <div key={row.order_id} className="p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm text-white truncate">{row.is_test && <span className="mr-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">TEST</span>}{row.business_name || row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
-              <p className="text-xs text-gray-500 mt-0.5">{row.gstin && <span className="font-mono">GSTIN {row.gstin} · </span>}{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{row.gstin && <span className="font-mono">GSTIN {row.gstin} · </span>}{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}{row.qr_image_url && row.status === 'AWAITING_PAYMENT' && <> · <a href={row.qr_image_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">scan-to-pay QR</a></>}</p>
             </div>
             <p className={`text-[11px] text-right shrink-0 ${tone}`}>{label}</p>
           </div>;
