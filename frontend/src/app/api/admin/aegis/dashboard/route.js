@@ -30,7 +30,7 @@ export async function PUT(request) {
     const action = String(input?.action || '').trim().toLowerCase();
     const { edited_subject, edited_body, edited_recipient, owner_note } = input || {};
     if (!approval_id) return NextResponse.json({ error: 'Missing approval ID' }, { status: 400 });
-    if (!['approve','reject','edit'].includes(action)) {
+    if (!['approve','reject','edit','discard'].includes(action)) {
       return NextResponse.json({ error: `Invalid approval decision: ${action || 'missing action'}` }, { status: 400 });
     }
     const response = await fetch(`${AEGIS_URL}/api/aegis/approvals/${encodeURIComponent(approval_id)}`, {
