@@ -34,6 +34,8 @@ export function PolicyFooter() {
       <span className="mx-3 text-gray-700">·</span>
       <a href="/privacy" className="hover:text-[#D4AF37]">Privacy</a>
       <span className="mx-3 text-gray-700">·</span>
+      <a href="https://wa.me/919742668951" target="_blank" rel="noreferrer" className="hover:text-[#D4AF37]">WhatsApp us</a>
+      <span className="mx-3 text-gray-700">·</span>
       <a href="mailto:brew@estatetea.in" className="hover:text-[#D4AF37]">brew@estatetea.in</a>
     </footer>
   );
