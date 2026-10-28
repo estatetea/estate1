@@ -26,7 +26,7 @@ const sections = [
     'We do not sell or rent your personal information to anyone.',
   ]],
   ['Who helps us', [
-    'We use trusted service providers who process information only to provide their service to us: Razorpay (payments and invoices), Resend (sending and receiving email), Meta / WhatsApp Business (WhatsApp messages), Vercel (hosting our website and systems), MongoDB Atlas (our database) and Google (to help us draft replies, which a person at Estate Tea reviews before anything is sent). Couriers receive your name, phone number and address when they deliver your order.',
+    'We use trusted service providers who process information only to provide their service to us: Razorpay (payments and invoices), Resend (sending and receiving email), Meta / WhatsApp Business (WhatsApp messages), Vercel (hosting our website and systems), MongoDB Atlas (our database), and AI services that help our team draft replies and run our internal assistant: Google (Gemini), Groq and ElevenLabs (voice), with OpenAI used only if we switch it on. A person at Estate Tea reviews every reply before it is sent to you. Couriers receive your name, phone number and address when they deliver your order.',
     'We may share information if the law requires it, for example with tax authorities.',
   ]],
   ['How long we keep it', [
