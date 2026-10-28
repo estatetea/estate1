@@ -19,6 +19,9 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Aegis unavailable' }, { status: 502 });
   }
 }
+// Rejecting a draft makes Brew write a new one, which can take a minute.
+export const maxDuration = 300;
+
 export async function PUT(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
