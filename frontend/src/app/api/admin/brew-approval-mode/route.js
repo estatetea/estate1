@@ -20,6 +20,6 @@ export async function GET(request) {
 export async function PUT(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json().catch(() => ({}));
-  if (!['whatsapp', 'email'].includes(body.channel) || !['auto', 'approval'].includes(body.mode)) return NextResponse.json({ error: 'Choose a channel and a mode' }, { status: 400 });
+  if (!['whatsapp', 'email', 'whatsapp_orders'].includes(body.channel) || !['auto', 'approval'].includes(body.mode)) return NextResponse.json({ error: 'Choose a channel and a mode' }, { status: 400 });
   try { return await call('PUT', { channel: body.channel, mode: body.mode }); } catch { return NextResponse.json({ error: 'Could not reach Brew' }, { status: 502 }); }
 }
