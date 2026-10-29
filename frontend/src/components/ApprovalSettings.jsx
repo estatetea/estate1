@@ -26,7 +26,7 @@ export function ApprovalSettings({ headers, only, compact = false }) {
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || 'Could not change the setting');
       setMode(data);
-      toast.success(next === 'auto' ? `${LABEL[channel]}: approval off` : `${LABEL[channel]}: approval on`);
+      toast.success(next === 'auto' ? `${LABEL[channel]}: Brew now does it himself` : `${LABEL[channel]}: Brew asks you first`);
     } catch (e) { toast.error(e.message); } finally { setBusy(''); }
   };
   const rows = CHANNELS.filter(([channel]) => !only || channel.startsWith(only));
@@ -37,7 +37,7 @@ export function ApprovalSettings({ headers, only, compact = false }) {
           <div><p className="text-sm text-white">{label}</p><p className="text-[11px] text-gray-500">{mode ? (on ? onText : offText) : 'Loading…'}</p></div>
           <button onClick={() => flip(channel)} disabled={!mode || busy === channel} role="switch" aria-checked={on} aria-label={`${label}: approval ${on ? 'on' : 'off'}`} className="flex items-center gap-2 text-xs text-gray-300 disabled:opacity-50">
             <span className={`relative h-6 w-11 rounded-full transition-colors ${on ? 'bg-[#efbd63]' : 'bg-white/15'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} /></span>
-            {on ? 'Approval on' : 'Approval off'}
+            {on ? 'Asks me first' : 'Brew does it'}
           </button>
         </div>;
       })}
