@@ -143,6 +143,10 @@ export default function OrderDetailsPage() {
                   className="mt-2 flex min-h-12 w-full items-center justify-center rounded-lg border border-[#D4AF37] bg-[#D4AF37] px-5 py-3 text-sm font-medium tracking-wide text-[#0A0A0A] transition hover:bg-[#E1C15A] disabled:cursor-not-allowed disabled:opacity-60">
                   {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Saving…</> : 'Save my details'}
                 </button>
+                <div className="rounded-xl border border-white/10 px-4 py-3 text-xs font-light leading-5 text-white/60">
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[#D4AF37]">Delivery</p>
+                  Free in PIN 560077 · ₹10 elsewhere within about 12 km · further away, a third-party delivery service at what it costs (we’ll confirm it before you pay).
+                </div>
                 <p className="pt-1 text-center text-xs font-light leading-5 text-white/40">Used only for your Estate Tea orders and invoices.</p>
               </form>
             </>

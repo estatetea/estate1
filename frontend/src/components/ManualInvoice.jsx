@@ -72,7 +72,7 @@ export function ManualInvoice({ headers }) {
 
   const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
-    if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the courier will cost');
+    if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
     if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
     if (form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('A business invoice needs a valid 15-character GSTIN');
     setBusy(true);
@@ -110,8 +110,7 @@ export function ManualInvoice({ headers }) {
   // Why this delivery: the PIN's distance from us decides it; the owner can still change it.
   const autoMethod = quote?.found ? (quote.local ? 'own_delivery' : 'third_party_courier') : null;
   const deliveryWhy = !quote || quote.loading ? '' : !quote.found ? quote.message
-    : (quote.local ? `${quote.message} Within ${quote.local_km ?? 12} km we deliver ourselves.` : quote.message)
-      + (form.delivery_method !== autoMethod ? ' You changed it by hand.' : '');
+    : `${quote.message} ${quote.rule || ''}`.trim() + (form.delivery_method !== autoMethod ? ' You changed it by hand.' : '');
 
   // A new pack or quantity needs a fresh check.
   useEffect(() => { setStockWarning(null); }, [form.product_id, qty]);
@@ -143,11 +142,11 @@ export function ManualInvoice({ headers }) {
     <div className="mt-2">
       <p className="text-[11px] text-gray-500">Delivery <WhyInfo className="ml-1" text={deliveryWhy} /></p>
       <div className="mt-1 grid grid-cols-3 gap-2">
-        {[['own_delivery', `Estate Tea · ${rupees(ownFee)}`, ownAllowed], ['third_party_courier', 'Courier', courierAllowed], ['', 'No charge', true]].filter(o => o[2]).map(([value, label]) =>
+        {[['own_delivery', `Estate Tea · ${rupees(ownFee)}`, ownAllowed], ['third_party_courier', 'Third-party', courierAllowed], ['', 'No charge', true]].filter(o => o[2]).map(([value, label]) =>
           <button key={value || 'none'} type="button" onClick={() => set('delivery_method', value)}
             className={`rounded-2xl border px-2 py-2.5 text-xs ${form.delivery_method === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
       </div>
-      {form.delivery_method === 'third_party_courier' && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the courier will cost (₹)" className={`${input} mt-2`} />}
+      {form.delivery_method === 'third_party_courier' && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
     </div>
     <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
       <label className="text-[11px] text-gray-500">Packet size
@@ -161,7 +160,7 @@ export function ManualInvoice({ headers }) {
     </div>
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
       <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(teaTotal)}</span></div>
-      {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'courier'})</span><span>{rupees(deliveryFee)}</span></div>}
+      {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
       <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>

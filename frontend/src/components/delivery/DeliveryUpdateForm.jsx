@@ -6,7 +6,7 @@ import { printBill } from '@/lib/print-bill';
 // The bill belongs to the parcel once it's packed and ready to go; the laptop prints it at that step.
 const BILL_STAGES = ['READY_FOR_DISPATCH', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 // The delivery method is chosen once, on Send invoice; this screen only shows it.
-const METHOD_LABELS = { own_delivery: 'Estate Tea delivery', third_party_courier: 'Third-party courier' };
+const METHOD_LABELS = { own_delivery: 'Estate Tea delivery', third_party_courier: 'Third-party delivery service' };
 import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } from '@/lib/delivery-status';
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
