@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { WhyInfo } from './WhyInfo';
 
 // Same retail packs and prices as the store and Steward.
 const PACKS = [
@@ -106,6 +107,11 @@ export function ManualInvoice({ headers }) {
   }, [form.pincode]);
   const ownAllowed = !quote || quote.loading || quote.own_delivery_allowed !== false;
   const courierAllowed = !quote?.found || quote.courier_allowed;
+  // Why this delivery: the PIN's distance from us decides it; the owner can still change it.
+  const autoMethod = quote?.found ? (quote.local ? 'own_delivery' : 'third_party_courier') : null;
+  const deliveryWhy = !quote || quote.loading ? '' : !quote.found ? quote.message
+    : (quote.local ? `${quote.message} Within ${quote.local_km ?? 12} km we deliver ourselves.` : quote.message)
+      + (form.delivery_method !== autoMethod ? ' You changed it by hand.' : '');
 
   // A new pack or quantity needs a fresh check.
   useEffect(() => { setStockWarning(null); }, [form.product_id, qty]);
@@ -135,7 +141,7 @@ export function ManualInvoice({ headers }) {
       <p className={`self-center text-xs ${quote?.found === false ? 'text-amber-400' : 'text-gray-400'}`}>{quote?.loading ? 'Measuring the distance…' : quote?.message || 'Type the PIN to measure the distance.'}</p>
     </div>
     <div className="mt-2">
-      <p className="text-[11px] text-gray-500">Delivery</p>
+      <p className="text-[11px] text-gray-500">Delivery <WhyInfo className="ml-1" text={deliveryWhy} /></p>
       <div className="mt-1 grid grid-cols-3 gap-2">
         {[['own_delivery', `Estate Tea · ${rupees(ownFee)}`, ownAllowed], ['third_party_courier', 'Courier', courierAllowed], ['', 'No charge', true]].filter(o => o[2]).map(([value, label]) =>
           <button key={value || 'none'} type="button" onClick={() => set('delivery_method', value)}
