@@ -145,7 +145,7 @@ export default function OrderDetailsPage() {
                 </button>
                 <div className="rounded-xl border border-white/10 px-4 py-3 text-xs font-light leading-5 text-white/60">
                   <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[#D4AF37]">Delivery</p>
-                  Free in PIN 560077 · ₹10 elsewhere within about 12 km · further away, a third-party delivery service at what it costs (we’ll confirm it before you pay).
+                  Within Bangalore only. Free in PIN 560077 · ₹10 to ₹25 by distance up to 12 km · further away in Bangalore, a third-party delivery service at what it costs (we’ll confirm it before you pay). Outside Bangalore: bulk orders of 7 kg or more, plus delivery charges.
                 </div>
                 <p className="pt-1 text-center text-xs font-light leading-5 text-white/40">Used only for your Estate Tea orders and invoices.</p>
               </form>
