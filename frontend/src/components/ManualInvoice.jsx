@@ -24,7 +24,7 @@ function statusLabel(row) {
 
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1, customer_type: 'home', business_name: '', gstin: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1, customer_type: 'home', business_name: '', gstin: '', gst_enabled: true });
   // Steward's distance check for the PIN: which delivery options apply.
   const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -45,7 +45,7 @@ export function ManualInvoice({ headers }) {
   const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? Math.max(0, Number(form.courier_fee) || 0) : 0;
   // Delivery is charged with the tea, so GST applies to both.
   const subtotal = teaTotal + deliveryFee;
-  const gst = pack.test ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
+  const gst = pack.test || !form.gst_enabled ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
   const total = subtotal + gst;
   const needKg = Math.round(pack.kg * qty * 1000) / 1000;
   // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
@@ -74,7 +74,7 @@ export function ManualInvoice({ headers }) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
     if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
     if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
-    if (form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('A business invoice needs a valid 15-character GSTIN');
+    if (form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
     setBusy(true);
     try {
       const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty, override_stock: overrideStock }) });
@@ -86,7 +86,7 @@ export function ManualInvoice({ headers }) {
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
-      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1, customer_type: 'home', business_name: '', gstin: '' }));
+      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1, customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -124,11 +124,20 @@ export function ManualInvoice({ headers }) {
         <button key={value} type="button" onClick={() => set('customer_type', value)}
           className={`rounded-2xl border px-2 py-2.5 text-xs ${form.customer_type === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
     </div>
+    <div className="mt-3">
+      <p className="text-[11px] text-gray-500 mb-1">GST for this manual invoice</p>
+      <div className="grid grid-cols-2 gap-2">
+        {[{ value: true, label: 'Normal GST · 5%' }, { value: false, label: 'GST off' }].map(option =>
+          <button key={String(option.value)} type="button" onClick={() => set('gst_enabled', option.value)}
+            className={`rounded-2xl border px-3 py-2.5 text-xs ${form.gst_enabled === option.value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{option.label}</button>)}
+      </div>
+      <p className="mt-1 text-[11px] text-gray-500">{form.gst_enabled ? 'GST is calculated at 5% on tea and delivery.' : 'GST will not be added to this manual invoice.'}</p>
+    </div>
     <div className="mt-2 grid gap-2 sm:grid-cols-2">
       {form.customer_type === 'business' && <>
         <input value={form.business_name} onChange={e => set('business_name', e.target.value)} placeholder="Business name (on the tax invoice)" className={input} />
         <div>
-          <input value={form.gstin} onChange={e => set('gstin', e.target.value.toUpperCase().replace(/\s/g, '').slice(0, 15))} placeholder="GSTIN (required)" className={`${input} font-mono ${form.gstin && !GSTIN.test(form.gstin) ? 'border-amber-500/60' : ''}`} />
+          <input value={form.gstin} onChange={e => set('gstin', e.target.value.toUpperCase().replace(/\s/g, '').slice(0, 15))} placeholder={form.gst_enabled ? "GSTIN (required with GST)" : "GSTIN (optional)"} className={`${input} font-mono ${form.gstin && !GSTIN.test(form.gstin) ? 'border-amber-500/60' : ''}`} />
           {form.gstin && !GSTIN.test(form.gstin) && <p className="mt-1 px-1 text-[11px] text-amber-400">GSTIN is 15 characters, like 29AAGCB7383J1Z4.</p>}
         </div>
       </>}
@@ -161,7 +170,7 @@ export function ManualInvoice({ headers }) {
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
       <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(teaTotal)}</span></div>
       {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
-      <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>
+      {form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>}{!form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST</span><span>Off</span></div>}
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>
     {stock && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
