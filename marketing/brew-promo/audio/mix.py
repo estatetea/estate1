@@ -114,81 +114,9 @@ for x in (.4, .9, 2.4, 5.6): add(sfx, pop(1100, .05), at(3, x), .35)
 bubble(3, 5.8); add(sfx, chime((1318.5, 1760.0), .9), at(3, 5.8), .5)
 typing(3, 6.8, 8.2, "Thank you, it's perfect!")
 
-# ---------------- music: cinematic score ----------------
-# Slow and atmospheric over the tea pour, a riser into a hit as the poster forms, then a driving pulse
-# (staccato strings, deep drums) through the features, and a final hit with a long tail on the ending.
-hz = lambda m: 440 * 2 ** ((m - 69) / 12)
-def saw_stack(f, d, detune=(-7, 0, 7), bright=2200):
-    n = int(d * SR); t = np.arange(n) / SR; y = np.zeros(n)
-    for c in detune:
-        ff = f * 2 ** (c / 1200); ph = (t * ff) % 1.0; y += 2 * ph - 1
-    return lowpass(y / len(detune), bright)
-def pad(f, d, att=1.2, rel=1.5, bright=1600):
-    n = int(d * SR); y = saw_stack(f, d, (-9, -3, 3, 9), bright)
-    e = np.minimum(1, np.arange(n) / (att * SR)); r = int(min(n, rel * SR)); e[-r:] *= np.linspace(1, 0, r)
-    return y * e
-def piano(f, d):
-    n = int(d * SR); t = np.arange(n) / SR
-    y = np.sin(2*np.pi*f*t) + .35*np.sin(2*np.pi*2*f*t)*np.exp(-t*2) + .12*np.sin(2*np.pi*3*f*t)*np.exp(-t*4)
-    return y * np.exp(-t * 1.4) * env(n, .004, .3)
-def stab(f, d):          # staccato string
-    n = int(d * SR); y = saw_stack(f, d, (-6, 0, 6), 3000); t = np.arange(n) / SR
-    return y * np.exp(-t * 14) * env(n, .003, .02)
-def taiko(d=.6):
-    n = int(d * SR); t = np.arange(n) / SR
-    body = np.sin(2*np.pi*(48 + 70*np.exp(-t*25))*t) * np.exp(-t*6)
-    skin = rng.standard_normal(n) * np.exp(-t*40) * .25
-    return (body + lowpass(skin, 1800)) * .9
-def impact(d=3.0):
-    n = int(d * SR); t = np.arange(n) / SR
-    sub = np.sin(2*np.pi*(38 + 40*np.exp(-t*8))*t) * np.exp(-t*1.6)
-    crash = lowpass(rng.standard_normal(n), 5000) * np.exp(-t*2.5) * .35
-    return (sub + crash) * env(n, .002)
-def riser(d):
-    n = int(d * SR); t = np.linspace(0, 1, n); x = rng.standard_normal(n)
-    y = lowpass(x, 200 + 7000 * t**2) * t**2
-    tone = np.sin(2*np.pi*np.cumsum(220 + 660*t**2)/SR) * t**3 * .25
-    return (y * .6 + tone)
-
-music = np.zeros(N)
-P0 = TL['POSTER_IN'][0]; S0 = TL['STOPS'][0]['move'][0]; ENDT = TL['END']; M1 = TL['MERGE'][1]
-# 1) Opening (0 -> poster): slow, warm, atmospheric: low pad + sparse piano (D minor colour)
-add(music, pad(hz(38), P0 + .6, att=1.5, rel=.6, bright=900), 0, .35)
-add(music, pad(hz(50), P0 + .6, att=2.0, rel=.6, bright=1200), 0, .18)
-for k, (m, at) in enumerate([(62, .3), (65, 1.3), (69, 2.3), (67, 3.2)]):
-    add(music, piano(hz(m), 2.2), at, .28)
-add(music, riser(1.6), P0 - 1.55, .55)
-add(music, impact(3.2), P0 - .02, 1.0)                      # the hit as the video flies into the poster
-# 2) Main pulse: 124 BPM, Dm - Bb - F - C, staccato strings in 8ths + taiko + low pad
-BPM = 124; beat = 60 / BPM; bar = 4 * beat
-CH = [[50, 53, 57], [46, 50, 53], [41, 45, 48], [48, 52, 55]]
-start = P0 + .05; stop_ = TL['OUT'][0]
-b = 0; t0 = start
-while t0 < stop_:
-    ch = CH[b % 4]
-    add(music, pad(hz(ch[0] - 12), bar + .2, att=.3, rel=.3, bright=1100), t0, .22)
-    for m in ch: add(music, pad(hz(m + 12), bar + .2, att=.4, rel=.3, bright=1800), t0, .05)
-    pattern = [ch[0], ch[0], ch[1], ch[0], ch[2], ch[0], ch[1], ch[2]]
-    for k, m in enumerate(pattern):
-        add(music, stab(hz(m + 12), beat * .45), t0 + k * beat / 2, .16 if t0 > S0 - .1 else .09)
-    for k in range(4):
-        if t0 > S0 - .2 or k == 0:
-            add(music, taiko(), t0 + k * beat, .5 if k in (0, 2) else .28)
-    if b % 2 == 1 and t0 > S0:   # fill on the last 8th of every other bar
-        add(music, taiko(.3), t0 + 3.5 * beat, .3)
-    b += 1; t0 += bar
-# 3) Ending: riser, big hit on the merge, warm held chord with a long tail
-add(music, riser(1.2), TL['MERGE'][0] - .25, .5)
-add(music, impact(4.0), M1 - .1, 1.0)
-for m, g in ((38, .3), (50, .16), (57, .1), (62, .1), (65, .08)):
-    add(music, pad(hz(m), ENDT - M1 + .4, att=.08, rel=2.4, bright=1500), M1 - .1, g)
-add(music, piano(hz(74), 3.0), M1 + .05, .3); add(music, piano(hz(69), 3.0), M1 + .05, .2)
-# room: a short, simple reverb (decaying noise convolution would be heavy; use a few echoes)
-wet = np.zeros(N)
-for dly, g in ((.043, .35), (.071, .28), (.113, .22), (.167, .16), (.239, .1)):
-    i = int(dly * SR); wet[i:] += music[:-i] * g
-music = lowpass(music + wet * .6, 9000)
-fo = t2i(.6); music[-fo:] *= np.linspace(1, 0, fo)
+# ---------------- music: the cinematic score (score.py, stereo) ----------------
+score = np.load('score.npy')[:N]
+if len(score) < N: score = np.vstack([score, np.zeros((N - len(score), 2))])
 
 # ---------------- voiceover ----------------
 lines = json.load(open('lines.json'))
@@ -206,11 +134,9 @@ envv = np.abs(voice)
 win = int(.12 * SR); envv = np.convolve(envv, np.ones(win) / win, 'same')
 duck = 1 - .55 * np.clip(envv / .04, 0, 1)
 duck = np.convolve(duck, np.ones(int(.25 * SR)) / int(.25 * SR), 'same')   # smooth release
-mix = music * duck * 1.0 + sfx * .55 + voice * 1.0
-mix /= np.max(np.abs(mix)) + 1e-9
-stereo = np.stack([mix, mix], 1)
-# gentle width for music/sfx: tiny delay on one side
-stereo[:, 1] = np.concatenate([np.zeros(int(.0006 * SR)), mix])[:N]
+centre = sfx * .55 + voice * 1.0
+stereo = score * duck[:, None] * .9 + centre[:, None]
+stereo /= np.max(np.abs(stereo)) + 1e-9
 with wave.open('soundtrack-raw.wav', 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((stereo * 32000).astype(np.int16).tobytes())
 # loudness for social video
