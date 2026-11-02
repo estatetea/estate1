@@ -127,27 +127,43 @@ score = np.load('score.npy')[:N]
 if len(score) < N: score = np.vstack([score, np.zeros((N - len(score), 2))])
 
 # ---------------- voiceover ----------------
+# Each line is processed like a real recorded voice: low-cut, a little warmth and presence, gentle compression,
+# and matched loudness, so every line sits at the same level. A very small room makes it feel recorded, not synthetic.
 import os
 lines = json.load(open(os.environ.get('LINES', 'lines.json')))
 voice = np.zeros(N)
+VCHAIN = ('highpass=f=75,lowpass=f=13000,equalizer=f=170:t=q:w=1:g=1.5,equalizer=f=3200:t=q:w=1.2:g=1.2,'
+          'acompressor=threshold=-24dB:ratio=2.5:attack=8:release=140:makeup=2,loudnorm=I=-19:TP=-3:LRA=7')
 for L in lines:
     src = os.path.join(os.environ.get('VOICE_DIR', '.'), f"{L['id']}.wav")
-    d = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]))
-    tempo = max(1.0, d / L['max'])          # only ever speed up a touch to fit its scene
-    raw = subprocess.check_output(['ffmpeg', '-loglevel', 'error', '-i', src, '-af', f'atempo={tempo:.3f},aresample={SR}', '-f', 's16le', '-ac', '1', '-'])
+    raw = subprocess.check_output(['ffmpeg', '-loglevel', 'error', '-i', src, '-af', f'{VCHAIN},aresample={SR}', '-f', 's16le', '-ac', '1', '-'])
     v = np.frombuffer(raw, np.int16).astype(float) / 32768
-    add(voice, v / (np.max(np.abs(v)) + 1e-9) * .9, L['at'])
+    fade = int(.02 * SR); v[:fade] *= np.linspace(0, 1, fade); v[-fade:] *= np.linspace(1, 0, fade)
+    add(voice, v, L['at'])
+# small room (about 0.3 s), mixed low
+rn = int(.3 * SR); rt = np.arange(rn) / SR
+room = rng.standard_normal(rn) * np.exp(-rt / .07); room = lowpass(room, 5000); room[:int(.006 * SR)] = 0
+room /= np.sqrt(np.sum(room ** 2))
+size = 1 << (N + rn - 1).bit_length()
+voice = voice + np.fft.irfft(np.fft.rfft(voice, size) * np.fft.rfft(room, size), size)[:N] * .11
 
-# ---------------- mix: duck the music under the voice ----------------
+# ---------------- mix ----------------
+# Levels (relative to the voice, checked by measuring each stem): music sits ~10-12 dB under the voice while he talks
+# and comes up between lines; effects sit ~14 dB under the voice.
 envv = np.abs(voice)
-win = int(.12 * SR); envv = np.convolve(envv, np.ones(win) / win, 'same')
-duck = 1 - .5 * np.clip(envv / .04, 0, 1)
-duck = np.convolve(duck, np.ones(int(.25 * SR)) / int(.25 * SR), 'same')   # smooth release
-centre = sfx * .5 + voice * 1.05
-stereo = score * duck[:, None] * .9 + centre[:, None]
-stereo /= np.max(np.abs(stereo)) + 1e-9
+win = int(.15 * SR); envv = np.convolve(envv, np.ones(win) / win, 'same')
+duck = 1 - .86 * np.clip(envv / .02, 0, 1)
+k = int(.35 * SR); duck = np.convolve(np.pad(duck, (k // 2, k - k // 2 - 1), mode='edge'), np.ones(k) / k, 'valid')   # smooth, no pumping
+MUSIC, SFX, VOICE = float(os.environ.get('MUSIC', .62)), float(os.environ.get('SFX', .32)), 1.0
+stems = {'voice': voice * VOICE, 'music': score * duck[:, None] * MUSIC, 'sfx': sfx * SFX}
+stereo = stems['music'] + (stems['voice'] + stems['sfx'])[:, None]
+peak = np.max(np.abs(stereo)) + 1e-9; stereo /= peak
+for name, st in stems.items():   # keep the stems for level checks
+    st = st / peak; st = st if st.ndim == 2 else np.stack([st, st], 1)
+    with wave.open(f'stem-{name}.wav', 'wb') as w:
+        w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((np.clip(st, -1, 1) * 32000).astype(np.int16).tobytes())
 with wave.open('soundtrack-raw.wav', 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((stereo * 32000).astype(np.int16).tobytes())
 # loudness for social video
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'soundtrack-raw.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', str(SR), os.environ.get('OUT', 'soundtrack.wav')], check=True)
-print('soundtrack.wav', round(DUR, 2), 's')
+print('soundtrack', round(DUR, 2), 's')

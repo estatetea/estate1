@@ -174,15 +174,15 @@ while t0 < OUT0 + bar * .5:
     b += 1; t0 += bar
 # braam + hit on every cut, with a tom fill and a short riser leading into it
 for mt in moves:
-    for k in range(6): place(tom(150 - k * 14), mt - .6 + k * .1, .55, (-.4 + k * .16))
-    place(riser(.7, 5000), mt - .7, .35)
-    place(braam(2.2, 26 if moves.index(mt) % 2 == 0 else 22), mt - .02, .5)
-    place(hit(2.2), mt - .02, .45)
+    for k in range(6): place(tom(150 - k * 14), mt - .6 + k * .1, .38, (-.4 + k * .16))
+    place(riser(.7, 5000), mt - .7, .28)
+    place(braam(2.2, 26 if moves.index(mt) % 2 == 0 else 22), mt - .02, .32)
+    place(hit(2.2), mt - .02, .3)
 
 # 3) Ending: riser into a final braam + hit as Estate Tea comes together, then a long tail.
 place(riser(M1 - OUT0, 7000), OUT0, .5)
 for k in range(8): place(tom(160 - k * 10), M1 - .8 + k * .1, .5, (-.5 + k * .14))
-place(hit(5.0), M1 - .03, 1.0); place(braam(4.5, 26), M1 - .03, .7)
+place(hit(5.0), M1 - .03, .72); place(braam(4.5, 26), M1 - .03, .48)
 for k, m in enumerate((26, 38, 45, 50, 53, 57, 62)):
     place(sustain(m, END - M1, att=.05, rel=2.0, bright=3000), M1 - .03, (.4, .3, .15, .12, .1, .08, .06)[k], -.6 + .2 * k)
 

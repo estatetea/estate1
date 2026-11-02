@@ -15,3 +15,8 @@ Not part of the website build. Kept here so nothing is lost between sessions.
 - Voice: Gemini voice "Achird", one continuous read (`audio/script-brew.txt`), cut into `audio/brew-voice/l1–l7.wav`;
   timings in `audio/lines-brew.json`. Rebuild: `LINES=lines-brew.json VOICE_DIR=brew-voice OUT=soundtrack-brew.wav python3 mix.py`.
 - v8 (female narrator, third person) is kept alongside.
+
+## v10 — fine-tuned (current)
+- `brew-promo-v10-16x9.mp4`, `brew-promo-v10-9x16.mp4`: v9 picture, re-mixed sound.
+- Voice lines evenly spaced (~0.85 s), each processed like a recorded voice and matched at -19 LUFS; small room.
+- Rebuild: `python3 score2.py && SFX=.36 MUSIC=.66 LINES=lines-brew.json VOICE_DIR=brew-voice OUT=soundtrack-brew2.wav python3 mix.py`.

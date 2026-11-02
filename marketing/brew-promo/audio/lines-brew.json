@@ -2,43 +2,43 @@
  {
   "id": "l1",
   "text": "Estate Tea. Premium tea for your everyday chai.",
-  "at": 0.15,
+  "at": 0.2,
   "max": 4.6
  },
  {
   "id": "l2",
   "text": "Hi, I'm Brew, from Estate Tea.",
-  "at": 4.95,
+  "at": 5.1,
   "max": 2.4
  },
  {
   "id": "l3",
   "text": "Your own tea concierge, on WhatsApp. Ask me anything.",
-  "at": 9.0,
+  "at": 8.0,
   "max": 4.4
  },
  {
   "id": "l4",
   "text": "Running low on tea? Just message me. Your order, your invoice, your payment, all sorted right here in the chat.",
-  "at": 14.1,
+  "at": 13.0,
   "max": 7.8
  },
  {
   "id": "l5",
   "text": "I remember your details and your usual, so your next order takes seconds.",
-  "at": 22.3,
+  "at": 21.4,
   "max": 5.6
  },
  {
   "id": "l6",
   "text": "Running a caf\u00e9 or an office? No calls, no chasing. I'll get it done, right to your door.",
-  "at": 28.7,
+  "at": 27.0,
   "max": 7.2
  },
  {
   "id": "l7",
   "text": "Your one-stop shop for all things Estate Tea. Scan the code, and say hi.",
-  "at": 36.25,
+  "at": 34.6,
   "max": 5.9
  }
 ]
