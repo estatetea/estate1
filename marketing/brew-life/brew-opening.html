@@ -433,12 +433,16 @@ window.render = async function (t) {
   [...document.querySelectorAll('.pm')].forEach((m, i) => { const k = pop(t, POSTER_IN[1] - .25 + i * .09, .35); m.style.opacity = clamp(k); m.style.transform = `translateY(${(1 - k) * 14}px) scale(${.92 + .08 * k})`; });
   const screenRect = (() => { const ph = $('pphone'); const s = cam.s; return [cam.x + (ph.offsetLeft + 12) * s, cam.y + (ph.offsetTop + 12) * s, (ph.offsetWidth - 24) * s, (ph.offsetHeight - 24) * s]; })();
   const vk = eio(clamp((t - POSTER_IN[0]) / (POSTER_IN[1] - POSTER_IN[0])));
-  const full = [0, 0, W, H];
+  // Phone (9:16): show a wider slice of the footage (packet and pour both in frame, centred on 52% of its width),
+  // with a slow push-in; its top and bottom fade into the black backdrop.
+  const push = 1 + .05 * Math.min(vt, 5) / 5, fw = (VERT ? W / .56 : W) * push, fh = VERT ? fw * 9 / 16 : H * push;
+  const full = VERT ? [W / 2 - .52 * fw, H / 2 - 140 - fh / 2, fw, fh] : [W / 2 - fw / 2, H / 2 - fh / 2, fw, fh];
   const vr = lerpRect(full, screenRect, vk);
   const vout = prog(t, POSTER_IN[1] - .35, POSTER_IN[1] + .35);
   Object.assign(vid.style, { left: vr[0] + 'px', top: vr[1] + 'px', width: vr[2] + 'px', height: vr[3] + 'px', borderRadius: (vk * 42 * cam.s) + 'px',
     opacity: 1 - vout, filter: `blur(${vout * 10}px) brightness(${1 - .6 * vout})` });
   vid.style.display = t > POSTER_IN[1] + .4 ? 'none' : 'block';
+  if (VERT) { const e = 14 * (1 - vk); vid.style.webkitMaskImage = vid.style.maskImage = `linear-gradient(to bottom, transparent 0%, #000 ${e}%, #000 ${100 - e}%, transparent 100%)`; }
   
   // Opening title card: a small gold "ESTATE TEA" label with lines drawing out, then the line itself, word by word.
   const out = 1 - prog(t, 3.6, 4.15), lk = prog(t, .35, .9), lw = 70 * prog(t, .5, 1.1);
