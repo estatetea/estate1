@@ -7,6 +7,9 @@ import { Check, Loader2 } from 'lucide-react';
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
 const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
+// Brew's WhatsApp chat. After the form is sent, the page takes the customer straight back to it.
+const BREW_CHAT_URL = 'https://wa.me/919742668951';
+
 const empty = { name: '', email: '', house: '', street: '', landmark: '', city: 'Bengaluru', pincode: '', customer_type: 'home', business_name: '', gstin: '' };
 
 function friendlyError(status, payload) {
@@ -27,6 +30,14 @@ export default function OrderDetailsPage() {
   const [form, setForm] = useState(empty);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [justSent, setJustSent] = useState(false);
+
+  // Right after a successful send, go back to WhatsApp on its own (a short pause so "Thank you" is seen first).
+  useEffect(() => {
+    if (!justSent) return;
+    const t = setTimeout(() => { window.location.href = BREW_CHAT_URL; }, 1500);
+    return () => clearTimeout(t);
+  }, [justSent]);
 
   useEffect(() => {
     if (!token) return;
@@ -68,6 +79,7 @@ export default function OrderDetailsPage() {
       const result = await r.json().catch(() => ({}));
       if (!r.ok) return setError(friendlyError(r.status, result));
       setPageState('success');
+      setJustSent(true);
     } catch {
       setError('We couldn’t send your details right now. Please try again shortly.');
     } finally { setSubmitting(false); }
@@ -102,8 +114,11 @@ export default function OrderDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">Thank you.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve saved your details. Head back to WhatsApp: Brew will send you a quick summary to confirm, then your invoice.
+                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} Brew will send you a quick summary to confirm, then your invoice.
               </p>
+              <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
+                Back to WhatsApp
+              </a>
               <div className="mt-8 h-px w-12 bg-[#D4AF37]" />
               <p className="mt-5 text-xs uppercase tracking-[0.22em] text-[#D4AF37]">Estate Tea</p>
             </div>
