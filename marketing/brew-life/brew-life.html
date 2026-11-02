@@ -1,0 +1,404 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Brew in real life</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0B0A09; --gold:#D2AE55; --gold-soft:#E9CF8A; --text:#F2ECDF; --sub:#B9B0A0; --dim:#7F7768; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:1920px; height:1080px; background:var(--bg); overflow:hidden; font-family:Inter,sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  body.V { width:1080px; height:1920px; }
+  #stage { position:absolute; inset:0; overflow:hidden; background:var(--bg); }
+  #art { position:absolute; left:0; top:0; width:1920px; height:1080px; }
+  body.V #art { width:1080px; height:1150px; }
+  body.V #artfade { position:absolute; left:0; right:0; top:900px; height:250px; background:linear-gradient(transparent, var(--bg)); }
+  body.V #topfade { position:absolute; left:0; right:0; top:0; height:420px; background:linear-gradient(rgba(11,10,9,.88), rgba(11,10,9,.55) 60%, transparent); }
+  body.V #below { position:absolute; left:0; right:0; top:1150px; bottom:0; background:var(--bg); }
+  .vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 75% 70% at 45% 50%, transparent 55%, rgba(0,0,0,.55)); }
+
+  /* scene captions */
+  #cap { position:absolute; left:110px; bottom:120px; width:900px; }
+  body.V #cap { left:0; right:0; width:auto; top:120px; bottom:auto; text-align:center; }
+  #chip { display:inline-flex; align-items:center; gap:12px; padding:9px 18px; border-radius:999px; background:rgba(11,10,9,.62); border:1px solid rgba(210,174,85,.35);
+    font-size:22px; font-weight:500; color:var(--gold-soft); letter-spacing:.02em; backdrop-filter:blur(6px); }
+  #chip i { width:8px; height:8px; border-radius:50%; background:var(--gold); display:block; }
+  #hook { font-size:84px; font-weight:600; letter-spacing:-.035em; line-height:1.02; margin-top:22px; text-shadow:0 6px 30px rgba(0,0,0,.6); }
+  body.V #hook { font-size:76px; margin-top:20px; }
+  #hook span { color:var(--gold); }
+
+  /* phone */
+  #phone { position:absolute; left:1340px; top:110px; width:420px; height:860px; border-radius:58px; background:#050505; padding:13px;
+    box-shadow:0 0 0 1.5px rgba(242,236,223,.16), 0 50px 120px rgba(0,0,0,.75), 0 0 80px rgba(210,174,85,.12); transform-origin:50% 50%; }
+  body.V #phone { left:288px; top:840px; transform-origin:50% 0; }
+  .scr { position:relative; width:100%; height:100%; border-radius:46px; overflow:hidden; background:#0E0D0C; }
+  .sb { display:flex; justify-content:space-between; padding:16px 30px 0; font-size:15px; font-weight:600; color:#ddd; height:40px; }
+  .hd { display:flex; align-items:center; gap:13px; padding:10px 18px 14px; background:#171513; border-bottom:1px solid rgba(255,255,255,.06); }
+  .av { width:46px; height:46px; border-radius:50%; background:#000; border:1.5px solid rgba(210,174,85,.6); display:grid; place-items:center; flex:none; }
+  .av img { width:30px; }
+  .hd b { display:block; font-size:19px; font-weight:600; } .hd small { display:block; font-size:14px; color:#7DCB8F; margin-top:2px; }
+  .chat { position:absolute; left:0; right:0; top:112px; bottom:78px; padding:16px 15px; display:flex; flex-direction:column; justify-content:flex-end; gap:10px; overflow:hidden;
+    background-image:radial-gradient(rgba(210,174,85,.05) 1px, transparent 1px); background-size:22px 22px; }
+  .m { max-width:84%; font-size:18px; line-height:1.38; padding:11px 14px 9px; border-radius:18px; transform-origin:bottom; }
+  .m.me { align-self:flex-end; background:#2E2920; border-bottom-right-radius:5px; transform-origin:bottom right; }
+  .m.br { align-self:flex-start; background:#1C1A17; border:1px solid rgba(255,255,255,.07); border-bottom-left-radius:5px; transform-origin:bottom left; }
+  .m small { display:block; text-align:right; font-size:12px; color:#8a8170; margin-top:3px; } .m.me small::after { content:" ✓✓"; color:#6FB7E9; }
+  .dots { display:flex; gap:6px; padding:16px 16px; } .dots i { width:9px; height:9px; border-radius:50%; background:#9a9080; display:block; }
+  .card { border:1px solid rgba(210,174,85,.35); border-radius:14px; padding:12px; margin-top:8px; background:rgba(210,174,85,.06); }
+  .card .row { display:flex; justify-content:space-between; font-size:16px; color:var(--sub); } .card .row b { color:var(--text); font-weight:600; }
+  .card .btn { margin-top:10px; text-align:center; padding:10px; border-radius:10px; background:var(--gold); color:#14110B; font-weight:600; font-size:17px; }
+  .card .btn.paid { background:#1f3a27; color:#8FE0A6; }
+  .inp { position:absolute; left:12px; right:12px; bottom:14px; height:52px; display:flex; align-items:center; gap:10px; }
+  .inp .f { flex:1; height:52px; border-radius:26px; background:#1E1C19; display:flex; align-items:center; padding:0 18px; font-size:17px; color:#e8e2d6; white-space:nowrap; overflow:hidden; }
+  .inp .f.ph { color:#6d665a; } .inp .f u { width:2px; height:22px; background:var(--gold); display:inline-block; margin-left:2px; text-decoration:none; }
+  .inp .s { width:52px; height:52px; border-radius:50%; background:#25A366; display:grid; place-items:center; flex:none; }
+  /* lock screen */
+  .lock { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 20%, #2b241a, #0b0a09 70%); }
+  .lock .tm { text-align:center; margin-top:86px; font-size:92px; font-weight:300; letter-spacing:-.02em; } .lock .dt { text-align:center; font-size:19px; color:var(--sub); margin-top:4px; }
+  .nt { margin:0 14px 10px; padding:13px 15px; border-radius:20px; background:rgba(40,36,30,.86); border:1px solid rgba(255,255,255,.06); }
+  .nt .a { display:flex; align-items:center; gap:9px; font-size:14px; color:var(--sub); } .nt .a b { color:var(--text); font-weight:600; font-size:15px; }
+  .nt .a em { width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-style:normal; font-size:13px; }
+  .nt p { font-size:16.5px; line-height:1.38; margin-top:6px; }
+
+  /* title card + end card */
+  .full { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  #title .lab { display:flex; align-items:center; gap:22px; color:var(--gold); font-size:26px; font-weight:600; letter-spacing:.42em; }
+  #title .lab i { display:block; height:1.5px; background:var(--gold); width:90px; }
+  #title h2 { font-size:92px; font-weight:600; letter-spacing:-.04em; line-height:1.08; margin-top:34px; }
+  body.V #title h2 { font-size:78px; }
+  #title h2 .g { color:var(--gold); }
+  #end .mk { display:flex; align-items:center; gap:26px; } #end .mk img { width:96px; } #end .mk b { font-size:108px; font-weight:600; letter-spacing:-.045em; }
+  body.V #end .mk img { width:80px; } body.V #end .mk b { font-size:92px; }
+  #end .mk b span { color:var(--gold); }
+  #end h3 { font-size:40px; font-weight:500; color:var(--sub); margin-top:22px; letter-spacing:-.01em; }
+  body.V #end h3 { font-size:36px; }
+  #end .row { display:flex; align-items:center; gap:40px; margin-top:54px; }
+  body.V #end .row { flex-direction:column; gap:34px; }
+  #end .pill { display:flex; align-items:center; gap:16px; padding:18px 28px; border-radius:22px; background:#121110; border:1px solid rgba(210,174,85,.35); text-align:left; }
+  #end .pill .wa { width:54px; height:54px; border-radius:50%; background:#25A366; display:grid; place-items:center; }
+  #end .pill b { display:block; font-size:28px; } #end .pill small { display:block; font-size:22px; color:var(--sub); margin-top:3px; }
+  #end .qr { width:220px; height:220px; border-radius:22px; background:#F4EFE3; padding:14px; box-shadow:0 0 60px rgba(210,174,85,.25); } #end .qr img { width:100%; height:100%; }
+  #end .site { margin-top:40px; font-size:30px; color:var(--gold-soft); letter-spacing:.04em; }
+  .halo { position:absolute; left:50%; top:50%; width:1300px; height:900px; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(210,174,85,.16), transparent); }
+
+  /* the cut between scenes */
+  #wipe { position:absolute; top:0; bottom:0; width:140%; left:-140%; background:var(--bg); }
+  #wipe::before { content:""; position:absolute; right:0; top:0; bottom:0; width:6px; background:linear-gradient(var(--gold-soft), var(--gold)); box-shadow:0 0 40px var(--gold); }
+  #grain { position:absolute; inset:0; pointer-events:none; opacity:.07; mix-blend-mode:overlay; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg id="art" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="artfade"></div><div id="topfade"></div><div id="below"></div>
+  <div class="vignette"></div>
+  <div id="cap"><div id="chip"><i></i><span id="chipt"></span></div><div id="hook"></div></div>
+  <div id="phone"><div class="scr" id="scr"></div></div>
+  <div id="title" class="full"><div class="halo"></div><div class="lab"><i></i><span>ESTATE TEA</span><i></i></div><h2 id="tl"></h2></div>
+  <div id="end" class="full"><div class="halo"></div>
+    <div class="mk"><img src="mark-gold.png"><b>Estate <span>Tea</span></b></div>
+    <h3>One message away.</h3>
+    <div class="row">
+      <div class="pill"><div class="wa"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg></div><div><b>Chat with Brew</b><small>+91 97426 68951</small></div></div>
+      <div class="qr"><img src="qr-plain.png"></div>
+    </div>
+    <div class="site">estatetea.in</div>
+  </div>
+  <div id="wipe"></div>
+  <svg id="grain" width="100%" height="100%"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg>
+</div>
+<script>
+const Q = new URLSearchParams(location.search);
+const VERT = Q.has('v'); if (VERT) document.body.classList.add('V');
+const VOICE = Q.get('voice') || 'brew';
+// Voice line lengths (seconds), measured from the recordings: title, couch, kitchen, run, café, door, end.
+const DUR = { brew: [3.54, 7.23, 6.69, 4.48, 6.92, 1.47, 4.15], narr: [4.36, 7.77, 7.91, 5.55, 8.46, 1.9, 5.55] }[VOICE];
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eout = x => 1 - Math.pow(1 - clamp(x), 3);
+const lerp = (a, b, x) => a + (b - a) * x;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+
+// ---------------- timeline: every scene is as long as its line needs ----------------
+const LEAD = 0.9, TAIL = 0.75;
+const SCN = [
+  { id: 'couch',   min: 8.0, chip: '7:40 PM · On the couch', hook: 'Got a tea <span>question?</span>' },
+  { id: 'kitchen', min: 8.6, chip: '7:05 AM · Kitchen',      hook: 'The tin is <span>empty?</span>' },
+  { id: 'run',     min: 6.4, chip: '6:30 AM · Morning run',  hook: 'One line is <span>enough.</span>' },
+  { id: 'cafe',    min: 8.2, chip: '3:15 PM · Your café',    hook: 'No calls. <span>No chasing.</span>' },
+  { id: 'door',    min: 6.0, chip: '6:10 PM · Home',         hook: 'At your <span>door.</span>' },
+];
+const TITLE_END = 0.5 + DUR[0] + 1.0;
+let clock = TITLE_END;
+SCN.forEach((s, i) => { s.start = clock; s.len = Math.max(LEAD + DUR[i + 1] + TAIL, s.min); s.k = s.len / s.min; s.voice = s.start + LEAD; clock += s.len; });
+const END_START = clock, END = END_START + 0.6 + DUR[6] + 2.4;
+window.DURATION = END;
+const LINES = [{ id: 'l1', at: 0.5 }, ...SCN.map((s, i) => ({ id: 'l' + (i + 2), at: s.voice })), { id: 'l7', at: END_START + 0.6 }];
+
+// ---------------- chats (times are local, scaled to the scene's length) ----------------
+const CHATS = {
+  couch: [{ me: 'Which tea makes the strongest masala chai?', type: [1.0, 2.5] },
+          { br: 'Our CTC is made for it ☕ Simmer 2 tsp with ginger and cardamom for 4 minutes, then add milk.', at: 4.0 },
+          { me: 'Perfect, making one now!', type: [5.4, 6.3] }],
+  kitchen: [{ me: 'Out of tea 😩 One 500 g pack, please', type: [3.2, 4.4] },
+            { br: 'On it, Sam! Here’s your invoice:', at: 5.3, card: { item: 'Estate Tea · 500 g', total: '₹378', paidAt: 6.9 } },
+            { br: 'Payment received ✓ Thank you!', at: 7.6 }],
+  run: [{ me: 'Same as last time, please 🙏', type: [1.1, 2.1] },
+        { br: 'Welcome back, Sam! 500 g to your home, as usual. Invoice sent ✓', at: 3.2 }],
+  cafe: [{ me: 'Need 5 kg for the café this week', type: [1.0, 2.3] },
+         { br: 'Sure! 5 kg at our business price ☕', at: 3.5 },
+         { br: 'GST invoice for Sam’s Café is in your email 📄', at: 4.9 },
+         { me: 'Great, thanks!', type: [6.0, 6.6] }],
+};
+const NOTES = [{ at: 1.0, app: 'Mail', icon: '✉', col: '#3D7BF7', title: 'Estate Tea', text: 'Your order ET-0042 is out for delivery.' },
+               { at: 2.9, app: 'Messages', icon: '💬', col: '#34C759', title: 'ET-ESTEA', text: 'Delivered ✓ Your Estate Tea order ET-0042 is at your door. Enjoy your chai!' }];
+
+// sound events for the mix (computed from the same timeline)
+const EV = [];
+SCN.forEach((s, i) => {
+  if (i > 0) EV.push({ t: s.start - .25, k: 'cut' });
+  EV.push({ t: s.start + .55, k: 'phone' });
+  (CHATS[s.id] || []).forEach(m => {
+    if (m.me) { EV.push({ t: s.start + m.type[0] * s.k, t1: s.start + m.type[1] * s.k, k: 'type', n: m.me.length }); EV.push({ t: s.start + m.type[1] * s.k, k: 'sent' }); }
+    else { EV.push({ t: s.start + m.at * s.k, k: 'recv' }); if (m.card) EV.push({ t: s.start + m.card.paidAt * s.k, k: 'paid' }); }
+  });
+});
+const K = SCN[1]; EV.push({ t: K.start + 1.35 * K.k, k: 'lid' });
+const D = SCN[4]; EV.push({ t: D.start + 1.75 * D.k, k: 'bell' }); NOTES.forEach(n => EV.push({ t: D.start + n.at * D.k, k: 'ping' }));
+EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' });
+window.TL = { END, LINES, EVENTS: EV, SCENES: SCN.map(s => ({ id: s.id, start: s.start, len: s.len })), TITLE_END, END_START, VOICE };
+
+// ---------------- drawing helpers ----------------
+const P = (a, l) => [Math.sin(a * Math.PI / 180) * l, Math.cos(a * Math.PI / 180) * l];
+function limb(x, y, a1, l1, a2, l2, w, c1, c2) {
+  const [dx1, dy1] = P(a1, l1), ex = x + dx1, ey = y + dy1; const [dx2, dy2] = P(a2, l2);
+  return `<path d="M${x} ${y}L${ex} ${ey}" stroke="${c1}" stroke-width="${w}" stroke-linecap="round" fill="none"/>` +
+         `<path d="M${ex} ${ey}L${ex + dx2} ${ey + dy2}" stroke="${c2 || c1}" stroke-width="${w * .9}" stroke-linecap="round" fill="none"/>`;
+}
+function end(x, y, a1, l1, a2, l2) { const [a, b] = P(a1, l1), [c, d] = P(a2, l2); return [x + a + c, y + b + d]; }
+// A stylised person. Hip at (x, y); angles in degrees (0 = straight down, 90 = to the right, 180 = up).
+function person(o) {
+  const s = o.s || 1, skin = o.skin || '#9A6644', hair = o.hair || '#18120E', shirt = o.shirt || '#2F5D62', pants = o.pants || '#22242A';
+  const lean = o.lean || 0, f = o.face || 1;
+  const [tx, ty] = P(180 - lean, 150 * s), sx = o.x + tx, sy = o.y + ty;
+  const [nx, ny] = P(180 - lean - (o.nod || 0), 58 * s), hx = sx + nx, hy = sy + ny;
+  const shade = c => `color-mix(in srgb, ${c} 72%, #000)`;
+  let g = '';
+  const arm = (a, c) => limb(sx, sy + 10 * s, a[0], 72 * s, a[1], 68 * s, 25 * s, c, c === 'B' ? shade(skin) : skin);
+  const leg = (a, back) => limb(o.x, o.y, a[0], 98 * s, a[1], 96 * s, 36 * s, back ? shade(pants) : pants) +
+    (() => { const [fx, fy] = end(o.x, o.y, a[0], 98 * s, a[1], 96 * s); return `<path d="M${fx} ${fy}l${22 * s * f} ${2 * s}" stroke="${back ? '#0d0c0b' : (o.shoe || '#151413')}" stroke-width="${20 * s}" stroke-linecap="round"/>`; })();
+  if (o.legR) g += leg(o.legR, true);
+  if (o.armR) g += limb(sx, sy + 10 * s, o.armR[0], 72 * s, o.armR[1], 68 * s, 25 * s, shade(shirt), shade(skin));
+  if (o.legL) g += leg(o.legL, false);
+  g += `<path d="M${o.x} ${o.y}L${sx} ${sy}" stroke="${shirt}" stroke-width="${84 * s}" stroke-linecap="round"/>`;
+  if (o.apron) g += `<path d="M${o.x} ${o.y + 10 * s}L${lerp(o.x, sx, .55)} ${lerp(o.y, sy, .55)}" stroke="${o.apron}" stroke-width="${70 * s}" stroke-linecap="round"/>`;
+  g += `<path d="M${sx} ${sy}L${hx} ${hy}" stroke="${shade(skin)}" stroke-width="${26 * s}" stroke-linecap="round"/>`;
+  g += `<circle cx="${hx}" cy="${hy}" r="${36 * s}" fill="${skin}"/><circle cx="${hx + 33 * s * f}" cy="${hy + 6 * s}" r="${7 * s}" fill="${skin}"/>`;
+  g += `<path d="M${hx - 38 * s} ${hy + 2 * s} a${38 * s} ${38 * s} 0 0 1 ${76 * s} ${-4 * s} q${-30 * s * f} ${-6 * s} ${-44 * s} ${12 * s} q${-14 * s} ${-2 * s} ${-32 * s} ${14 * s}z" fill="${hair}" transform="${f < 0 ? `translate(${2 * hx} 0) scale(-1 1)` : ''}"/>`;
+  if (o.helmet) g += `<path d="M${hx - 42 * s} ${hy + 4 * s} a${42 * s} ${42 * s} 0 0 1 ${84 * s} 0z" fill="${o.helmet}"/><path d="M${hx - 6 * s * f} ${hy - 4 * s}h${48 * s * f}" stroke="#111" stroke-width="${10 * s}" stroke-linecap="round"/>`;
+  if (o.armL) g += limb(sx, sy + 10 * s, o.armL[0], 72 * s, o.armL[1], 68 * s, 25 * s, shirt, skin);
+  if (o.phone && o.armL) { const [px, py] = end(sx, sy + 10 * s, o.armL[0], 72 * s, o.armL[1], 68 * s);
+    g += `<circle cx="${px}" cy="${py}" r="${90 * s}" fill="url(#phoneglow)"/><rect x="${px - 13 * s}" y="${py - 22 * s}" width="${26 * s}" height="${44 * s}" rx="${5 * s}" fill="#0b0b0b" stroke="#E9CF8A" stroke-width="${2 * s}" transform="rotate(${o.phone} ${px} ${py})"/>`; }
+  return { svg: g, hand: o.armL ? end(sx, sy + 10 * s, o.armL[0], 72 * s, o.armL[1], 68 * s) : [sx, sy], head: [hx, hy] };
+}
+const DEFS = `<defs>
+  <radialGradient id="phoneglow"><stop offset="0" stop-color="#F7E2A6" stop-opacity=".45"/><stop offset="1" stop-color="#F7E2A6" stop-opacity="0"/></radialGradient>
+  <radialGradient id="lamp"><stop offset="0" stop-color="#FFC977" stop-opacity=".55"/><stop offset=".45" stop-color="#E39A45" stop-opacity=".16"/><stop offset="1" stop-color="#E39A45" stop-opacity="0"/></radialGradient>
+  <radialGradient id="sun"><stop offset="0" stop-color="#FFE3A3"/><stop offset=".25" stop-color="#FFB86B" stop-opacity=".9"/><stop offset="1" stop-color="#FF8C4B" stop-opacity="0"/></radialGradient>
+  <linearGradient id="night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1424"/><stop offset="1" stop-color="#2A2335"/></linearGradient>
+  <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B2840"/><stop offset=".55" stop-color="#8E5A5A"/><stop offset="1" stop-color="#E59A5B"/></linearGradient>
+  <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#211913"/><stop offset="1" stop-color="#140F0B"/></linearGradient>
+  <linearGradient id="wallam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A2B1F"/><stop offset="1" stop-color="#22190F"/></linearGradient>
+  <linearGradient id="tin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8B6A28"/><stop offset=".45" stop-color="#E9CF8A"/><stop offset="1" stop-color="#7A5A20"/></linearGradient>
+  <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter><filter id="blur2"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>`;
+const steam = (x, y, t, n = 3, h = 70) => Array.from({ length: n }, (_, i) => {
+  const ph = (t * .45 + i / n) % 1; const yy = y - ph * h; const xx = x + Math.sin(ph * 7 + i) * 9 + (i - 1) * 10;
+  return `<ellipse cx="${xx}" cy="${yy}" rx="${7 + ph * 10}" ry="${12 + ph * 8}" fill="#fff" opacity="${.16 * Math.sin(ph * Math.PI)}" filter="url(#blur2)"/>`; }).join('');
+const cup = (x, y, t, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-26 -30h52l-6 34a8 8 0 0 1-8 7h-24a8 8 0 0 1-8-7z" fill="#EDE4D3"/><path d="M26 -22a12 12 0 0 1 0 22" stroke="#EDE4D3" stroke-width="6" fill="none"/><ellipse cx="0" cy="-30" rx="26" ry="6" fill="#B5793C"/></g>` + steam(x, y - 40 * s, t);
+const tinSvg = (x, y, open, tilt, lidY) => `<g transform="translate(${x} ${y}) rotate(${tilt})"><rect x="-58" y="-150" width="116" height="150" rx="10" fill="url(#tin)"/>
+  <rect x="-58" y="-104" width="116" height="52" fill="#16120D" opacity=".9"/><text x="0" y="-80" text-anchor="middle" font-size="16" font-weight="700" fill="#E9CF8A" font-family="Inter" letter-spacing="3">ESTATE</text><text x="0" y="-60" text-anchor="middle" font-size="16" font-weight="700" fill="#E9CF8A" font-family="Inter" letter-spacing="3">TEA</text>
+  ${open ? `<ellipse cx="0" cy="-150" rx="58" ry="14" fill="#0b0805"/><ellipse cx="0" cy="-148" rx="50" ry="9" fill="#1a130c"/>` : ''}</g>
+  <g transform="translate(${x} ${y - 150 - lidY}) rotate(${tilt + (lidY > 0 ? -18 * clamp(lidY / 90) : 0)})"><rect x="-62" y="-16" width="124" height="20" rx="8" fill="url(#tin)"/></g>`;
+
+// ---------------- the scenes ----------------
+function sceneCouch(t, s) {
+  const typing = [[1.0, 2.5], [5.4, 6.3]].some(([a, b]) => t > a * s.k && t < b * s.k);
+  const tap = typing ? Math.sin(t * 38) * 4 : 0;
+  let g = `<rect width="1920" height="1080" fill="url(#wall)"/>`;
+  g += `<g><rect x="790" y="150" width="440" height="380" rx="8" fill="url(#night)"/>` +
+    [[820, 380, 60, 150], [890, 330, 70, 200], [975, 400, 50, 130], [1040, 300, 80, 230], [1130, 360, 70, 170]].map(([x, y, w, h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#151a28"/>` +
+      Array.from({ length: Math.floor(h / 34) }, (_, r) => Array.from({ length: Math.floor(w / 22) }, (_, c) => ((r * 7 + c * 3 + x) % 5 < 2) ? `<rect x="${x + 6 + c * 22}" y="${y + 10 + r * 34}" width="10" height="14" fill="#F2C46B" opacity="${.5 + .4 * Math.sin(t * .7 + r + c)}"/>` : '').join('')).join('')).join('') +
+    `<circle cx="1150" cy="215" r="26" fill="#F4E6C3" opacity=".9"/><rect x="790" y="150" width="440" height="380" fill="none" stroke="#2C2118" stroke-width="16"/><path d="M1010 150v380M790 340h440" stroke="#2C2118" stroke-width="10"/></g>`;
+  g += `<circle cx="250" cy="300" r="420" fill="url(#lamp)" opacity="${.9 + .05 * Math.sin(t * 3)}"/><path d="M250 330v520" stroke="#3a2e22" stroke-width="10"/><path d="M190 250h120l26 90h-172z" fill="#E8C68A"/><ellipse cx="250" cy="855" rx="70" ry="12" fill="#0b0806"/>`;
+  g += `<rect x="0" y="880" width="1920" height="200" fill="#100C09"/><ellipse cx="700" cy="905" rx="520" ry="30" fill="#000" opacity=".5"/>`;
+  g += `<rect x="370" y="560" width="680" height="230" rx="40" fill="#4A3426"/><rect x="340" y="690" width="740" height="160" rx="36" fill="#5A3F2E"/><rect x="320" y="640" width="90" height="230" rx="36" fill="#4F3728"/><rect x="1010" y="640" width="90" height="230" rx="36" fill="#4F3728"/><path d="M380 880v28M1040 880v28" stroke="#1d140e" stroke-width="16"/>`;
+  g += `<rect x="1110" y="740" width="150" height="16" rx="6" fill="#2E2219"/><path d="M1130 756v120M1240 756v120" stroke="#2E2219" stroke-width="10"/>` + cup(1185, 740, t, .9);
+  const p = person({ x: 640, y: 720, s: 1.05, lean: 10, nod: 18, shirt: '#2F5D62', pants: '#3A3F4A', legL: [80, 4], legR: [74, 2], armR: [20, 140 + tap * .5], armL: [28, 150 + tap], phone: 10 });
+  g += p.svg;
+  return g;
+}
+function sceneKitchen(t, s) {
+  const k = s.k, reach = ease(seg(t, .4 * k, 1.2 * k)), lid = ease(seg(t, 1.2 * k, 1.9 * k)), tilt = ease(seg(t, 1.9 * k, 2.5 * k)) * (1 - ease(seg(t, 2.9 * k, 3.4 * k)));
+  const phoneUp = ease(seg(t, 2.8 * k, 3.4 * k));
+  let g = `<rect width="1920" height="1080" fill="url(#wallam)"/>`;
+  g += `<rect x="760" y="120" width="420" height="320" rx="8" fill="url(#dawn)"/><circle cx="1000" cy="420" r="160" fill="url(#sun)" opacity=".8"/><rect x="760" y="120" width="420" height="320" fill="none" stroke="#3A2B1F" stroke-width="16"/><path d="M970 120v320" stroke="#3A2B1F" stroke-width="10"/>`;
+  g += `<path d="M560 120 L1380 120" stroke="none"/><polygon points="760,440 1180,440 1500,1080 420,1080" fill="#FFB86B" opacity=".05"/>`;
+  g += `<rect x="80" y="110" width="560" height="230" rx="8" fill="#2B1F15"/><path d="M360 110v230" stroke="#1d150e" stroke-width="6"/><circle cx="340" cy="230" r="6" fill="#B79A5A"/><circle cx="380" cy="230" r="6" fill="#B79A5A"/>`;
+  g += `<rect x="60" y="660" width="1240" height="40" rx="6" fill="#4C3A2A"/><rect x="80" y="700" width="1200" height="380" fill="#2A1F16"/><path d="M380 720v340M680 720v340M980 720v340" stroke="#1d150e" stroke-width="6"/>`;
+  g += `<g><path d="M150 660v-70a30 30 0 0 1 30-30h80a30 30 0 0 1 30 30v70z" fill="#5c5f63"/><path d="M290 600q40 0 46 30" stroke="#5c5f63" stroke-width="12" fill="none"/><rect x="170" y="545" width="100" height="16" rx="8" fill="#3d3f42"/></g>`;
+  g += `<rect x="1020" y="560" width="160" height="100" rx="6" fill="#3a2c20"/><circle cx="1060" cy="610" r="22" fill="#5B8A4E"/><path d="M1060 590q-10-60 10-80M1060 590q20-50 50-60" stroke="#5B8A4E" stroke-width="8" fill="none"/>`;
+  const p = person({ x: 520, y: 760, s: 1.05, lean: 6 + reach * 4, shirt: '#6B6F76', pants: '#2C2F36', legL: [8, 0], legR: [-6, -2], nod: 10 + tilt * 14,
+    armR: [lerp(10, 60, reach), lerp(20, 110, reach)], armL: phoneUp > 0 ? [lerp(20, 30, phoneUp), lerp(90, 160, phoneUp)] : [lerp(10, 50, reach), lerp(20, 95, reach)], phone: phoneUp > .5 ? 8 : null });
+  g += p.svg;
+  g += tinSvg(780, 660, lid > .3, -tilt * 24, lid * 90 * (1 - phoneUp) + (phoneUp > 0 ? 0 : 0));
+  if (tilt > .6) g += `<text x="${600}" y="${500}" font-size="40" font-weight="700" fill="#E9CF8A" font-family="Inter" opacity="${clamp((tilt - .6) * 3) * (1 - phoneUp)}">…empty.</text>`;
+  return g;
+}
+function sceneRun(t, s) {
+  const ph = t * 2.7 * Math.PI, sw = Math.sin(ph), bob = Math.abs(Math.cos(ph)) * 10;
+  let g = `<rect width="1920" height="1080" fill="url(#dawn)"/><circle cx="1180" cy="640" r="320" fill="url(#sun)"/><circle cx="1180" cy="640" r="70" fill="#FFE3A3" opacity=".85"/>`;
+  const hills = (y, amp, col, sp, seed) => { let d = `M0 1080L0 ${y}`; for (let x = 0; x <= 1920; x += 40) d += `L${x} ${y - amp * (.5 + .5 * Math.sin((x + t * sp) * .004 + seed) * Math.cos((x + t * sp) * .0017 + seed * 2))}`; return `<path d="${d}L1920 1080z" fill="${col}"/>`; };
+  g += hills(700, 120, '#5A3C46', 20, 1) + hills(780, 80, '#3A2833', 60, 4);
+  const trees = (y, sc, col, sp, gap) => { let o = ''; const off = (t * sp) % gap; for (let x = -gap; x < 2100; x += gap) { const xx = x - off; o += `<path d="M${xx} ${y}v${-120 * sc}" stroke="${col}" stroke-width="${12 * sc}"/><circle cx="${xx}" cy="${y - 150 * sc}" r="${60 * sc}" fill="${col}"/><circle cx="${xx - 40 * sc}" cy="${y - 120 * sc}" r="${45 * sc}" fill="${col}"/><circle cx="${xx + 40 * sc}" cy="${y - 118 * sc}" r="${48 * sc}" fill="${col}"/>`; } return o; };
+  g += trees(860, 1.1, '#2A1E25', 260, 380);
+  g += `<rect x="0" y="860" width="1920" height="220" fill="#1C1418"/><rect x="0" y="880" width="1920" height="70" fill="#3B2C2A"/>`;
+  for (let x = -200; x < 2100; x += 160) g += `<rect x="${x - (t * 900) % 160}" y="912" width="70" height="6" rx="3" fill="#6F5848"/>`;
+  g += trees(1150, 1.6, '#120D10', 1300, 900);
+  const p = person({ x: 640, y: 720 - bob, s: 1.05, lean: 12, nod: -4, shirt: '#C8553D', pants: '#1F2229', shoe: '#EDE4D3',
+    legL: [-50 * sw + 10, -50 * sw + 10 - 40 * Math.max(0, -sw) - 30], legR: [50 * sw + 10, 50 * sw + 10 - 40 * Math.max(0, sw) - 30],
+    armR: [-50 * sw + 10, 140 - 30 * sw], armL: [40, 168], phone: 4 });
+  g += `<ellipse cx="660" cy="930" rx="${120 - bob * 3}" ry="14" fill="#000" opacity=".35"/>` + p.svg;
+  for (let i = 0; i < 4; i++) g += `<path d="M${470 - i * 30} ${560 + i * 50}h${-120 - i * 20}" stroke="#F2ECDF" stroke-opacity=".18" stroke-width="4" stroke-linecap="round"/>`;
+  return g;
+}
+function sceneCafe(t, s) {
+  const typing = [[1.0, 2.3], [6.0, 6.6]].some(([a, b]) => t > a * s.k && t < b * s.k);
+  const tap = typing ? Math.sin(t * 38) * 4 : 0;
+  let g = `<rect width="1920" height="1080" fill="url(#wall)"/>`;
+  g += `<rect x="700" y="150" width="520" height="300" rx="10" fill="#1F2A24" stroke="#5a4532" stroke-width="14"/><text x="960" y="215" text-anchor="middle" font-family="Inter" font-size="34" font-weight="700" fill="#EDE4D3" letter-spacing="6">MENU</text>` +
+    [['Masala chai', '₹40'], ['Ginger chai', '₹45'], ['Cutting chai', '₹25']].map(([a, b], i) => `<text x="760" y="${280 + i * 52}" font-family="Inter" font-size="28" fill="#D9D2C2">${a}</text><text x="1160" y="${280 + i * 52}" text-anchor="end" font-family="Inter" font-size="28" fill="#E9CF8A">${b}</text>`).join('');
+  g += `<rect x="90" y="360" width="460" height="14" fill="#3A2B1F"/>` + [130, 210, 290, 370, 450].map((x, i) => i === 2 ? `<rect x="${x}" y="270" width="60" height="90" rx="8" fill="url(#tin)"/>` : `<rect x="${x}" y="${290 - (i % 2) * 14}" width="56" height="${70 + (i % 2) * 14}" rx="10" fill="#2E3B3A" opacity=".85"/>`).join('');
+  [400, 960, 1520].forEach((x, i) => { g += `<path d="M${x} 0v${90 + i % 2 * 30}" stroke="#2a2018" stroke-width="4"/><path d="M${x - 40} ${90 + i % 2 * 30}h80l-14 -36h-52z" fill="#C79A4C"/><circle cx="${x}" cy="${140 + i % 2 * 30}" r="300" fill="url(#lamp)" opacity=".75"/>`; });
+  g += `<g opacity=".55" filter="url(#blur2)"><rect x="160" y="760" width="200" height="12" fill="#2E2219"/>` + person({ x: 200, y: 700, s: .6, lean: 4, shirt: '#5B4B6B', pants: '#2A2A30', legL: [80, 0], legR: [76, 0], armL: [30, 120], face: 1 }).svg + person({ x: 330, y: 700, s: .6, lean: -4, shirt: '#7A5B3A', pants: '#2A2A30', legL: [-80, 0], legR: [-76, 0], armL: [-30, -120], face: -1 }).svg + `</g>`;
+  const p = person({ x: 640, y: 650, s: 1.05, lean: 2, nod: 14, shirt: '#EDE4D3', apron: '#3A2A1E', pants: '#2A2A30', legL: [4, 0], legR: [-4, 0], armR: [60, 100], armL: [24, 150 + tap], phone: 6 });
+  g += p.svg;
+  g += `<rect x="200" y="650" width="1100" height="40" rx="6" fill="#5A4130"/><rect x="220" y="690" width="1060" height="390" fill="#3A2A1E"/><path d="M220 760h1060" stroke="#2a1e15" stroke-width="6"/>`;
+  g += `<g><rect x="900" y="520" width="150" height="130" rx="14" fill="#7a7d80"/><rect x="920" y="545" width="110" height="40" rx="6" fill="#2d2f31"/><circle cx="975" cy="610" r="12" fill="#C79A4C"/></g>` + steam(975, 520, t, 3, 90);
+  g += cup(400, 650, t, .8) + cup(1150, 650, t + .4, .8);
+  return g;
+}
+function sceneDoor(t, s) {
+  const k = s.k, walkIn = ease(seg(t, 0, 1.5 * k)), place = ease(seg(t, 1.5 * k, 1.9 * k)), walkOut = ease(seg(t, 2.2 * k, 3.2 * k)), open = ease(seg(t, 3.2 * k, 3.9 * k)), pick = ease(seg(t, 4.3 * k, 5.0 * k));
+  let g = `<rect width="1920" height="1080" fill="#1A1714"/><rect x="0" y="0" width="1920" height="860" fill="url(#wallam)"/>`;
+  g += `<circle cx="1080" cy="300" r="380" fill="url(#lamp)"/><rect x="1060" y="260" width="40" height="60" rx="8" fill="#F1D9A2"/>`;
+  g += `<rect x="740" y="240" width="300" height="620" fill="#120D09"/>`;
+  g += `<g><rect x="${740}" y="240" width="${300 * (1 - open * .82)}" height="620" fill="#5A3A24"/><rect x="${770}" y="280" width="${240 * (1 - open * .82)}" height="250" rx="6" fill="none" stroke="#3f2818" stroke-width="8"/><circle cx="${740 + 300 * (1 - open * .82) - 30}" cy="560" r="10" fill="#D2AE55"/></g>`;
+  g += `<rect x="1060" y="420" width="70" height="30" rx="6" fill="#2a2018"/><text x="1095" y="441" text-anchor="middle" font-family="Inter" font-size="16" fill="#E9CF8A">B-204</text>`;
+  g += `<rect x="1150" y="520" width="26" height="40" rx="6" fill="#2a2018"/><circle cx="1163" cy="540" r="7" fill="${t > 1.7 * k && t < 2.4 * k ? '#F7D27A' : '#7a6a4a'}"/>`;
+  if (t > 1.7 * k && t < 2.6 * k) { const r = seg(t, 1.7 * k, 2.6 * k); g += `<circle cx="1163" cy="540" r="${20 + r * 60}" fill="none" stroke="#F7D27A" stroke-opacity="${1 - r}" stroke-width="3"/>`; }
+  g += `<rect x="0" y="860" width="1920" height="220" fill="#221C17"/><rect x="760" y="862" width="260" height="22" rx="4" fill="#4a3a2a"/>`;
+  // the delivery partner walks in from the left, sets the parcel down, rings and leaves
+  const cx = walkOut > 0 ? lerp(620, -200, walkOut) : lerp(-200, 620, walkIn), stepping = (walkIn > 0 && walkIn < 1) || (walkOut > 0 && walkOut < 1);
+  const sw = stepping ? Math.sin(t * 2.4 * Math.PI) : 0, f = walkOut > 0 ? -1 : 1;
+  const carry = walkOut > 0 || place >= 1 ? 0 : 1;
+  const box = (x, y, sc = 1) => `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="-60" y="-70" width="120" height="70" rx="4" fill="#B48A55"/><rect x="-60" y="-70" width="120" height="14" fill="#9E7645"/><rect x="-36" y="-46" width="72" height="30" rx="3" fill="#16120D"/><text x="0" y="-26" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#E9CF8A" letter-spacing="2">ESTATE TEA</text></g>`;
+  const courier = person({ x: cx, y: 660, s: 1.0, face: f, lean: 4 * f + place * 10, shirt: '#2E6F8E', pants: '#22252B', helmet: '#E3A63C',
+    legL: [-30 * sw, -30 * sw - 10 * Math.abs(sw)], legR: [30 * sw, 30 * sw - 10 * Math.abs(sw)],
+    armR: carry ? [40 * f, 110 * f] : [10 * f - 20 * sw, 10 * f], armL: carry ? [50 * f, 100 * f] : (place > 0 && walkOut === 0 ? [60, 60] : [-10 * f + 20 * sw, 0]) });
+  // Sam steps out and picks up the parcel
+  if (open > 0) g += person({ x: 900, y: 690, s: 1.0, face: 1, lean: pick * 25, nod: 20, shirt: '#2F5D62', pants: '#3A3F4A', legL: [6, 0], legR: [-6, 0], armR: [lerp(10, 50, pick), lerp(20, 30, pick)], armL: [lerp(10, 40, pick), lerp(20, 20, pick)] }).svg;
+  g += courier.svg;
+  const bx = carry ? cx + 70 * f : 880, by = carry ? 590 : lerp(lerp(590, 880, place), 700, pick);
+  g += box(bx, by);
+  return g;
+}
+const SCENE_FN = { couch: sceneCouch, kitchen: sceneKitchen, run: sceneRun, cafe: sceneCafe, door: sceneDoor };
+const FOCUS = { couch: 700, kitchen: 640, run: 660, cafe: 640, door: 820 };
+
+// ---------------- phone contents ----------------
+function chatHtml(s, t) {
+  const msgs = CHATS[s.id], k = s.k; let html = '', field = '', typingBrew = false;
+  for (const m of msgs) {
+    if (m.me) {
+      const a = m.type[0] * k, b = m.type[1] * k;
+      if (t >= b) html += bubble('me', m.me, seg(t, b, b + .25));
+      else if (t >= a) field = m.me.slice(0, Math.round(m.me.length * seg(t, a, b)));
+    } else {
+      const at = m.at * k;
+      if (t >= at) html += bubble('br', m.br, seg(t, at, at + .25), m.card && card(m.card, t >= m.card.paidAt * k));
+      else if (t >= at - 1.1) typingBrew = true;
+    }
+  }
+  if (typingBrew) html += `<div class="m br dots">${[0, 1, 2].map(i => `<i style="opacity:${.35 + .65 * Math.abs(Math.sin(t * 6 + i * .9))}"></i>`).join('')}</div>`;
+  return `<div class="sb"><span>${s.chip.split(' · ')[0].replace(/ (AM|PM)/, '')}</span><span>●●● ▮</span></div>
+    <div class="hd"><div class="av"><img src="mark-gold.png"></div><div><b>Brew · Estate Tea</b><small>${typingBrew ? 'typing…' : 'online'}</small></div></div>
+    <div class="chat">${html}</div>
+    <div class="inp"><div class="f ${field ? '' : 'ph'}">${field ? field + '<u></u>' : 'Message'}</div><div class="s"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg></div></div>`;
+}
+function bubble(cls, text, a, extra = '') {
+  return `<div class="m ${cls}" style="opacity:${a};transform:scale(${.85 + .15 * eout(a)}) translateY(${(1 - eout(a)) * 12}px)">${text}${extra}<small>now</small></div>`;
+}
+function card(c, paid) {
+  return `<div class="card"><div class="row"><span>${c.item}</span><b>${c.total}</b></div><div class="row" style="margin-top:4px"><span>incl. 5% GST · UPI / card</span></div><div class="btn ${paid ? 'paid' : ''}">${paid ? 'Paid ✓' : 'Pay ' + c.total}</div></div>`;
+}
+function lockHtml(s, t) {
+  const n = NOTES.filter(x => t >= x.at * s.k).reverse().map(x => { const a = seg(t, x.at * s.k, x.at * s.k + .3);
+    return `<div class="nt" style="opacity:${a};transform:translateY(${(1 - eout(a)) * -24}px)"><div class="a"><em style="background:${x.col}">${x.icon}</em><span>${x.app}</span><span style="margin-left:auto">now</span></div><p><b>${x.title}</b><br>${x.text}</p></div>`; }).join('');
+  return `<div class="lock"><div class="sb"><span></span><span>●●● ▮</span></div><div class="tm">6:10</div><div class="dt">Friday, 7 November</div><div style="margin-top:46px">${n}</div></div>`;
+}
+
+// ---------------- render(t) ----------------
+function render(t) {
+  const title = $('title'), endc = $('end'), art = $('art'), phone = $('phone'), cap = $('cap'), wipe = $('wipe');
+  // the wipe that cuts between scenes (and into the end card)
+  const cuts = [...SCN.slice(1).map(s => s.start), END_START, TITLE_END];
+  let w = null; for (const c of cuts) if (t > c - .35 && t < c + .35) w = (t - (c - .35)) / .7;
+  wipe.style.left = w === null ? '-140%' : `${lerp(-140, 100, ease(w))}%`;
+
+  if (t < TITLE_END) {
+    title.style.display = 'flex'; endc.style.display = 'none'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
+    const a = eout(seg(t, .2, 1.0)); title.querySelector('.lab').style.cssText = `opacity:${a};transform:translateY(${(1 - a) * 16}px)`;
+    title.querySelectorAll('.lab i').forEach(i => i.style.width = `${90 * eout(seg(t, .4, 1.4))}px`);
+    const words = ['Premium', 'tea', 'for', 'your', 'everyday', '<span class="g">cup.</span>'];
+    $('tl').innerHTML = words.map((wd, i) => { const b = eout(seg(t, 1.3 + i * .14, 1.8 + i * .14)); return `<span style="display:inline-block;opacity:${b};transform:translateY(${(1 - b) * 26}px)">${wd}</span>`; }).join(' ').replace('for</span> ', 'for</span>' + (VERT ? '<br>' : ' '));
+    title.style.transform = `scale(${1 + t * .008})`;
+    return;
+  }
+  title.style.display = 'none';
+  if (t >= END_START) {
+    endc.style.display = 'flex'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
+    const lt = t - END_START, a = eout(seg(lt, .15, .9));
+    endc.querySelector('.mk').style.cssText = `opacity:${a};transform:scale(${.92 + .08 * a})`;
+    const b = eout(seg(lt, .8, 1.5)); endc.querySelector('h3').style.cssText = `opacity:${b};transform:translateY(${(1 - b) * 18}px)`;
+    const c = eout(seg(lt, 1.5, 2.2)); endc.querySelector('.row').style.cssText = `opacity:${c};transform:translateY(${(1 - c) * 24}px)`;
+    const d = eout(seg(lt, 2.1, 2.8)); endc.querySelector('.site').style.opacity = d;
+    endc.querySelector('.qr').style.boxShadow = `0 0 ${50 + 20 * Math.sin(lt * 3)}px rgba(210,174,85,.3)`;
+    return;
+  }
+  endc.style.display = 'none'; art.style.display = 'block'; phone.style.display = 'block'; cap.style.display = 'block';
+  const s = SCN.filter(x => t >= x.start).pop(), lt = t - s.start;
+  // a slow push-in on every scene (a camera, not a slideshow)
+  const z = 1 + .07 * ease(lt / s.len), fx = FOCUS[s.id];
+  const vw = VERT ? 1014 / z : 1920 / z, vh = 1080 / z, vx = VERT ? fx - vw / 2 : (1920 - vw) * .38, vy = (1080 - vh) * .45;
+  art.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`); art.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  art.innerHTML = DEFS + SCENE_FN[s.id](lt, s);
+  // caption
+  $('chipt').textContent = s.chip; $('hook').innerHTML = s.hook;
+  const ca = eout(seg(lt, .25, .85)), co = 1 - ease(seg(lt, s.len - .5, s.len - .1));
+  $('chip').style.cssText = `opacity:${ca * co};transform:translateY(${(1 - ca) * 14}px)`;
+  const ha = eout(seg(lt, .45, 1.1)); $('hook').style.cssText = `opacity:${ha * co};transform:translateY(${(1 - ha) * 24}px)`;
+  // phone: slides up into frame for every scene (in the kitchen, once the tin turns out empty)
+  const pin = s.id === 'kitchen' ? 2.6 * s.k : .5;
+  const pa = eout(seg(lt, pin, pin + .55)), po = ease(seg(lt, s.len - .45, s.len));
+  const base = VERT ? 'scale(1.2)' : '';
+  phone.style.transform = `${base} translateY(${(1 - pa) * 1100 + po * 60}px) rotate(${(1 - pa) * 6}deg)`;
+  phone.style.opacity = pa * (1 - po);
+  $('scr').innerHTML = s.id === 'door' ? lockHtml(s, lt) : chatHtml(s, lt);
+}
+window.render = render;
+render(0);
+</script>
+</body>
+</html>
