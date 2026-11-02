@@ -2,7 +2,7 @@
 event list, and the voice (same chain and ducking as the poster video). Usage: python3 mix-life.py brew|narr"""
 import json, os, subprocess, sys, wave
 import numpy as np
-V = sys.argv[1]; HERE = os.path.dirname(os.path.abspath(__file__)); A = os.path.join(HERE, '../../audio')
+V = sys.argv[1]; VD = os.environ.get('VOICE_DIR', V); HERE = os.path.dirname(os.path.abspath(__file__)); A = os.path.join(HERE, '../../audio')
 work = os.path.join(HERE, 'work-' + V); os.makedirs(work, exist_ok=True); os.chdir(work)
 T = json.load(open(os.path.join(HERE, f'tl-{V}.json')))
 S = T['SCENES']; ES = T['END_START']
@@ -35,7 +35,7 @@ VCHAIN = ('highpass=f=75,lowpass=f=13000,equalizer=f=170:t=q:w=1:g=1.5,equalizer
           'acompressor=threshold=-24dB:ratio=2.5:attack=8:release=140:makeup=2,loudnorm=I=-19:TP=-3:LRA=7')
 voice = np.zeros(N)
 for L in T['LINES']:
-    raw = subprocess.check_output(['ffmpeg', '-loglevel', 'error', '-i', os.path.join(HERE, V, L['id'] + '.wav'), '-af', f'{VCHAIN},aresample={SR}', '-f', 's16le', '-ac', '1', '-'])
+    raw = subprocess.check_output(['ffmpeg', '-loglevel', 'error', '-i', os.path.join(HERE, VD, L['id'] + '.wav'), '-af', f'{VCHAIN},aresample={SR}', '-f', 's16le', '-ac', '1', '-'])
     v = np.frombuffer(raw, np.int16).astype(float) / 32768; f = int(.02 * SR); v[:f] *= np.linspace(0, 1, f); v[-f:] *= np.linspace(1, 0, f)
     add(voice, v, L['at'])
 rn = int(.3 * SR); rt = np.arange(rn) / SR; room = rng.standard_normal(rn) * np.exp(-rt / .07); room = lowpass(room, 5000); room[:int(.006 * SR)] = 0; room /= np.sqrt(np.sum(room ** 2))

@@ -158,10 +158,12 @@ const SCN = [
   { id: 'cafe',    min: 8.2, chip: '3:15 PM · Your café',    hook: 'No calls. <span>No chasing.</span>' },
   { id: 'door',    min: 6.0, chip: '6:10 PM · Home',         hook: 'At your <span>door.</span>' },
 ];
-const TITLE_END = 0.5 + DUR[0] + 1.0;
+// bare: only the five scenes (the poster opening and ending come from brew-poster-ends.html)
+const BARE = Q.has('bare');
+const TITLE_END = BARE ? 0 : 0.5 + DUR[0] + 1.0;
 let clock = TITLE_END;
 SCN.forEach((s, i) => { s.start = clock; s.len = Math.max(LEAD + DUR[i + 1] + TAIL, s.min); s.k = s.len / s.min; s.voice = s.start + LEAD; clock += s.len; });
-const END_START = clock, END = END_START + 0.6 + DUR[6] + (MEET ? 2.2 : 2.4);
+const END_START = clock, END = BARE ? clock : END_START + 0.6 + DUR[6] + (MEET ? 2.2 : 2.4);
 const SWAP = END_START + 0.6 + 2.0;   // brew2: as he starts "Your one-stop shop…"
 window.DURATION = END;
 const LINES = [{ id: 'l1', at: 0.5 }, ...SCN.map((s, i) => ({ id: 'l' + (i + 2), at: s.voice })), { id: 'l7', at: END_START + 0.6 }];
@@ -196,7 +198,7 @@ SCN.forEach((s, i) => {
 });
 const K = SCN[1]; EV.push({ t: K.start + 1.35 * K.k, k: 'lid' });
 const D = SCN[4]; EV.push({ t: D.start + 1.75 * D.k, k: 'bell' }); NOTES.forEach(n => EV.push({ t: D.start + n.at * D.k, k: 'ping' }));
-EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' });
+if (!BARE) { EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' }); }
 if (MEET) EV.push({ t: SWAP - .05, k: 'swap' });
 window.TL = { END, SWAP, LINES, EVENTS: EV, SCENES: SCN.map(s => ({ id: s.id, start: s.start, len: s.len })), TITLE_END, END_START, VOICE };
 
@@ -384,12 +386,12 @@ function lockHtml(s, t) {
 function render(t) {
   const title = $('title'), endc = $('end'), art = $('art'), phone = $('phone'), cap = $('cap'), wipe = $('wipe');
   // the wipe that cuts between scenes (and into the end card)
-  const cuts = [...SCN.slice(1).map(s => s.start), END_START, TITLE_END];
+  const cuts = [...SCN.slice(1).map(s => s.start), ...(BARE ? [] : [END_START, TITLE_END])];
   let w = null; for (const c of cuts) if (t > c - .35 && t < c + .35) w = (t - (c - .35)) / .7;
   wipe.style.left = w === null ? '-140%' : `${lerp(-140, 100, ease(w))}%`;
 
   if (t < TITLE_END) {
-    title.style.display = 'flex'; endc.style.display = 'none'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
+    title.style.display = 'flex'; endc.style.display = 'none'; $('meet').style.display = 'none'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
     const a = eout(seg(t, .2, 1.0)); title.querySelector('.lab').style.cssText = `opacity:${a};transform:translateY(${(1 - a) * 16}px)`;
     title.querySelectorAll('.lab i').forEach(i => i.style.width = `${90 * eout(seg(t, .4, 1.4))}px`);
     const words = ['Premium', 'tea', 'for', 'your', 'everyday', '<span class="g">cup.</span>'];
