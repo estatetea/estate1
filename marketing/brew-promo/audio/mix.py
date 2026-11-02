@@ -127,10 +127,11 @@ score = np.load('score.npy')[:N]
 if len(score) < N: score = np.vstack([score, np.zeros((N - len(score), 2))])
 
 # ---------------- voiceover ----------------
-lines = json.load(open('lines.json'))
+import os
+lines = json.load(open(os.environ.get('LINES', 'lines.json')))
 voice = np.zeros(N)
 for L in lines:
-    src = f"{L['id']}.wav"
+    src = os.path.join(os.environ.get('VOICE_DIR', '.'), f"{L['id']}.wav")
     d = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]))
     tempo = max(1.0, d / L['max'])          # only ever speed up a touch to fit its scene
     raw = subprocess.check_output(['ffmpeg', '-loglevel', 'error', '-i', src, '-af', f'atempo={tempo:.3f},aresample={SR}', '-f', 's16le', '-ac', '1', '-'])
@@ -148,5 +149,5 @@ stereo /= np.max(np.abs(stereo)) + 1e-9
 with wave.open('soundtrack-raw.wav', 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((stereo * 32000).astype(np.int16).tobytes())
 # loudness for social video
-subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'soundtrack-raw.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', str(SR), 'soundtrack.wav'], check=True)
+subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'soundtrack-raw.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', str(SR), os.environ.get('OUT', 'soundtrack.wav')], check=True)
 print('soundtrack.wav', round(DUR, 2), 's')

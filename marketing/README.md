@@ -8,3 +8,10 @@ Not part of the website build. Kept here so nothing is lost between sessions.
   - `brew-promo-v8-16x9.mp4`, `brew-promo-v8-9x16.mp4` – finished videos with voiceover, music and sound effects.
   - `audio/` – voice lines (Gemini TTS, voice "Aoede", via `gen.py`), `lines.json` (script and timings),
     `score2.py` (the cinematic score), `mix.py` ( sound effects, ducking, final mix → `soundtrack.wav`), `timeline.json` (event times from the animation).
+
+## v9 — Brew speaking (male voice, first person)
+- `brew-promo-v9.html` (same animation as v8; opening line "Estate Tea · Premium tea for your everyday chai."),
+  `brew-promo-v9-16x9.mp4`, `brew-promo-v9-9x16.mp4`.
+- Voice: Gemini voice "Achird", one continuous read (`audio/script-brew.txt`), cut into `audio/brew-voice/l1–l7.wav`;
+  timings in `audio/lines-brew.json`. Rebuild: `LINES=lines-brew.json VOICE_DIR=brew-voice OUT=soundtrack-brew.wav python3 mix.py`.
+- v8 (female narrator, third person) is kept alongside.
