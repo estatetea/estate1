@@ -81,6 +81,23 @@
   #end .site { margin-top:40px; font-size:30px; color:var(--gold-soft); letter-spacing:.04em; }
   .halo { position:absolute; left:50%; top:50%; width:1300px; height:900px; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(210,174,85,.16), transparent); }
 
+  #meet .badge { display:inline-flex; align-items:center; gap:12px; padding:10px 20px 10px 12px; border:1px solid rgba(210,174,85,.35); border-radius:999px; background:rgba(210,174,85,.07); font-size:22px; font-weight:500; color:var(--sub); }
+  #meet .badge em { font-style:normal; background:var(--gold); color:#14110B; font-weight:600; font-size:16px; padding:4px 11px; border-radius:999px; }
+  #meet h1 { font-size:150px; font-weight:600; letter-spacing:-.045em; line-height:1; margin-top:34px; height:160px; width:1400px; }
+  body.V #meet h1 { font-size:132px; width:1000px; height:140px; }
+  #meet h1 .g, #meet .gs { color:var(--gold); } #meet .gs { color:var(--gold-soft); }
+  #mb, #et { position:absolute; left:0; right:0; top:0; display:flex; align-items:center; justify-content:center; gap:24px; }
+  #mb { gap:.25em; } #et img { width:126px; } body.V #et img { width:104px; }
+  #meet .msub { position:relative; width:1400px; height:104px; margin-top:30px; font-size:38px; line-height:1.4; color:var(--sub); }
+  body.V #meet .msub { width:1000px; font-size:36px; }
+  #sub2, #sub3 { position:absolute; left:0; right:0; top:0; }
+  #meet .row { display:flex; align-items:center; gap:40px; margin-top:56px; }
+  body.V #meet .row { flex-direction:column; gap:34px; }
+  #meet .pill { display:flex; align-items:center; gap:16px; padding:18px 28px; border-radius:22px; background:#121110; border:1px solid rgba(210,174,85,.35); text-align:left; }
+  #meet .pill .wa { width:54px; height:54px; border-radius:50%; background:#25A366; display:grid; place-items:center; }
+  #meet .pill b { display:block; font-size:28px; } #meet .pill small { display:block; font-size:22px; color:var(--sub); margin-top:3px; }
+  #meet .qr { width:220px; height:220px; border-radius:22px; background:#F4EFE3; padding:14px; } #meet .qr img { width:100%; height:100%; }
+
   /* the cut between scenes */
   #wipe { position:absolute; top:0; bottom:0; width:140%; left:-140%; background:var(--bg); }
   #wipe::before { content:""; position:absolute; right:0; top:0; bottom:0; width:6px; background:linear-gradient(var(--gold-soft), var(--gold)); box-shadow:0 0 40px var(--gold); }
@@ -104,6 +121,15 @@
     </div>
     <div class="site">estatetea.in</div>
   </div>
+  <div id="meet" class="full"><div class="halo"></div>
+    <div class="badge"><em>NEW</em>Now on WhatsApp</div>
+    <h1 style="position:relative"><span id="mb">Meet <span class="g">Brew.</span></span><span id="et"><img src="mark-gold.png">Estate <span class="g">Tea</span></span></h1>
+    <div class="msub"><span id="sub2">Your chai experience just got<br><span class="gs">easier, and better.</span></span><span id="sub3">Your one-stop shop for all things Estate Tea.<br><span class="gs">estatetea.in</span></span></div>
+    <div class="row">
+      <div class="pill"><div class="wa"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg></div><div><b>Chat with Brew</b><small>+91 97426 68951</small></div></div>
+      <div class="qr"><img src="qr-plain.png"></div>
+    </div>
+  </div>
   <div id="wipe"></div>
   <svg id="grain" width="100%" height="100%"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg>
 </div>
@@ -112,7 +138,10 @@ const Q = new URLSearchParams(location.search);
 const VERT = Q.has('v'); if (VERT) document.body.classList.add('V');
 const VOICE = Q.get('voice') || 'brew';
 // Voice line lengths (seconds), measured from the recordings: title, couch, kitchen, run, café, door, end.
-const DUR = { brew: [3.54, 7.23, 6.69, 4.48, 6.92, 1.47, 4.15], narr: [4.36, 7.77, 7.91, 5.55, 8.46, 1.9, 5.55] }[VOICE];
+const DUR = { brew: [3.54, 7.23, 6.69, 4.48, 6.92, 1.47, 4.15], narr: [4.36, 7.77, 7.91, 5.55, 8.46, 1.9, 5.55],
+  brew2: [3.41, 7.68, 5.83, 4.5, 6.83, 1.71, 6.72] }[VOICE];
+// end=meet: the poster video's ending ("Meet Brew." turns into Estate Tea, then the one-stop shop line)
+const MEET = Q.get('end') === 'meet';
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -132,7 +161,8 @@ const SCN = [
 const TITLE_END = 0.5 + DUR[0] + 1.0;
 let clock = TITLE_END;
 SCN.forEach((s, i) => { s.start = clock; s.len = Math.max(LEAD + DUR[i + 1] + TAIL, s.min); s.k = s.len / s.min; s.voice = s.start + LEAD; clock += s.len; });
-const END_START = clock, END = END_START + 0.6 + DUR[6] + 2.4;
+const END_START = clock, END = END_START + 0.6 + DUR[6] + (MEET ? 2.2 : 2.4);
+const SWAP = END_START + 0.6 + 2.0;   // brew2: as he starts "Your one-stop shop…"
 window.DURATION = END;
 const LINES = [{ id: 'l1', at: 0.5 }, ...SCN.map((s, i) => ({ id: 'l' + (i + 2), at: s.voice })), { id: 'l7', at: END_START + 0.6 }];
 
@@ -167,7 +197,8 @@ SCN.forEach((s, i) => {
 const K = SCN[1]; EV.push({ t: K.start + 1.35 * K.k, k: 'lid' });
 const D = SCN[4]; EV.push({ t: D.start + 1.75 * D.k, k: 'bell' }); NOTES.forEach(n => EV.push({ t: D.start + n.at * D.k, k: 'ping' }));
 EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' });
-window.TL = { END, LINES, EVENTS: EV, SCENES: SCN.map(s => ({ id: s.id, start: s.start, len: s.len })), TITLE_END, END_START, VOICE };
+if (MEET) EV.push({ t: SWAP - .05, k: 'swap' });
+window.TL = { END, SWAP, LINES, EVENTS: EV, SCENES: SCN.map(s => ({ id: s.id, start: s.start, len: s.len })), TITLE_END, END_START, VOICE };
 
 // ---------------- drawing helpers ----------------
 const P = (a, l) => [Math.sin(a * Math.PI / 180) * l, Math.cos(a * Math.PI / 180) * l];
@@ -367,6 +398,25 @@ function render(t) {
     return;
   }
   title.style.display = 'none';
+  if (t >= END_START && MEET) {
+    endc.style.display = 'none'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
+    const m = $('meet'), lt = t - END_START; m.style.display = 'flex';
+    const a = eout(seg(lt, .1, .8)); $('mb').style.cssText = `opacity:${a};transform:scale(${.92 + .08 * a})`;
+    m.querySelector('.badge').style.cssText = `opacity:${eout(seg(lt, 0, .6))}`;
+    const b = eout(seg(lt, .6, 1.2)); $('sub2').style.cssText = `opacity:${b};transform:translateY(${(1 - b) * 16}px)`;
+    const c = eout(seg(lt, 1.0, 1.7)); m.querySelector('.row').style.cssText = `opacity:${c};transform:translateY(${(1 - c) * 24}px)`;
+    const sw = ease(seg(t, SWAP, SWAP + .55));
+    if (sw > 0) {
+      $('mb').style.cssText = `opacity:${1 - sw};transform:translateX(${-sw * 640}px);filter:blur(${sw * 6}px)`;
+      $('sub2').style.opacity = 1 - seg(t, SWAP - .1, SWAP + .35);
+    }
+    $('et').style.cssText = `opacity:${sw};transform:translateX(${(1 - sw) * 640}px);filter:blur(${(1 - sw) * 6}px)`;
+    $('sub3').style.opacity = seg(t, SWAP + .15, SWAP + .65);
+    m.querySelector('.qr').style.boxShadow = `0 0 ${50 + 20 * Math.sin(lt * 3)}px rgba(210,174,85,.3)`;
+    $('stage').style.opacity = 1 - seg(t, END - .5, END);
+    return;
+  }
+  $('meet').style.display = 'none';
   if (t >= END_START) {
     endc.style.display = 'flex'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
     const lt = t - END_START, a = eout(seg(lt, .15, .9));

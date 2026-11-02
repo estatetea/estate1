@@ -17,7 +17,7 @@ def bell():                                         # a two-tone doorbell
     return np.concatenate([chime((1318.5, 2637), .45)[:int(.42 * SR)], chime((1046.5, 2093), 1.2)]) * 1.2
 for e in T['EVENTS']:
     k, t = e['k'], e['t']
-    if k == 'cut': add(sfx, msg_swoosh(.45, .7), t, SW)
+    if k in ('cut', 'swap'): add(sfx, msg_swoosh(.45, .7), t, SW)
     elif k == 'phone': add(sfx, msg_swoosh(.3, 1.0), t, SW * .8)
     elif k == 'type':
         for c in range(e['n']):
