@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0B0A09; --panel:#151311; --gold:#D2AE55; --gold-soft:#E9CF8A; --text:#F2ECDF; --sub:#B9B0A0; --dim:#7F7768; --line:rgba(242,236,223,.09); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:1080px; height:1350px; background:var(--bg); overflow:hidden; font-family:Inter,sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  .poster { position:relative; width:1080px; height:1350px; overflow:hidden; }
+  /* faint grid, fading out from the centre */
+  .grid { position:absolute; inset:0;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:60px 60px; background-position:30px 0;
+    -webkit-mask-image:radial-gradient(ellipse 60% 50% at 50% 42%,#000 20%,transparent 75%); }
+  .halo { position:absolute; left:50%; top:610px; width:760px; height:520px; transform:translate(-50%,-50%);
+    background:radial-gradient(closest-side,rgba(210,174,85,.20),transparent); }
+
+  .nav { position:absolute; top:64px; left:80px; right:80px; display:flex; justify-content:space-between; align-items:center; }
+  .logo { display:flex; align-items:center; gap:12px; font-weight:600; font-size:20px; letter-spacing:-.01em; }
+  .logo img { width:40px; }
+  .site { font-size:17px; color:var(--sub); font-weight:500; }
+
+  .head { position:absolute; top:150px; left:0; right:0; text-align:center; }
+  .badge { display:inline-flex; align-items:center; gap:10px; padding:8px 16px 8px 10px; border:1px solid rgba(210,174,85,.35); border-radius:999px; background:rgba(210,174,85,.07); font-size:16px; font-weight:500; color:var(--gold-soft); }
+  .badge em { font-style:normal; background:var(--gold); color:#14110B; font-weight:600; font-size:13px; padding:3px 9px; border-radius:999px; letter-spacing:.02em; }
+  h1 { font-size:116px; font-weight:600; letter-spacing:-.045em; line-height:1; margin-top:28px; }
+  h1 span { color:var(--gold); }
+  .sub { font-size:28px; line-height:1.45; color:var(--sub); margin-top:22px; letter-spacing:-.01em; }
+
+  /* phone */
+  .phone { position:absolute; left:50%; top:470px; width:400px; height:610px; transform:translateX(-50%);
+    border-radius:52px; background:#050505; padding:12px; box-shadow:0 0 0 1px rgba(242,236,223,.14), 0 40px 80px rgba(0,0,0,.6); }
+  .screen { width:100%; height:100%; border-radius:42px; overflow:hidden; background:#0E0D0C; position:relative; }
+  .bar { display:flex; align-items:center; gap:12px; padding:30px 20px 14px; background:#171513; border-bottom:1px solid rgba(255,255,255,.05); }
+  .av { width:40px; height:40px; border-radius:50%; background:#000; border:1px solid rgba(210,174,85,.6); display:grid; place-items:center; }
+  .av img { width:26px; }
+  .bar b { display:block; font-size:16px; font-weight:600; }
+  .bar small { display:block; font-size:12px; color:#7DCB8F; margin-top:2px; }
+  .chat { padding:14px 14px; display:flex; flex-direction:column; gap:9px; }
+  .msg { max-width:82%; font-size:14px; line-height:1.4; padding:10px 13px; border-radius:16px; }
+  .in { align-self:flex-end; background:#2A2620; color:var(--text); border-bottom-right-radius:5px; }
+  .out { align-self:flex-start; background:#1B1916; border:1px solid rgba(255,255,255,.06); border-bottom-left-radius:5px; }
+  .pay { align-self:flex-start; width:80%; background:#1B1916; border:1px solid rgba(210,174,85,.4); border-radius:16px; padding:12px 13px; font-size:13px; }
+  .pay .t { color:var(--sub); } .pay .a { font-size:20px; font-weight:600; margin:4px 0 8px; }
+  .pay .b { text-align:center; background:var(--gold); color:#14110B; font-weight:600; border-radius:10px; padding:8px; font-size:13.5px; }
+  .cta-btn { margin-top:9px; border-top:1px solid rgba(255,255,255,.08); padding-top:8px; text-align:center; color:#7FC3F5; font-weight:500; font-size:13.5px; }
+  .pay .n { font-size:11.5px; color:var(--dim); margin-top:7px; }
+  .fade { position:absolute; left:0; right:0; bottom:0; height:28px; background:linear-gradient(transparent,#0E0D0C); }
+
+  /* features either side of the phone */
+  .feats { position:absolute; top:560px; width:250px; display:flex; flex-direction:column; gap:54px; }
+  .feats.l { left:72px; text-align:right; } .feats.r { right:72px; }
+  .f b { display:block; font-size:21px; font-weight:600; letter-spacing:-.01em; }
+  .f span { display:block; font-size:16px; line-height:1.45; color:var(--sub); margin-top:6px; }
+  .f i { display:inline-block; width:34px; height:34px; border-radius:10px; border:1px solid rgba(210,174,85,.4); background:rgba(210,174,85,.08); margin-bottom:12px; position:relative; }
+  .f i svg { position:absolute; inset:7px; stroke:var(--gold); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+
+  .cta { position:absolute; left:0; right:0; bottom:96px; display:flex; justify-content:center; align-items:center; gap:28px; }
+  .btn { display:flex; align-items:center; gap:14px; background:#000; border:1px solid rgba(242,236,223,.22); border-radius:16px; padding:18px 28px 18px 22px; box-shadow:0 0 0 1px #000, 0 12px 30px rgba(0,0,0,.6); }
+  .btn svg { width:30px; height:30px; fill:var(--text); }
+  .btn b { display:block; font-size:22px; font-weight:600; letter-spacing:-.01em; }
+  .btn small { display:block; font-size:16px; color:var(--sub); margin-top:3px; }
+  .btn .arr { color:var(--gold); font-size:22px; margin-left:10px; }
+  .qr { display:flex; align-items:center; gap:14px; }
+  .qr img { width:132px; height:132px; border-radius:12px; display:block; }
+  .qr span { font-size:15px; color:var(--sub); line-height:1.4; }
+.live { display:flex; align-items:center; gap:16px; padding:22px 40px; border:1px solid rgba(210,174,85,.45); border-radius:999px; background:rgba(210,174,85,.08); font-size:30px; font-weight:500; color:var(--text); letter-spacing:-.01em; }
+  .live b { color:var(--gold); font-weight:600; }
+  .live .dot { width:12px; height:12px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 6px rgba(210,174,85,.18); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="grid"></div><div class="halo"></div>
+
+  <div class="nav">
+    <div class="logo"><img src="mark-gold.png" alt="">Estate Tea</div>
+    <div class="site">estatetea.in</div>
+  </div>
+
+  <div class="head">
+    <div class="badge"><em>NEW</em>Now on WhatsApp</div>
+    <h1>Meet <span>Brew.</span></h1>
+    <div class="sub">Your tea concierge. Ask, order and reorder,<br>all in one chat.</div>
+  </div>
+
+  <div class="feats l">
+    <div class="f"><i><svg viewBox="0 0 20 20"><path d="M17 10a7 7 0 0 1-10.2 6.2L3 17l1-3.6A7 7 0 1 1 17 10z"/></svg></i><b>Ask anything</b><span>Taste, strength, the perfect cup. Just message him.</span></div>
+    <div class="f"><i><svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="11" rx="2"/><path d="M3 9h14"/></svg></i><b>Order in chat</b><span>Add your details in one tap. Pay by link or UPI QR in the chat.</span></div>
+  </div>
+  <div class="feats r">
+    <div class="f"><i><svg viewBox="0 0 20 20"><path d="M4 10.5l3.5 3.5L16 6"/></svg></i><b>Remembers you</b><span>Your details and your usual, ready next time.</span></div>
+    <div class="f"><i><svg viewBox="0 0 20 20"><path d="M2.5 6h9v7h-9zM11.5 8.5h3l3 3V13h-6z"/><circle cx="6" cy="14.5" r="1.4"/><circle cx="14.5" cy="14.5" r="1.4"/></svg></i><b>To your door</b><span>Payment confirmed on WhatsApp. Track your order anytime on your order link.</span></div>
+  </div>
+
+  <div class="phone"><div class="screen">
+    <div class="bar"><div class="av"><img src="mark-gold.png" alt=""></div><div><b>Brew · Estate Tea</b><small>online</small></div></div>
+    <div class="chat">
+      <div class="msg in">Hi! Is your tea good for masala chai?</div>
+      <div class="msg out">Perfect for it 🙂 Strong, rich and lovely with milk and spices.</div>
+      <div class="msg in">One 500 g pack, please</div>
+      <div class="msg out">Lovely! Add your details here, and I'll keep them on file 🙂<div class="cta-btn">Add your details</div></div>
+      <div class="pay"><div class="t">Invoice · ET-0031</div><div class="a">₹378</div><div class="b">Pay now · or scan the UPI QR</div></div>
+      <div class="msg out">Payment received, thank you! 🎉 Your order is confirmed.</div>
+    </div>
+    <div class="fade"></div>
+  </div></div>
+
+  <div class="cta">
+    <div class="live"><span class="dot"></span>Live on <b>November 7th</b></div>
+  </div>
+</div>
+</body>
+</html>

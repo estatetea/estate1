@@ -1,0 +1,299 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0B0A09; --gold:#D2AE55; --gold-soft:#E9CF8A; --text:#F2ECDF; --sub:#B9B0A0; --dim:#7F7768; --line:rgba(242,236,223,.08); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:1920px; height:1080px; background:var(--bg); overflow:hidden; font-family:Inter,sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  .stage { position:absolute; inset:0; overflow:hidden; }
+  .grid { position:absolute; inset:0; background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px; -webkit-mask-image:radial-gradient(ellipse 70% 60% at 60% 50%,#000 20%,transparent 75%); }
+  .halo { position:absolute; left:1340px; top:540px; width:1000px; height:800px; transform:translate(-50%,-50%); background:radial-gradient(closest-side,rgba(210,174,85,.18),transparent); }
+
+  /* intro: the poster */
+  #poster { position:absolute; left:50%; top:50%; height:1000px; transform:translate(-50%,-50%); border-radius:18px; box-shadow:0 40px 120px rgba(0,0,0,.7); }
+
+  /* left column */
+  #left { position:absolute; left:130px; top:0; bottom:0; width:820px; }
+  .logo { position:absolute; top:84px; display:flex; align-items:center; gap:14px; font-size:24px; font-weight:600; }
+  .logo img { width:46px; }
+  .kicker { position:absolute; top:200px; font-size:20px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+  .title { position:absolute; top:242px; font-size:92px; font-weight:600; letter-spacing:-.04em; line-height:1.02; }
+  .title span { color:var(--gold); }
+  .feats { position:absolute; top:440px; display:flex; flex-direction:column; gap:14px; width:700px; }
+  .f { display:flex; gap:20px; align-items:flex-start; padding:20px 24px; border-radius:20px; border:1px solid transparent; transition:none; }
+  .f i { flex:none; width:52px; height:52px; border-radius:14px; border:1px solid rgba(210,174,85,.4); background:rgba(210,174,85,.08); position:relative; }
+  .f i svg { position:absolute; inset:12px; stroke:var(--gold); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .f b { display:block; font-size:28px; font-weight:600; letter-spacing:-.01em; }
+  .f span { display:block; font-size:19px; color:var(--sub); margin-top:5px; line-height:1.4; }
+  .caption { position:absolute; left:130px; bottom:64px; width:860px; font-size:24px; line-height:1.45; color:var(--sub); }
+
+  /* phone */
+  #phone { position:absolute; left:1150px; top:70px; width:470px; height:940px; border-radius:62px; background:#050505; padding:14px;
+    box-shadow:0 0 0 1px rgba(242,236,223,.14), 0 50px 110px rgba(0,0,0,.65); }
+  .screen { position:relative; width:100%; height:100%; border-radius:50px; overflow:hidden; background:#0E0D0C; }
+  .bar { position:absolute; left:0; right:0; top:0; height:112px; display:flex; align-items:flex-end; gap:14px; padding:0 22px 16px; background:#171513; border-bottom:1px solid rgba(255,255,255,.05); z-index:2; }
+  .av { width:46px; height:46px; border-radius:50%; background:#000; border:1px solid rgba(210,174,85,.6); display:grid; place-items:center; }
+  .av img { width:30px; }
+  .bar b { display:block; font-size:19px; font-weight:600; }
+  .bar small { display:block; font-size:14px; color:#7DCB8F; margin-top:2px; }
+  .chat { position:absolute; left:0; right:0; top:112px; bottom:92px; overflow:hidden; }
+  .inner { position:absolute; left:14px; right:14px; bottom:14px; display:flex; flex-direction:column; gap:11px; }
+  .msg { max-width:82%; font-size:17px; line-height:1.42; padding:12px 15px; border-radius:18px; white-space:pre-wrap; }
+  .in { align-self:flex-end; background:#2A2620; border-bottom-right-radius:6px; }
+  .out { align-self:flex-start; background:#1B1916; border:1px solid rgba(255,255,255,.06); border-bottom-left-radius:6px; }
+  .btn { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.09); text-align:center; color:#7FC3F5; font-weight:500; position:relative; }
+  .ripple { position:absolute; left:50%; top:60%; width:20px; height:20px; border-radius:50%; background:rgba(127,195,245,.35); transform:translate(-50%,-50%) scale(0); }
+  .img { align-self:flex-start; width:82%; background:#1B1916; border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:6px; }
+  .img img { width:100%; border-radius:13px; display:block; }
+  .img p { font-size:16px; line-height:1.42; padding:9px 8px 5px; white-space:pre-wrap; }
+  .chip { align-self:center; font-size:13px; color:var(--sub); background:#1B1916; border:1px solid rgba(255,255,255,.07); padding:5px 12px; border-radius:999px; }
+  .dots { align-self:flex-start; background:#1B1916; border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:15px 18px; display:flex; gap:6px; }
+  .dots i { width:9px; height:9px; border-radius:50%; background:var(--sub); }
+  .input { position:absolute; left:0; right:0; bottom:0; height:92px; display:flex; align-items:center; gap:12px; padding:0 16px 14px; background:#121110; }
+  .field { flex:1; height:50px; border-radius:25px; background:#1E1C1A; display:flex; align-items:center; padding:0 18px; font-size:17px; color:var(--text); overflow:hidden; white-space:nowrap; }
+  .field.ph { color:#6e675d; }
+  .caret { display:inline-block; width:2px; height:21px; background:var(--gold); margin-left:1px; }
+  .send { width:50px; height:50px; border-radius:50%; background:#1f7a52; display:grid; place-items:center; }
+  .send svg { width:22px; fill:#fff; }
+
+  /* outro */
+  #outro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  #outro img { width:96px; }
+  #outro h1 { font-size:150px; font-weight:600; letter-spacing:-.05em; margin-top:24px; }
+  #outro h1 span { color:var(--gold); }
+  #outro p { font-size:30px; color:var(--sub); margin-top:14px; }
+  .live { margin-top:46px; display:inline-flex; align-items:center; gap:18px; padding:24px 44px; border:1px solid rgba(210,174,85,.5); border-radius:999px; background:rgba(210,174,85,.08); font-size:38px; font-weight:500; }
+  .live b { color:var(--gold); font-weight:600; }
+  .live .dot { width:14px; height:14px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 7px rgba(210,174,85,.18); }
+  .site { margin-top:34px; font-size:24px; color:var(--dim); letter-spacing:.06em; }
+  #hook { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+  #hook .w { display:inline-block; margin:0 14px; font-size:132px; font-weight:700; letter-spacing:-.045em; }
+  #hook .w.g { color:var(--gold); }
+  #hook .sub { display:block; font-size:30px; font-weight:500; color:var(--sub); letter-spacing:.02em; margin-top:26px; }
+  #blurwrap { position:absolute; inset:0; }
+  .callout { position:absolute; display:flex; align-items:center; gap:12px; padding:16px 24px; border-radius:18px; background:rgba(23,21,19,.92);
+    border:1px solid rgba(210,174,85,.45); box-shadow:0 18px 50px rgba(0,0,0,.55); font-size:22px; font-weight:600; white-space:nowrap; }
+  .callout em { font-style:normal; color:var(--gold); }
+  #cursor { position:absolute; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.92); box-shadow:0 6px 20px rgba(0,0,0,.5); pointer-events:none; }
+  #phone { transform-style:preserve-3d; }
+  .stage3d { position:absolute; inset:0; perspective:1800px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="grid"></div><div class="halo"></div>
+  <img id="poster" src="brew-poster.png" alt="">
+  <div id="blurwrap">
+
+  <div id="left">
+    <div class="logo"><img src="mark-gold.png" alt="">Estate Tea</div>
+    <div class="kicker" id="kicker">Now on WhatsApp</div>
+    <div class="title">Meet <span>Brew.</span></div>
+    <div class="feats" id="feats"></div>
+  </div>
+  <div class="caption" id="caption"></div>
+
+  <div class="stage3d"><div id="phone"><div class="screen">
+    <div class="bar"><div class="av"><img src="mark-gold.png" alt=""></div><div><b>Brew · Estate Tea</b><small id="status">online</small></div></div>
+    <div class="chat"><div class="inner" id="inner"></div></div>
+    <div class="input"><div class="field" id="field"></div>
+      <div class="send"><svg viewBox="0 0 24 24"><path d="M3 20.5V14l9-2-9-2V3.5L22 12z"/></svg></div></div>
+  </div></div></div>
+  <div id="callouts"></div><div id="cursor"></div>
+  </div>
+  <div id="hook"></div>
+
+  <div id="outro">
+    <img src="mark-gold.png" alt="">
+    <h1>Meet <span>Brew.</span></h1>
+    <p>Your tea concierge on WhatsApp. Ask, order and reorder, all in one chat.</p>
+    <div class="live"><span class="dot"></span>Live on <b>November 7th</b></div>
+    <div class="site">ESTATETEA.IN</div>
+  </div>
+</div>
+<script>
+const FEATS = [
+  ["Ask anything", "Brewing, strength, the perfect cup.", '<path d="M17 10a7 7 0 0 1-10.2 6.2L3 17l1-3.6A7 7 0 1 1 17 10z"/>'],
+  ["Order in chat", "Details in one tap. Pay by link or UPI QR.", '<rect x="3" y="5" width="14" height="11" rx="2"/><path d="M3 9h14"/>'],
+  ["Remembers you", "Your details and your usual, ready next time.", '<path d="M4 10.5l3.5 3.5L16 6"/>'],
+  ["To your door", "Fresh from the Nilgiris, right to you.", '<path d="M2.5 6h9v7h-9zM11.5 8.5h3l3 3V13h-6z"/><circle cx="6" cy="14.5" r="1.4"/><circle cx="14.5" cy="14.5" r="1.4"/>'],
+];
+document.getElementById('feats').innerHTML = FEATS.map(([b, s, p]) => `<div class="f"><i><svg viewBox="0 0 20 20">${p}</svg></i><div><b>${b}</b><span>${s}</span></div></div>`).join('');
+
+// Each scene opens with a hook (big words, background blurred), then the chat plays out.
+// Step times are seconds after the hook ends.
+const HOOK = 1.9;
+const RAW = [
+  { feat: 0, kicker: "Ask anything", hook: ["Got a", "*tea", "question?"], sub: "Just message Brew.",
+    caption: "Ask Brew anything, from the right strength to the perfect cup of masala chai.",
+    callouts: [{ text: "Replies in <em>seconds</em> ⚡", at: 5.6, x: 880, y: 250 }],
+    len: 9.5, steps: [
+      { type: "How do I make the perfect masala chai?", from: .4, to: 2.9 },
+      { wait: [3.1, 4.6] },
+      { out: "Lovely question 🙂 Boil a cup of water with crushed ginger and cardamom, add 2 tsp of our tea and simmer for 2 minutes. Add milk, bring it to a boil, strain and enjoy ☕", at: 4.6 },
+    ] },
+  { feat: 1, kicker: "Order in chat", hook: ["Order in", "*one message."], sub: "No apps. No forms to hunt for.",
+    caption: "Ordering takes a message. Add your details in one tap, then pay by link or UPI, right in the chat.",
+    callouts: [{ text: "Details in <em>one tap</em>", at: 3.6, x: 880, y: 420 }, { text: "<em>UPI</em> · cards · netbanking", at: 7.4, x: 860, y: 660 }],
+    len: 12.5, steps: [
+      { type: "One 500 g pack, please", from: .4, to: 2.0 },
+      { wait: [2.2, 3.3] },
+      { btn: "Lovely! Add your details here, and I'll keep them on file 🙂", label: "Add your details", at: 3.3, tap: 4.7 },
+      { chip: "✓ Details saved", at: 5.5 },
+      { wait: [5.8, 6.9] },
+      { img: "qr-card.png", text: "Here's your invoice for ₹378.\nPay here: rzp.io/estatetea\nor scan the QR with any UPI app.", at: 6.9 },
+      { out: "Payment received, thank you! 🎉 Your order ET-0031 is confirmed.", at: 10.0 },
+    ] },
+  { feat: 2, kicker: "Remembers you", hook: ["Back again?", "*He remembers."], sub: "Your details. Your usual.",
+    caption: "Brew remembers you: your details, your usual, how you like your tea.",
+    callouts: [{ text: "No forms the <em>second time</em>", at: 4.0, x: 860, y: 380 }],
+    len: 9.0, steps: [
+      { chip: "3 weeks later", at: .2 },
+      { type: "Hi! Same as last time, please", from: .6, to: 2.3 },
+      { wait: [2.5, 3.6] },
+      { out: "Welcome back, Sam! 🙂 One 500 g pack to Lake View Apartments, Kothanur, like last time?", at: 3.6 },
+      { type: "Yes please", from: 5.0, to: 5.9 },
+      { wait: [6.1, 7.0] },
+      { out: "Done! Your invoice is on its way 🧾", at: 7.0 },
+    ] },
+  { feat: 3, kicker: "To your door", hook: ["Fresh from the Nilgiris.", "*Right to your door."], sub: "",
+    caption: "Fresh from the Nilgiris to your door, with Brew keeping you posted.",
+    callouts: [{ text: "Delivery code at <em>your door</em> 🔐", at: 1.4, x: 850, y: 300 }],
+    len: 8.0, steps: [
+      { out: "Good news, Sam! Your order ET-0047 is out for delivery 🚚\n\nYour delivery code is 4821.", at: .5 },
+      { out: "Your tea has been delivered 🙂 Hope you enjoy every cup, Sam ☕", at: 3.2 },
+      { type: "Thank you, it's perfect!", from: 4.6, to: 6.2 },
+    ] },
+];
+// Lay the scenes out on one clock.
+let clock = 4.2;
+const SCENES = RAW.map(r => {
+  const sc = { ...r, from: clock, hookEnd: clock + HOOK, to: clock + HOOK + r.len };
+  const at = x => sc.hookEnd + x;
+  sc.steps = r.steps.map(st => st.type ? { ...st, from: at(st.from), to: at(st.to) } : st.wait ? { wait: [at(st.wait[0]), at(st.wait[1])] } : { ...st, at: at(st.at), tap: st.tap != null ? at(st.tap) : null });
+  sc.callouts = r.callouts.map(c => ({ ...c, at: at(c.at) }));
+  clock = sc.to;
+  return sc;
+});
+const OUTRO = clock, END = clock + 6.5;
+
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+const back = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const prog = (t, a, b) => ease(clamp((t - a) / (b - a)));
+const $ = id => document.getElementById(id);
+const pop = (t, at, d = .32) => back(clamp((t - at) / d));
+
+function bubble(step, t) {
+  const k = clamp((t - step.at) / .3), b = back(k);
+  const style = `opacity:${k};transform:translateY(${(1 - b) * 18}px) scale(${.9 + .1 * b});transform-origin:${step.mine ? 'right' : 'left'} bottom`;
+  if (step.out) return `<div class="msg out" style="${style}">${step.out}</div>`;
+  if (step.mine) return `<div class="msg in" style="${style}">${step.mine}</div>`;
+  if (step.chip) return `<div class="chip" style="${style}">${step.chip}</div>`;
+  if (step.img) return `<div class="img" style="${style}"><img src="${step.img}"><p>${step.text}</p></div>`;
+  if (step.btn) {
+    const r = step.tap && t >= step.tap ? clamp((t - step.tap) / .55) : 0;
+    const ripple = r > 0 && r < 1 ? `<span class="ripple" style="transform:translate(-50%,-50%) scale(${1 + r * 10});opacity:${1 - r}"></span>` : '';
+    const lit = r > 0 ? 'background:rgba(127,195,245,.08);border-radius:10px;' : '';
+    return `<div class="msg out" style="${style}">${step.btn}<div class="btn" style="${lit}">${step.label}${ripple}</div></div>`;
+  }
+  return '';
+}
+
+window.render = function (t) {
+  // Intro: the poster pushes in, then the scene layout takes over.
+  const intro = 1 - prog(t, 3.3, 4.2);
+  $('poster').style.opacity = intro;
+  $('poster').style.transform = `translate(-50%,-50%) scale(${1 + .07 * clamp(t / 4.2)})`;
+  const scene = SCENES.find(s => t >= s.from && t < s.to) || (t < SCENES[0].from ? SCENES[0] : SCENES[SCENES.length - 1]);
+
+  // Hook: background blurs and dims, the words punch in one by one, then everything clears for the chat.
+  const inHook = t >= scene.from && t < scene.hookEnd + .35;
+  const hk = inHook ? clamp((t - scene.from) / .3) * (1 - prog(t, scene.hookEnd - .25, scene.hookEnd + .25)) : 0;
+  $('hook').style.opacity = hk;
+  if (inHook) {
+    const words = scene.hook.flatMap(line => line.split(' ').map((w, i) => ({ w: w.replace('*', ''), g: line.startsWith('*') })));
+    $('hook').innerHTML = '<div>' + words.map((x, i) => {
+      const k = pop(t, scene.from + .12 + i * .13, .38);
+      return `<span class="w${x.g ? ' g' : ''}" style="opacity:${clamp(k)};transform:translateY(${(1 - k) * 60}px) scale(${.8 + .2 * k});filter:blur(${(1 - clamp(k)) * 8}px)">${x.w}</span>`;
+    }).join('') + (scene.sub ? `<span class="sub" style="opacity:${clamp((t - scene.from - .9) / .4)}">${scene.sub}</span>` : '') + '</div>';
+  }
+  const ui = prog(t, 3.5, 4.4) * (1 - prog(t, OUTRO, OUTRO + .7));
+  $('blurwrap').style.opacity = ui * (1 - .75 * hk);
+  $('blurwrap').style.filter = `blur(${hk * 14}px)`;
+
+  // Phone: tilted in 3D, turns toward us and the camera pushes in as each scene plays.
+  const inScene = clamp((t - scene.hookEnd) / (scene.to - scene.hookEnd));
+  const turn = ease(clamp((t - scene.hookEnd + .2) / 1.2));
+  const ry = -16 + 12 * turn + (t < 4.6 ? -10 * (1 - prog(t, 3.5, 4.6)) : 0), rx = 5 - 3 * turn;
+  const push = 1 + .07 * ease(inScene);
+  $('phone').style.transform = `translateY(${(1 - prog(t, 3.5, 4.7)) * 80}px) rotateY(${ry}deg) rotateX(${rx}deg) scale(${push})`;
+
+  const o = prog(t, OUTRO + .4, OUTRO + 1.3);
+  $('outro').style.opacity = o;
+  $('outro').style.transform = `scale(${.94 + .06 * o})`;
+  $('outro').querySelector('.live').style.boxShadow = `0 0 ${40 * prog(t, OUTRO + 1.6, OUTRO + 2.4)}px rgba(210,174,85,.35)`;
+
+  [...document.querySelectorAll('.f')].forEach((el, i) => {
+    const on = i === scene.feat ? prog(t, scene.hookEnd - .2, scene.hookEnd + .4) : 0;
+    el.style.borderColor = `rgba(210,174,85,${.5 * on})`;
+    el.style.background = `rgba(210,174,85,${.08 * on})`;
+    el.style.opacity = .4 + .6 * on;
+    el.style.transform = `translateX(${on * 14}px)`;
+  });
+  $('kicker').textContent = scene.kicker;
+  $('caption').textContent = scene.caption;
+  $('caption').style.opacity = clamp((t - scene.hookEnd) / .5) * (1 - prog(t, scene.to - .4, scene.to));
+
+  // Callout chips that pop beside the phone.
+  $('callouts').innerHTML = scene.callouts.map(c => {
+    const k = pop(t, c.at, .45), gone = prog(t, scene.to - .5, scene.to);
+    if (t < c.at) return '';
+    return `<div class="callout" style="left:${c.x}px;top:${c.y}px;opacity:${clamp(k) * (1 - gone)};transform:scale(${.7 + .3 * k}) translateY(${(1 - k) * 20}px)">${c.text}</div>`;
+  }).join('');
+
+  // Chat for this scene.
+  const leave = prog(t, scene.to - .45, scene.to);
+  let html = '', typing = null, busy = false, tapAt = null;
+  for (const st of scene.steps) {
+    if (st.type) {
+      if (t >= st.from && t < st.to) typing = st.type.slice(0, Math.round(st.type.length * clamp((t - st.from) / (st.to - st.from - .3))));
+      if (t >= st.to) html += bubble({ mine: st.type, at: st.to }, t);
+    } else if (st.wait) {
+      if (t >= st.wait[0] && t < st.wait[1]) {
+        busy = true;
+        html += `<div class="dots">${[0, 1, 2].map(k => `<i style="opacity:${.3 + .7 * Math.max(0, Math.sin(t * 7 - k * .9))};transform:translateY(${-3 * Math.max(0, Math.sin(t * 7 - k * .9))}px)"></i>`).join('')}</div>`;
+      }
+    } else if (t >= st.at) { html += bubble(st, t); if (st.tap) tapAt = st.tap; }
+  }
+  $('inner').innerHTML = html;
+  $('inner').style.opacity = 1 - leave;
+  $('inner').style.transform = `translateY(${-leave * 140}px)`;
+  $('status').textContent = busy ? 'typing…' : 'online';
+  const field = $('field');
+  if (typing !== null) {
+    field.className = 'field';
+    field.innerHTML = typing.replace(/&/g, '&amp;').replace(/</g, '&lt;') + `<span class="caret" style="opacity:${Math.sin(t * 9) > -0.3 ? 1 : 0}"></span>`;
+  } else { field.className = 'field ph'; field.textContent = 'Message'; }
+
+  // A cursor glides in and taps the "Add your details" button.
+  const cur = $('cursor');
+  if (tapAt && t > tapAt - 1.1 && t < tapAt + .7) {
+    const btn = document.querySelector('.btn');
+    if (btn) {
+      const r = btn.getBoundingClientRect(), tx = r.left + r.width / 2 - 19, ty = r.top + r.height / 2 - 19;
+      const k = ease(clamp((t - (tapAt - 1.1)) / .9));
+      cur.style.left = (tx + (1 - k) * 260) + 'px'; cur.style.top = (ty + (1 - k) * 220) + 'px';
+      const press = t > tapAt && t < tapAt + .25 ? .78 : 1;
+      cur.style.transform = `scale(${press})`; cur.style.opacity = clamp((t - (tapAt - 1.1)) / .3) * (1 - clamp((t - tapAt - .4) / .3));
+    }
+  } else cur.style.opacity = 0;
+};
+window.DURATION = END;
+render(0);
+</script>
+</body>
+</html>
