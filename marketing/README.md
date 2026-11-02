@@ -25,3 +25,7 @@ Not part of the website build. Kept here so nothing is lost between sessions.
 - `brew-promo-v11.html`: panel lengths follow Brew's lines; each panel opens as he starts its line.
 - `brew-promo-v11-16x9.mp4`, `brew-promo-v11-9x16.mp4`.
 - Rebuild sound: `cp timeline11.json timeline.json && python3 score2.py && SFX=.36 MUSIC=.66 LINES=lines-brew11.json VOICE_DIR=brew-voice OUT=soundtrack-brew11.wav python3 mix.py`.
+
+## v12 (current)
+- Opening: "Estate Tea. Premium tea for your everyday cup." as a title card (gold ESTATE TEA label, line below).
+- `brew-promo-v12-16x9.mp4`, `brew-promo-v12-9x16.mp4`; scripts as plain lines in `scripts/Brew-scripts.pdf`.
