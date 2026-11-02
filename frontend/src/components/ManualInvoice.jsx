@@ -41,8 +41,11 @@ export function ManualInvoice({ headers }) {
   const pack = PACKS.find(p => p.id === form.product_id) || PACKS[0];
   const qty = pack.test ? 1 : Math.max(1, Math.floor(Number(form.quantity) || 1));
   const teaTotal = pack.price * qty;
-  const ownFee = quote?.own_delivery_fee ?? OWN_DELIVERY_FEE;
-  const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? Math.max(0, Number(form.courier_fee) || 0) : 0;
+  // Free delivery for more than 500 g within 10 km, and more than 750 g beyond (third-party; Estate Tea pays).
+  const orderKg = pack.test ? 0 : pack.kg * qty;
+  const freeOwn = orderKg > 0.5 + 1e-9, freeFar = orderKg > 0.75 + 1e-9;
+  const ownFee = freeOwn ? 0 : (quote?.own_delivery_fee ?? OWN_DELIVERY_FEE);
+  const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
   // Delivery is charged with the tea, so GST applies to both.
   const subtotal = teaTotal + deliveryFee;
   const gst = pack.test || !form.gst_enabled ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
@@ -72,7 +75,7 @@ export function ManualInvoice({ headers }) {
 
   const send = async (overrideStock = false) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
-    if (form.delivery_method === 'third_party_courier' && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
+    if (form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
     if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
     if (form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
     setBusy(true);
@@ -155,7 +158,7 @@ export function ManualInvoice({ headers }) {
           <button key={value || 'none'} type="button" onClick={() => set('delivery_method', value)}
             className={`rounded-2xl border px-2 py-2.5 text-xs ${form.delivery_method === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
       </div>
-      {form.delivery_method === 'third_party_courier' && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
+      {form.delivery_method === 'third_party_courier' && freeFar && <p className="text-xs text-emerald-300/80">Over 750 g: delivery is free for the customer.</p>}{form.delivery_method === 'third_party_courier' && !freeFar && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
     </div>
     <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
       <label className="text-[11px] text-gray-500">Packet size
