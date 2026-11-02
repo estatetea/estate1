@@ -1,0 +1,44 @@
+[
+ {
+  "id": "l1",
+  "text": "Estate Tea. Premium tea for your everyday chai.",
+  "at": 0.2,
+  "max": 4.288125
+ },
+ {
+  "id": "l2",
+  "text": "Hi, I'm Brew, from Estate Tea.",
+  "at": 5.0,
+  "max": 2.1243749999999997
+ },
+ {
+  "id": "l3",
+  "text": "Your own tea concierge, on WhatsApp. Ask me anything.",
+  "at": 8.1,
+  "max": 4.066667
+ },
+ {
+  "id": "l4",
+  "text": "Running low on tea? Just message me. Your order, your invoice, your payment, all sorted right here in the chat.",
+  "at": 13.7,
+  "max": 7.618208
+ },
+ {
+  "id": "l5",
+  "text": "I remember your details and your usual, so your next order takes seconds.",
+  "at": 22.37,
+  "max": 4.695583
+ },
+ {
+  "id": "l6",
+  "text": "Running a caf\u00e9 or an office? No calls, no chasing. I'll get it done, right to your door.",
+  "at": 28.17,
+  "max": 6.721667
+ },
+ {
+  "id": "l7",
+  "text": "Your one-stop shop for all things Estate Tea. Scan the code, and say hi.",
+  "at": 35.69,
+  "max": 5.435
+ }
+]
