@@ -11,7 +11,7 @@ export async function GET(request) {
     const r = await fetch(`${STEWARD_URL}/api/steward/delivery/quote?pincode=${pin}`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
     const q = await r.json().catch(() => ({}));
     if (!r.ok) return NextResponse.json({ found: false }, { status: 200 });
-    return NextResponse.json({ found: !!q.found, local: !!q.local, in_bangalore: q.in_bangalore !== false, own_delivery_fee: q.own_delivery_fee ?? null },
+    return NextResponse.json({ found: !!q.found, local: !!q.local, in_bangalore: q.in_bangalore !== false, own_delivery_fee: q.own_delivery_fee ?? null, distance_km: q.distance_km ?? null, place: q.place || null },
       { headers: { 'Cache-Control': 'no-store' } });
   } catch { return NextResponse.json({ found: false }, { status: 200 }); }
 }
