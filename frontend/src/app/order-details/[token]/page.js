@@ -73,7 +73,7 @@ export default function OrderDetailsPage() {
     } finally { setSubmitting(false); }
   };
 
-  const input = 'sample-input bg-white text-black caret-black placeholder:text-black/40';
+  const input = 'block w-full rounded-lg border border-white/10 bg-white px-4 py-3 text-base text-black caret-black placeholder:text-black/40 outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/40';
   return (
     <main className="min-h-[100dvh] bg-[#0A0A0A] text-[#F5F5F0] px-5 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-xl flex-col justify-center">
@@ -134,7 +134,7 @@ export default function OrderDetailsPage() {
                 <Field label="House / flat no., floor, building" required><input name="house" value={form.house} onChange={set} autoComplete="address-line1" maxLength={200} className={input} /></Field>
                 <Field label="Street and area" required><input name="street" value={form.street} onChange={set} autoComplete="address-line2" maxLength={200} className={input} /></Field>
                 <Field label="Landmark" optional><input name="landmark" value={form.landmark} onChange={set} maxLength={160} placeholder="Near…" className={input} /></Field>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-3">
                   <Field label="City" required><input name="city" value={form.city} onChange={set} autoComplete="address-level2" maxLength={80} className={input} /></Field>
                   <Field label="PIN code" required><input name="pincode" value={form.pincode} onChange={set} inputMode="numeric" autoComplete="postal-code" maxLength={6} className={input} /></Field>
                 </div>
