@@ -89,72 +89,106 @@ add(sfx, whoosh(0.9, up=True, bright=.6), MERGE[0], .6)
 add(sfx, chime((1046.5, 1568.0, 2093.0), 1.8), MERGE[1] - .05, .7)
 
 
-def typing(a, b, text, play):
-    chars = len(text); dur = (b - .3) - a
-    for k in range(chars):
-        if text[k] != ' ': add(sfx, tick(), play + a + dur * k / max(1, chars), .9)
-    add(sfx, swoosh_send(), play + b, 1.0)
+def at(i, x): return S[i]['play'] + x * S[i].get('k', 1)     # a moment inside panel i (panels run faster than written)
 
+def typing(i, a, b, text):
+    chars = len(text); t0, t1 = at(i, a), at(i, b) - .3 * S[i].get('k', 1)
+    for c in range(chars):
+        if text[c] != ' ': add(sfx, tick(), t0 + (t1 - t0) * c / max(1, chars), .9)
+    add(sfx, swoosh_send(), at(i, b), 1.0)
 
-def bubble(at, play, f=900): add(sfx, pop(f), play + at, .55)
+def bubble(i, x, f=900): add(sfx, pop(f), at(i, x), .55)
 
+# Each panel's moments, matching brew-promo-v5.html
+typing(0, .5, 2.8, 'How do I make the perfect masala chai?'); bubble(0, 4.2)
+for k in range(4): bubble(0, 4.6 + k * .55, 700); add(sfx, pop(1200, .05), at(0, 4.6 + k * .55 + .45), .35)
+typing(1, .4, 1.9, 'One 500 g pack, please'); bubble(1, 3.0)
+add(sfx, tap(), at(1, 4.2), 1.0); bubble(1, 6.6, 1050); bubble(1, 7.5)
+add(sfx, chime(), at(1, 9.6), .9); bubble(1, 9.6)
+bubble(2, .3, 700)
+for k in range(5): bubble(2, .9 + k * .3, 650 + 40 * k)
+typing(2, 2.4, 4.0, 'Hi! Same as last time, please'); bubble(2, 5.2)
+typing(2, 6.6, 7.4, 'Yes please'); bubble(2, 8.1)
+bubble(3, .6); add(sfx, pop(1400, .08), at(3, 2.3), .5); add(sfx, whoosh(.3, up=False, bright=1.4), at(3, 2.3), .35)
+for x in (.4, .9, 2.4, 5.6): add(sfx, pop(1100, .05), at(3, x), .35)
+bubble(3, 5.8); add(sfx, chime((1318.5, 1760.0), .9), at(3, 5.8), .5)
+typing(3, 6.8, 8.2, "Thank you, it's perfect!")
 
-# Each panel's moments (seconds after the panel opens), matching brew-promo-v3.html
-p0, p1, p2, p3 = (s['play'] for s in S)
-typing(.5, 2.8, 'How do I make the perfect masala chai?', p0); bubble(4.2, p0)
-for i in range(4): bubble(4.6 + i * .55, p0, 700); add(sfx, pop(1200, .05), p0 + 4.6 + i * .55 + .45, .35)
-typing(.4, 1.9, 'One 500 g pack, please', p1); bubble(3.0, p1)
-add(sfx, tap(), p1 + 4.2, 1.0); bubble(6.6, p1, 1050); bubble(7.5, p1)
-add(sfx, chime(), p1 + 9.6, .9); bubble(9.6, p1)
-bubble(.3, p2, 700)
-for i in range(5): bubble(.9 + i * .3, p2, 650 + 40 * i)
-typing(2.4, 4.0, 'Hi! Same as last time, please', p2); bubble(5.2, p2)
-typing(6.6, 7.4, 'Yes please', p2); bubble(8.1, p2)
-bubble(.6, p3); add(sfx, pop(1400, .08), p3 + 2.3, .5); add(sfx, whoosh(.3, up=False, bright=1.4), p3 + 2.3, .35)
-for at in (.4, .9, 2.4, 5.6): add(sfx, pop(1100, .05), p3 + at, .35)
-bubble(5.8, p3); add(sfx, chime((1318.5, 1760.0), .9), p3 + 5.8, .5)
-typing(6.8, 8.2, "Thank you, it's perfect!", p3)
-
-# ---------------- music: warm lo-fi bed, 90 BPM ----------------
-BPM = 90; beat = 60 / BPM
-def note(f, d, kind='keys'):
-    n = int(d * SR); t = np.arange(n) / SR
-    if kind == 'keys':   # soft electric piano: sine + gentle bell partial, slow decay
-        y = (np.sin(2 * np.pi * f * t) + .25 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t * 3) + .08 * np.sin(2 * np.pi * 3.5 * f * t) * np.exp(-t * 6))
-        y *= np.exp(-t * 1.1) * env(n, .01, .08)
-    elif kind == 'pluck':   # Karplus-Strong guitar
-        p = int(SR / f); buf = rng.uniform(-1, 1, p); y = np.zeros(n)
-        for k in range(n):
-            y[k] = buf[k % p]; buf[k % p] = .5 * (buf[k % p] + buf[(k + 1) % p]) * .996
-        y *= env(n, .002, .05)
-    else:  # bass
-        y = np.sin(2 * np.pi * f * t) * env(n, .01, .1) * np.exp(-t * .8)
-    return y
-
+# ---------------- music: cinematic score ----------------
+# Slow and atmospheric over the tea pour, a riser into a hit as the poster forms, then a driving pulse
+# (staccato strings, deep drums) through the features, and a final hit with a long tail on the ending.
 hz = lambda m: 440 * 2 ** ((m - 69) / 12)
-# Fmaj7 - Em7 - Dm7 - Cmaj7 (warm, unresolved, loops nicely)
-CHORDS = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]]
+def saw_stack(f, d, detune=(-7, 0, 7), bright=2200):
+    n = int(d * SR); t = np.arange(n) / SR; y = np.zeros(n)
+    for c in detune:
+        ff = f * 2 ** (c / 1200); ph = (t * ff) % 1.0; y += 2 * ph - 1
+    return lowpass(y / len(detune), bright)
+def pad(f, d, att=1.2, rel=1.5, bright=1600):
+    n = int(d * SR); y = saw_stack(f, d, (-9, -3, 3, 9), bright)
+    e = np.minimum(1, np.arange(n) / (att * SR)); r = int(min(n, rel * SR)); e[-r:] *= np.linspace(1, 0, r)
+    return y * e
+def piano(f, d):
+    n = int(d * SR); t = np.arange(n) / SR
+    y = np.sin(2*np.pi*f*t) + .35*np.sin(2*np.pi*2*f*t)*np.exp(-t*2) + .12*np.sin(2*np.pi*3*f*t)*np.exp(-t*4)
+    return y * np.exp(-t * 1.4) * env(n, .004, .3)
+def stab(f, d):          # staccato string
+    n = int(d * SR); y = saw_stack(f, d, (-6, 0, 6), 3000); t = np.arange(n) / SR
+    return y * np.exp(-t * 14) * env(n, .003, .02)
+def taiko(d=.6):
+    n = int(d * SR); t = np.arange(n) / SR
+    body = np.sin(2*np.pi*(48 + 70*np.exp(-t*25))*t) * np.exp(-t*6)
+    skin = rng.standard_normal(n) * np.exp(-t*40) * .25
+    return (body + lowpass(skin, 1800)) * .9
+def impact(d=3.0):
+    n = int(d * SR); t = np.arange(n) / SR
+    sub = np.sin(2*np.pi*(38 + 40*np.exp(-t*8))*t) * np.exp(-t*1.6)
+    crash = lowpass(rng.standard_normal(n), 5000) * np.exp(-t*2.5) * .35
+    return (sub + crash) * env(n, .002)
+def riser(d):
+    n = int(d * SR); t = np.linspace(0, 1, n); x = rng.standard_normal(n)
+    y = lowpass(x, 200 + 7000 * t**2) * t**2
+    tone = np.sin(2*np.pi*np.cumsum(220 + 660*t**2)/SR) * t**3 * .25
+    return (y * .6 + tone)
+
 music = np.zeros(N)
-bar = 4 * beat
-nbars = int(DUR / bar) + 1
-for b in range(nbars):
-    ch = CHORDS[b % 4]; t0 = b * bar
-    for m in ch: add(music, note(hz(m + 12), bar * 1.05, 'keys'), t0, .09)
-    add(music, note(hz(ch[0] - 12), bar * .95, 'bass'), t0, .22)
-    arp = [ch[1] + 12, ch[2] + 12, ch[3] + 12, ch[2] + 12, ch[1] + 24, ch[3] + 12, ch[2] + 12, ch[0] + 24]
-    for k, m in enumerate(arp):
-        if b >= 1: add(music, note(hz(m), beat * .9, 'pluck'), t0 + k * beat / 2, .09)
-    if b >= 2:   # soft beat: kick on 1 and 3, brushed hat on offbeats
-        for k in range(4):
-            if k % 2 == 0:
-                n = int(.25 * SR); tt = np.arange(n) / SR
-                add(music, np.sin(2 * np.pi * (55 + 60 * np.exp(-tt * 30)) * tt) * np.exp(-tt * 9), t0 + k * beat, .32)
-            h = rng.standard_normal(int(.06 * SR)); h = (h - lowpass(h, 6000)) * np.exp(-np.arange(len(h)) / SR * 70)
-            add(music, h, t0 + k * beat + beat / 2, .05)
-music = lowpass(music, 7000)
-# fade in from the opening, out at the very end
-fi = t2i(2.0); music[:fi] *= np.linspace(0, 1, fi)
-fo = t2i(2.5); music[-fo:] *= np.linspace(1, 0, fo)
+P0 = TL['POSTER_IN'][0]; S0 = TL['STOPS'][0]['move'][0]; ENDT = TL['END']; M1 = TL['MERGE'][1]
+# 1) Opening (0 -> poster): slow, warm, atmospheric: low pad + sparse piano (D minor colour)
+add(music, pad(hz(38), P0 + .6, att=1.5, rel=.6, bright=900), 0, .35)
+add(music, pad(hz(50), P0 + .6, att=2.0, rel=.6, bright=1200), 0, .18)
+for k, (m, at) in enumerate([(62, .3), (65, 1.3), (69, 2.3), (67, 3.2)]):
+    add(music, piano(hz(m), 2.2), at, .28)
+add(music, riser(1.6), P0 - 1.55, .55)
+add(music, impact(3.2), P0 - .02, 1.0)                      # the hit as the video flies into the poster
+# 2) Main pulse: 124 BPM, Dm - Bb - F - C, staccato strings in 8ths + taiko + low pad
+BPM = 124; beat = 60 / BPM; bar = 4 * beat
+CH = [[50, 53, 57], [46, 50, 53], [41, 45, 48], [48, 52, 55]]
+start = P0 + .05; stop_ = TL['OUT'][0]
+b = 0; t0 = start
+while t0 < stop_:
+    ch = CH[b % 4]
+    add(music, pad(hz(ch[0] - 12), bar + .2, att=.3, rel=.3, bright=1100), t0, .22)
+    for m in ch: add(music, pad(hz(m + 12), bar + .2, att=.4, rel=.3, bright=1800), t0, .05)
+    pattern = [ch[0], ch[0], ch[1], ch[0], ch[2], ch[0], ch[1], ch[2]]
+    for k, m in enumerate(pattern):
+        add(music, stab(hz(m + 12), beat * .45), t0 + k * beat / 2, .16 if t0 > S0 - .1 else .09)
+    for k in range(4):
+        if t0 > S0 - .2 or k == 0:
+            add(music, taiko(), t0 + k * beat, .5 if k in (0, 2) else .28)
+    if b % 2 == 1 and t0 > S0:   # fill on the last 8th of every other bar
+        add(music, taiko(.3), t0 + 3.5 * beat, .3)
+    b += 1; t0 += bar
+# 3) Ending: riser, big hit on the merge, warm held chord with a long tail
+add(music, riser(1.2), TL['MERGE'][0] - .25, .5)
+add(music, impact(4.0), M1 - .1, 1.0)
+for m, g in ((38, .3), (50, .16), (57, .1), (62, .1), (65, .08)):
+    add(music, pad(hz(m), ENDT - M1 + .4, att=.08, rel=2.4, bright=1500), M1 - .1, g)
+add(music, piano(hz(74), 3.0), M1 + .05, .3); add(music, piano(hz(69), 3.0), M1 + .05, .2)
+# room: a short, simple reverb (decaying noise convolution would be heavy; use a few echoes)
+wet = np.zeros(N)
+for dly, g in ((.043, .35), (.071, .28), (.113, .22), (.167, .16), (.239, .1)):
+    i = int(dly * SR); wet[i:] += music[:-i] * g
+music = lowpass(music + wet * .6, 9000)
+fo = t2i(.6); music[-fo:] *= np.linspace(1, 0, fo)
 
 # ---------------- voiceover ----------------
 lines = json.load(open('lines.json'))
@@ -170,7 +204,7 @@ for L in lines:
 # ---------------- mix: duck the music under the voice ----------------
 envv = np.abs(voice)
 win = int(.12 * SR); envv = np.convolve(envv, np.ones(win) / win, 'same')
-duck = 1 - .62 * np.clip(envv / .04, 0, 1)
+duck = 1 - .55 * np.clip(envv / .04, 0, 1)
 duck = np.convolve(duck, np.ones(int(.25 * SR)) / int(.25 * SR), 'same')   # smooth release
 mix = music * duck * 1.0 + sfx * .55 + voice * 1.0
 mix /= np.max(np.abs(mix)) + 1e-9

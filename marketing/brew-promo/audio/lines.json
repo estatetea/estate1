@@ -1,9 +1,44 @@
 [
- {"id":"l1","at":0.5,"max":3.4,"text":"Every great cup starts with a conversation."},
- {"id":"l2","at":4.6,"max":3.7,"text":"Meet Brew. Your tea concierge, on WhatsApp."},
- {"id":"l3","at":8.4,"max":7.1,"text":"Got a tea question? Just ask. From the perfect masala chai to the right strength, Brew replies in seconds."},
- {"id":"l4","at":17.7,"max":7.4,"text":"Ordering takes one message. Add your details in a single tap, then pay by UPI or link, right in the chat."},
- {"id":"l5","at":30.1,"max":7.2,"text":"Come back anytime. Brew remembers you: your details, your usual, even how you like your tea."},
- {"id":"l6","at":40.7,"max":7.2,"text":"Then it's fresh from the Nilgiris, straight to your door, with updates along the way."},
- {"id":"l7","at":51.0,"max":3.9,"text":"Meet Brew. Say hi on WhatsApp today."}
+ {
+  "id": "l1",
+  "at": 0.6,
+  "max": 3.4,
+  "text": "Every great cup starts with a conversation."
+ },
+ {
+  "id": "l2",
+  "at": 4.25,
+  "max": 3.45,
+  "text": "Meet Brew. Your tea concierge, on WhatsApp."
+ },
+ {
+  "id": "l3",
+  "at": 7.8,
+  "max": 4.9,
+  "text": "Got a tea question? From the perfect masala chai to the right strength, just ask."
+ },
+ {
+  "id": "l4",
+  "at": 13.0,
+  "max": 7.2,
+  "text": "Order in one message. Add your details in a tap, then pay by UPI or link, right in the chat."
+ },
+ {
+  "id": "l5",
+  "at": 21.65,
+  "max": 6.0,
+  "text": "Come back anytime. Brew remembers your details, your usual, and how you like your tea."
+ },
+ {
+  "id": "l6",
+  "at": 28.6,
+  "max": 6.2,
+  "text": "Then it's packed fresh and delivered straight to your door, with updates along the way."
+ },
+ {
+  "id": "l7",
+  "at": 35.55,
+  "max": 5.25,
+  "text": "Meet Brew. Your chai experience just got easier, and better."
+ }
 ]
