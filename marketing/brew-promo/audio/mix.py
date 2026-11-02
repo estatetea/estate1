@@ -74,19 +74,28 @@ def swoosh_send():  # a short airy "sent"
     return whoosh(0.22, up=True, bright=1.2) * 0.6
 
 
+def msg_swoosh(d=.28, pitch=1.0):
+    """A soft "message sent" swoosh: a short airy rise with a tiny bright tail (not a cinematic whoosh)."""
+    n = int(d * SR); t = np.linspace(0, 1, n); x = rng.standard_normal(n)
+    band = lowpass(x, 2500 + 6000 * t * pitch) - lowpass(x, 900 + 2500 * t * pitch)
+    tail = np.sin(2 * np.pi * np.cumsum(1200 * pitch + 900 * t) / SR) * np.exp(-((t - .8) / .12) ** 2) * .25
+    return (band * np.sin(np.pi * t) ** 2 + tail) * .5
+
+def ping(f=1568, d=.35):          # a phone notification
+    n = int(d * SR); tt = np.arange(n) / SR
+    return (np.sin(2 * np.pi * f * tt) + .4 * np.sin(2 * np.pi * f * 1.5 * tt)) * np.exp(-tt * 9) * env(n, .002) * .35
+
 sfx = np.zeros(N)
 P = TL['POSTER_IN']; S = TL['STOPS']; OUT = TL['OUT']; MERGE = TL['MERGE']
-# opening: the video flies into the phone; the chat loads
-add(sfx, whoosh(1.0, up=False, bright=.8), P[0] - .05, .8)
-for k in range(5): add(sfx, pop(760 + 60 * k), P[1] - .25 + k * .09 + .05, .35)
+SW = .32                                                      # overall swoosh level (kept well under the music and voice)
+add(sfx, msg_swoosh(.45, .7), P[0] - .1, SW)                  # the video flies into the phone
+for k in range(5): add(sfx, pop(760 + 60 * k), P[1] - .25 + k * .09 + .05, .25)
 for s in S:
-    add(sfx, whoosh(0.6 if s['i'] == 0 else 0.5, up=True), s['move'][0] - .05, .9)       # camera move
-    add(sfx, pop(520, .09), s['glow'], .5)                                              # feature lights up
-    add(sfx, whoosh(0.55, up=True, bright=1.3), s['open'][0] - .05, .7)                 # panel opens
-    add(sfx, whoosh(0.45, up=False, bright=1.0), s['close'][0] - .02, .55)              # panel folds back
-add(sfx, whoosh(0.8, up=False, bright=.7), OUT[0], .7)
-add(sfx, whoosh(0.9, up=True, bright=.6), MERGE[0], .6)
-add(sfx, chime((1046.5, 1568.0, 2093.0), 1.8), MERGE[1] - .05, .7)
+    add(sfx, msg_swoosh(.3, 1.0), s['move'][0] - .05, SW)     # camera move
+    add(sfx, msg_swoosh(.25, 1.3), s['open'][0] - .03, SW * .8)   # panel opens
+    add(sfx, msg_swoosh(.22, .8), s['close'][0], SW * .6)     # panel folds back
+add(sfx, msg_swoosh(.35, .8), OUT[0], SW)
+add(sfx, chime((1046.5, 1568.0, 2093.0), 1.8), MERGE[1] - .05, .45)
 
 
 def at(i, x): return S[i]['play'] + x * S[i].get('k', 1)     # a moment inside panel i (panels run faster than written)
@@ -94,25 +103,24 @@ def at(i, x): return S[i]['play'] + x * S[i].get('k', 1)     # a moment inside p
 def typing(i, a, b, text):
     chars = len(text); t0, t1 = at(i, a), at(i, b) - .3 * S[i].get('k', 1)
     for c in range(chars):
-        if text[c] != ' ': add(sfx, tick(), t0 + (t1 - t0) * c / max(1, chars), .9)
-    add(sfx, swoosh_send(), at(i, b), 1.0)
+        if text[c] != ' ': add(sfx, tick(), t0 + (t1 - t0) * c / max(1, chars), .7)
+    add(sfx, msg_swoosh(.22, 1.4), at(i, b), .45)             # "sent"
 
-def bubble(i, x, f=900): add(sfx, pop(f), at(i, x), .55)
+def bubble(i, x, f=900): add(sfx, pop(f), at(i, x), .42)
 
-# Each panel's moments, matching brew-promo-v5.html
+# Each panel's moments, matching brew-promo-v7.html
 typing(0, .5, 2.8, 'How do I make the perfect masala chai?'); bubble(0, 4.2)
-for k in range(4): bubble(0, 4.6 + k * .55, 700); add(sfx, pop(1200, .05), at(0, 4.6 + k * .55 + .45), .35)
+for k in range(4): bubble(0, 4.6 + k * .55, 700); add(sfx, pop(1200, .05), at(0, 4.6 + k * .55 + .45), .28)
 typing(1, .4, 1.9, 'One 500 g pack, please'); bubble(1, 3.0)
-add(sfx, tap(), at(1, 4.2), 1.0); bubble(1, 6.6, 1050); bubble(1, 7.5)
-add(sfx, chime(), at(1, 9.6), .9); bubble(1, 9.6)
+add(sfx, tap(), at(1, 4.2), .8); bubble(1, 6.6, 1050); bubble(1, 7.5)
+add(sfx, chime(), at(1, 9.6), .7); bubble(1, 9.6)
 bubble(2, .3, 700)
 for k in range(5): bubble(2, .9 + k * .3, 650 + 40 * k)
 typing(2, 2.4, 4.0, 'Hi! Same as last time, please'); bubble(2, 5.2)
 typing(2, 6.6, 7.4, 'Yes please'); bubble(2, 8.1)
-bubble(3, .6); add(sfx, pop(1400, .08), at(3, 2.3), .5); add(sfx, whoosh(.3, up=False, bright=1.4), at(3, 2.3), .35)
-for x in (.4, .9, 2.4, 5.6): add(sfx, pop(1100, .05), at(3, x), .35)
-bubble(3, 5.8); add(sfx, chime((1318.5, 1760.0), .9), at(3, 5.8), .5)
-typing(3, 6.8, 8.2, "Thank you, it's perfect!")
+# delivery: email / SMS notifications on the lock screen (no WhatsApp), and the timeline ticking over
+for x, f in ((.6, 1568), (2.3, 1760), (5.6, 1568)): add(sfx, ping(f), at(3, x), 1.0)
+for x in (.4, .9, 2.4, 5.6): add(sfx, pop(1100, .05), at(3, x), .28)
 
 # ---------------- music: the cinematic score (score.py, stereo) ----------------
 score = np.load('score.npy')[:N]
@@ -132,9 +140,9 @@ for L in lines:
 # ---------------- mix: duck the music under the voice ----------------
 envv = np.abs(voice)
 win = int(.12 * SR); envv = np.convolve(envv, np.ones(win) / win, 'same')
-duck = 1 - .55 * np.clip(envv / .04, 0, 1)
+duck = 1 - .5 * np.clip(envv / .04, 0, 1)
 duck = np.convolve(duck, np.ones(int(.25 * SR)) / int(.25 * SR), 'same')   # smooth release
-centre = sfx * .55 + voice * 1.0
+centre = sfx * .5 + voice * 1.05
 stereo = score * duck[:, None] * .9 + centre[:, None]
 stereo /= np.max(np.abs(stereo)) + 1e-9
 with wave.open('soundtrack-raw.wav', 'wb') as w:
