@@ -98,6 +98,14 @@
   #meet .pill b { display:block; font-size:28px; } #meet .pill small { display:block; font-size:22px; color:var(--sub); margin-top:3px; }
   #meet .qr { width:220px; height:220px; border-radius:22px; background:#F4EFE3; padding:14px; } #meet .qr img { width:100%; height:100%; }
 
+  #intro { position:absolute; inset:0; display:none; pointer-events:none; }
+  #i12 { position:absolute; left:110px; top:110px; font-size:96px; font-weight:600; letter-spacing:-.04em; line-height:1.05; text-shadow:0 6px 30px rgba(0,0,0,.6); }
+  body.V #i12 { left:0; right:0; bottom:auto; top:1260px; text-align:center; font-size:92px; }
+  #i2 span, #i3 span { color:var(--gold); }
+  #i3 { position:absolute; left:0; right:0; bottom:200px; display:flex; align-items:center; justify-content:center; gap:22px; } #i3 img { width:84px; } #i3 b { font-size:96px; font-weight:600; letter-spacing:-.045em; }
+  #i4 { position:absolute; left:0; right:0; bottom:140px; text-align:center; font-size:32px; color:var(--sub); }
+  body.V #i3 { bottom:auto; top:1300px; } body.V #i4 { bottom:auto; top:1440px; font-size:32px; }
+
   /* the cut between scenes */
   #wipe { position:absolute; top:0; bottom:0; width:140%; left:-140%; background:var(--bg); }
   #wipe::before { content:""; position:absolute; right:0; top:0; bottom:0; width:6px; background:linear-gradient(var(--gold-soft), var(--gold)); box-shadow:0 0 40px var(--gold); }
@@ -130,6 +138,8 @@
       <div class="qr"><img src="qr-plain.png"></div>
     </div>
   </div>
+  <div id="intro"><div id="i12"><div id="i1">Premium tea.</div><div id="i2">Everyday <span>price.</span></div></div>
+    <div id="i3"><img src="mark-gold.png"><b>Estate <span>Tea</span></b></div><div id="i4">with Brew, your tea concierge on WhatsApp</div></div>
   <div id="wipe"></div>
   <svg id="grain" width="100%" height="100%"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg>
 </div>
@@ -139,7 +149,9 @@ const VERT = Q.has('v'); if (VERT) document.body.classList.add('V');
 const VOICE = Q.get('voice') || 'brew';
 // Voice line lengths (seconds), measured from the recordings: title, couch, kitchen, run, café, door, end.
 const DUR = { brew: [3.54, 7.23, 6.69, 4.48, 6.92, 1.47, 4.15], narr: [4.36, 7.77, 7.91, 5.55, 8.46, 1.9, 5.55],
-  brew2: [3.41, 7.68, 5.83, 4.5, 6.83, 1.71, 6.72] }[VOICE];
+  brew2: [3.41, 7.68, 5.83, 4.5, 6.83, 1.71, 6.72], brew3: [6.52, 6.58, 7.67, 4.82, 9.68, 2.57, 6.86] }[VOICE];
+// cut=v3: 'premium tea at an everyday price': chai opening, tin running LOW (not empty), at work instead of the run
+const V3 = Q.get('cut') === 'v3', NOEND = Q.has('noend');
 // end=meet: the poster video's ending ("Meet Brew." turns into Estate Tea, then the one-stop shop line)
 const MEET = Q.get('end') === 'meet';
 const $ = id => document.getElementById(id);
@@ -160,10 +172,15 @@ const SCN = [
 ];
 // bare: only the five scenes (the poster opening and ending come from brew-poster-ends.html)
 const BARE = Q.has('bare');
+if (V3) {
+  SCN[1].hook = 'Tin running <span>low?</span>';
+  SCN[2] = { id: 'desk', min: 6.4, chip: '4:30 PM · At work', hook: 'Your usual, <span>remembered.</span>' };
+  SCN[4].hook = 'Kept in the <span>loop.</span>';
+}
 const TITLE_END = BARE ? 0 : 0.5 + DUR[0] + 1.0;
 let clock = TITLE_END;
 SCN.forEach((s, i) => { s.start = clock; s.len = Math.max(LEAD + DUR[i + 1] + TAIL, s.min); s.k = s.len / s.min; s.voice = s.start + LEAD; clock += s.len; });
-const END_START = clock, END = BARE ? clock : END_START + 0.6 + DUR[6] + (MEET ? 2.2 : 2.4);
+const END_START = clock, END = BARE || NOEND ? clock : END_START + 0.6 + DUR[6] + (MEET ? 2.2 : 2.4);
 const SWAP = END_START + 0.6 + 2.0;   // brew2: as he starts "Your one-stop shop…"
 window.DURATION = END;
 const LINES = [{ id: 'l1', at: 0.5 }, ...SCN.map((s, i) => ({ id: 'l' + (i + 2), at: s.voice })), { id: 'l7', at: END_START + 0.6 }];
@@ -186,6 +203,14 @@ const CHATS = {
 const NOTES = [{ at: 1.0, app: 'Mail', icon: '✉', col: '#3D7BF7', title: 'Estate Tea', text: 'Your order ET-0042 is out for delivery.' },
                { at: 2.9, app: 'Messages', icon: '💬', col: '#34C759', title: 'ET-ESTEA', text: 'Delivered ✓ Your Estate Tea order ET-0042 is at your door. Enjoy your chai!' }];
 
+if (V3) {
+  CHATS.kitchen = [{ me: 'Running low on tea. Can you send my usual 500 g?', type: [3.2, 4.5] },
+                   { br: 'Of course, Sam! Here’s your invoice:', at: 5.4, card: { item: 'Estate Tea · 500 g', total: '₹378', paidAt: 6.9 } },
+                   { br: 'Paid ✓ Your order’s placed. I’ll keep you posted 😊', at: 7.6 }];
+  CHATS.desk = [{ me: 'Same as last time, please', type: [1.1, 2.0] },
+                { br: 'Done, Sam! 500 g to your home, as usual. Invoice sent ✓', at: 3.2 }];
+  NOTES[0].text = 'Your order ET-0042 is packed and on its way.';
+}
 // sound events for the mix (computed from the same timeline)
 const EV = [];
 SCN.forEach((s, i) => {
@@ -197,8 +222,9 @@ SCN.forEach((s, i) => {
   });
 });
 const K = SCN[1]; EV.push({ t: K.start + 1.35 * K.k, k: 'lid' });
+if (V3 && !BARE) { EV.push({ t: 1.5, k: 'lid' }); EV.push({ t: 2.5, k: 'phone' }); EV.push({ t: 4.25, k: 'cut' }); EV.push({ t: 4.4, k: 'chime' }); }
 const D = SCN[4]; EV.push({ t: D.start + 1.75 * D.k, k: 'bell' }); NOTES.forEach(n => EV.push({ t: D.start + n.at * D.k, k: 'ping' }));
-if (!BARE) { EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' }); }
+if (!BARE && !NOEND) { EV.push({ t: END_START - .25, k: 'cut' }); EV.push({ t: END_START + .35, k: 'chime' }); }
 if (MEET) EV.push({ t: SWAP - .05, k: 'swap' });
 window.TL = { END, SWAP, LINES, EVENTS: EV, SCENES: SCN.map(s => ({ id: s.id, start: s.start, len: s.len })), TITLE_END, END_START, VOICE };
 
@@ -286,7 +312,10 @@ function sceneKitchen(t, s) {
     armR: [lerp(10, 60, reach), lerp(20, 110, reach)], armL: phoneUp > 0 ? [lerp(20, 30, phoneUp), lerp(90, 160, phoneUp)] : [lerp(10, 50, reach), lerp(20, 95, reach)], phone: phoneUp > .5 ? 8 : null });
   g += p.svg;
   g += tinSvg(780, 660, lid > .3, -tilt * 24, lid * 90 * (1 - phoneUp) + (phoneUp > 0 ? 0 : 0));
-  if (tilt > .6) g += `<text x="${600}" y="${500}" font-size="40" font-weight="700" fill="#E9CF8A" font-family="Inter" opacity="${clamp((tilt - .6) * 3) * (1 - phoneUp)}">…empty.</text>`;
+  if (tilt > .6 && !V3) g += `<text x="${600}" y="${500}" font-size="40" font-weight="700" fill="#E9CF8A" font-family="Inter" opacity="${clamp((tilt - .6) * 3) * (1 - phoneUp)}">…empty.</text>`;
+  if (V3 && t > 1.9 * k) { const o = clamp((t - 1.9 * k) * 3);   // the tin is running low, not empty
+    g += `<g opacity="${o}"><rect x="870" y="470" width="26" height="150" rx="13" fill="none" stroke="#E9CF8A" stroke-width="3"/><rect x="875" y="${615 - 30 * o}" width="16" height="${30 * o}" rx="8" fill="#D2AE55"/>
+      <rect x="912" y="520" width="220" height="50" rx="25" fill="rgba(11,10,9,.75)" stroke="#D2AE55" stroke-opacity=".5"/><text x="1022" y="553" text-anchor="middle" font-size="24" font-weight="600" fill="#E9CF8A" font-family="Inter">Running low</text></g>`; }
   return g;
 }
 function sceneRun(t, s) {
@@ -322,6 +351,51 @@ function sceneCafe(t, s) {
   g += cup(400, 650, t, .8) + cup(1150, 650, t + .4, .8);
   return g;
 }
+function sceneDesk(t, s) {
+  const typing = t > 1.1 * s.k && t < 2.0 * s.k, tap = typing ? Math.sin(t * 38) * 4 : 0;
+  let g = `<rect width="1920" height="1080" fill="url(#wallam)"/>`;
+  g += `<rect x="150" y="140" width="420" height="330" rx="8" fill="#C98A52" opacity=".55"/><rect x="150" y="140" width="420" height="330" fill="none" stroke="#3A2B1F" stroke-width="16"/>` +
+    [0, 1, 2, 3, 4, 5].map(i => `<rect x="150" y="${160 + i * 52}" width="420" height="16" fill="#2A1F16" opacity=".75"/>`).join('');
+  g += `<polygon points="150,470 570,470 1100,1080 -200,1080" fill="#FFB86B" opacity=".06"/>`;
+  g += `<circle cx="1180" cy="330" r="80" fill="#2F3D2E"/><circle cx="1140" cy="380" r="60" fill="#3B4D39"/><rect x="1150" y="400" width="60" height="120" rx="8" fill="#5a4532"/>`;
+  g += `<rect x="760" y="420" width="380" height="240" rx="14" fill="#0d0d0e" stroke="#2c2c2e" stroke-width="8"/><rect x="776" y="436" width="348" height="208" rx="6" fill="#1b2430"/>` +
+    [0, 1, 2, 3, 4].map(i => `<rect x="796" y="${460 + i * 34}" width="${120 + (i * 53) % 170}" height="12" rx="6" fill="#4f6a86" opacity=".7"/>`).join('') +
+    `<rect x="925" y="660" width="50" height="40" fill="#1d1d1f"/><rect x="880" y="698" width="140" height="12" rx="6" fill="#1d1d1f"/>`;
+  g += `<rect x="300" y="710" width="1000" height="28" rx="6" fill="#5A4130"/><path d="M340 738v330M1260 738v330" stroke="#3A2A1E" stroke-width="22"/>`;
+  g += cup(1100, 708, t, .85);
+  g += `<path d="M430 640v170M470 820h-90" stroke="#1d1d1f" stroke-width="16" stroke-linecap="round"/><rect x="360" y="520" width="40" height="230" rx="18" fill="#26272b"/>`;
+  g += person({ x: 520, y: 760, s: 1.05, lean: 4, nod: 16, shirt: '#3E5C7A', pants: '#2A2A30', legL: [84, 6], legR: [78, 4], armR: [36, 96], armL: [26, 150 + tap], phone: 8 }).svg;
+  return g;
+}
+function sceneChai(t) {
+  // The opening: chai coming to life in a pan, then the cup.
+  const cupK = ease(seg(t, 4.0, 4.6));
+  let g = `<rect width="1920" height="1080" fill="#120D09"/><circle cx="960" cy="380" r="700" fill="url(#lamp)" opacity=".55"/>`;
+  let pan = `<rect x="0" y="760" width="1920" height="320" fill="#1D1611"/><rect x="600" y="745" width="720" height="40" rx="8" fill="#0c0c0d"/>`;
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, x = 960 + Math.cos(a) * 120, y = 742 + Math.sin(a) * 16, h = 18 + 8 * Math.sin(t * 17 + i * 1.7);
+    pan += `<path d="M${x - 6} ${y}q6 ${-h} 12 0z" fill="#4F8BFF" opacity=".85"/><path d="M${x - 3} ${y}q3 ${-h * .55} 6 0z" fill="#BFD6FF"/>`; }
+  pan += `<circle cx="960" cy="720" r="210" fill="#4F8BFF" opacity=".08" filter="url(#blur6)"/>`;
+  pan += `<path d="M730 600v90a40 40 0 0 0 40 40h380a40 40 0 0 0 40-40v-90z" fill="#3b3b3e"/><path d="M745 610v76a30 30 0 0 0 30 30h40V610z" fill="#55565a" opacity=".6"/><rect x="1180" y="606" width="320" height="26" rx="13" fill="#141414"/>`;
+  const dark = ease(seg(t, 1.5, 2.3)), milk = ease(seg(t, 2.5, 3.5));
+  const mix = (a, b, x) => { const p = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); const A = p(a), B = p(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], x))).join(',')})`; };
+  const col = milk > 0 ? mix('#3A2414', '#B98250', milk) : mix('#5E6A70', '#3A2414', dark);
+  pan += `<ellipse cx="960" cy="600" rx="230" ry="48" fill="#2a2a2c"/><ellipse cx="960" cy="604" rx="214" ry="40" fill="${col}"/>`;
+  if (milk > 0 && milk < 1) pan += `<ellipse cx="${1000 - 40 * milk}" cy="600" rx="${30 + 160 * milk}" ry="${8 + 26 * milk}" fill="#EDE4D3" opacity="${.7 * (1 - milk)}"/>`;
+  const heat = seg(t, 2.8, 4.0);
+  for (let i = 0; i < 9; i++) { const ph = (t * 1.3 + i * .37) % 1; if (heat > 0) pan += `<circle cx="${820 + (i * 97) % 280}" cy="${595 + (i * 13) % 20}" r="${4 + 8 * ph}" fill="none" stroke="#E9CF8A" stroke-opacity="${.5 * heat * (1 - ph)}" stroke-width="2"/>`; }
+  pan += steam(900, 560, t, 3, 140) + steam(1020, 560, t + .5, 3, 160);
+  // the tin and a spoon of tea, then the milk
+  pan += tinSvg(420, 760, true, 0, 0).replace(/<g transform="translate\(420 610\)[^]*$/, '');
+  const sp = ease(seg(t, .5, 1.3)), tip = ease(seg(t, 1.3, 1.6)), away = ease(seg(t, 1.9, 2.4));
+  const sx = lerp(430, 900, sp) + away * 500, sy = lerp(560, 520, sp) - Math.sin(sp * Math.PI) * 120 - away * 300;
+  pan += `<g transform="translate(${sx} ${sy}) rotate(${-10 + tip * 70})"><ellipse cx="0" cy="0" rx="34" ry="18" fill="#D2AE55"/><ellipse cx="0" cy="-4" rx="26" ry="11" fill="${tip > .3 ? '#C9A048' : '#5A3A1E'}"/><path d="M30 -2l150 -30" stroke="#D2AE55" stroke-width="10" stroke-linecap="round"/></g>`;
+  if (t > 1.35 && t < 2.0) for (let i = 0; i < 26; i++) { const ph = ((t - 1.35) * 2.2 + i / 26) % 1; pan += `<circle cx="${905 + Math.sin(i * 7) * 14 + ph * 6}" cy="${540 + ph * 70}" r="3.2" fill="#5A3A1E" opacity="${1 - ph}"/>`; }
+  if (t > 2.4 && t < 3.4) { const k = seg(t, 2.4, 3.4); pan += `<path d="M1260 330q-90 20 -230 ${250}" stroke="#F4EDE0" stroke-width="${16 * Math.sin(k * Math.PI)}" fill="none" stroke-linecap="round"/><path d="M1210 250h120l-20 90h-80z" fill="#9aa0a6"/>`; }
+  g += `<g opacity="${1 - cupK}">${pan}</g>`;
+  if (cupK > 0) g += `<g opacity="${cupK}"><circle cx="960" cy="470" r="560" fill="url(#lamp)" opacity=".8"/><ellipse cx="960" cy="690" rx="300" ry="46" fill="#2a2018"/><ellipse cx="960" cy="680" rx="270" ry="36" fill="#EDE4D3" opacity=".9"/>` +
+    `<g transform="translate(960 ${640 - 6 * cupK})">${cup(0, 0, t, 3.6)}</g>` + steam(960, 500, t, 4, 220) + `</g>`;
+  return g;
+}
 function sceneDoor(t, s) {
   const k = s.k, walkIn = ease(seg(t, 0, 1.5 * k)), place = ease(seg(t, 1.5 * k, 1.9 * k)), walkOut = ease(seg(t, 2.2 * k, 3.2 * k)), open = ease(seg(t, 3.2 * k, 3.9 * k)), pick = ease(seg(t, 4.3 * k, 5.0 * k));
   let g = `<rect width="1920" height="1080" fill="#1A1714"/><rect x="0" y="0" width="1920" height="860" fill="url(#wallam)"/>`;
@@ -347,8 +421,8 @@ function sceneDoor(t, s) {
   g += box(bx, by);
   return g;
 }
-const SCENE_FN = { couch: sceneCouch, kitchen: sceneKitchen, run: sceneRun, cafe: sceneCafe, door: sceneDoor };
-const FOCUS = { couch: 700, kitchen: 640, run: 660, cafe: 640, door: 820 };
+const SCENE_FN = { couch: sceneCouch, kitchen: sceneKitchen, run: sceneRun, cafe: sceneCafe, door: sceneDoor, desk: sceneDesk };
+const FOCUS = { couch: 700, kitchen: 640, run: 660, cafe: 640, door: 820, desk: 660, chai: 960 };
 
 // ---------------- phone contents ----------------
 function chatHtml(s, t) {
@@ -386,10 +460,25 @@ function lockHtml(s, t) {
 function render(t) {
   const title = $('title'), endc = $('end'), art = $('art'), phone = $('phone'), cap = $('cap'), wipe = $('wipe');
   // the wipe that cuts between scenes (and into the end card)
-  const cuts = [...SCN.slice(1).map(s => s.start), ...(BARE ? [] : [END_START, TITLE_END])];
+  const cuts = [...SCN.slice(1).map(s => s.start), ...(BARE ? [] : NOEND ? [TITLE_END] : [END_START, TITLE_END])];
   let w = null; for (const c of cuts) if (t > c - .35 && t < c + .35) w = (t - (c - .35)) / .7;
   wipe.style.left = w === null ? '-140%' : `${lerp(-140, 100, ease(w))}%`;
 
+  if (t < TITLE_END && V3) {
+    title.style.display = 'none'; endc.style.display = 'none'; $('meet').style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
+    art.style.display = 'block'; $('intro').style.display = 'block';
+    const z = (VERT ? 1.15 : 1.6) + .08 * t / TITLE_END, vw = (VERT ? 1014 : 1920) / z, vh = 1080 / z, cy = lerp(600, VERT ? 560 : 720, ease(seg(t, 4.0, 4.6)));
+    art.setAttribute('viewBox', `${(VERT ? 900 : 860) - vw / 2} ${cy - vh / 2} ${vw} ${vh}`); art.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    art.innerHTML = DEFS + sceneChai(t);
+    const a1 = eout(seg(t, .55, 1.1)), a2 = eout(seg(t, 2.15, 2.7)), out = 1 - ease(seg(t, 3.9, 4.3));
+    $('i1').style.cssText = `opacity:${a1 * out};transform:translateY(${(1 - a1) * 24}px)`;
+    $('i2').style.cssText = `opacity:${a2 * out};transform:translateY(${(1 - a2) * 24}px)`;
+    const a3 = eout(seg(t, 4.35, 5.0)), a4 = eout(seg(t, 6.1, 6.7)), o3 = 1 - ease(seg(t, TITLE_END - .45, TITLE_END - .1));
+    $('i3').style.cssText = `opacity:${a3 * o3};transform:scale(${.94 + .06 * a3})`;
+    $('i4').style.cssText = `opacity:${a4 * o3};transform:translateY(${(1 - a4) * 16}px)`;
+    return;
+  }
+  $('intro').style.display = 'none';
   if (t < TITLE_END) {
     title.style.display = 'flex'; endc.style.display = 'none'; $('meet').style.display = 'none'; art.style.display = 'none'; phone.style.display = 'none'; cap.style.display = 'none';
     const a = eout(seg(t, .2, 1.0)); title.querySelector('.lab').style.cssText = `opacity:${a};transform:translateY(${(1 - a) * 16}px)`;

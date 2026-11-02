@@ -188,7 +188,7 @@ for (let i = 0; i < 4; i++) {
   clock = s.close[0] + .15;
 }
 const OUT = [clock, clock + .9];   // camera pulls back to the whole poster
-const L7 = OUT[0] + .3, L7_DUR = 6.72, SWAP = L7 + 1.9;   // Brew's last line, and the moment he says "Estate Tea"
+const L7 = OUT[0] + .3, L7_DUR = +(new URLSearchParams(location.search).get("l7") || 6.72), SWAP = L7 + 1.9;   // Brew's last line, and the moment he says "Estate Tea"
 const MERGE = [OUT[1] + .15, OUT[1] + 1.0];   // phone and features fade, title and call to action meet in the centre
 const END = L7 + L7_DUR + 1.8;
 
