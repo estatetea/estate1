@@ -7,6 +7,7 @@ import { DeliveryProgress } from './DeliveryProgress';
 import { DeliveryUpdateForm } from './DeliveryUpdateForm';
 import { DeliveryHistory } from './DeliveryHistory';
 import { orderNumber, recipientName, isPaymentVerified, statusLabel, formatWhen, METHOD_LABELS } from '@/lib/delivery-status';
+import { openInvoice, orderLines, SOURCE_LABELS } from '@/lib/order-invoice';
 
 const Section = ({ title, children, testId }) => (
   <section className="space-y-3 border-t border-white/[0.07] pt-5" data-testid={testId}>
@@ -15,14 +16,21 @@ const Section = ({ title, children, testId }) => (
   </section>
 );
 
+const rupee = v => `₹${Number(v || 0).toLocaleString('en-IN')}`;
 const details = o => [
+  ['Came from', SOURCE_LABELS[o.order_channel] || SOURCE_LABELS[o.order_source] || null],
   ['Customer', o.customer_name !== o.recipient_name ? o.customer_name : null],
   ['Phone', o.customer_phone || o.phone],
   ['Email', o.customer_email || o.email],
   ['Address', o.delivery_address || o.address],
-  ['PIN code', o.pincode || o.pin_code],
-  ['Total', o.total_amount != null ? `₹${o.total_amount}` : null],
-  ['Method', METHOD_LABELS[o.delivery_method] || o.delivery_method],
+  ['PIN code', o.delivery_pincode || o.pincode || o.pin_code],
+  ['Items', (o.items || []).map(i => `${i.quantity} × ${i.weight || i.product_id}`).join(', ') || null],
+  ['Quantity', o.quantity_kg != null ? `${o.quantity_kg} kg` : null],
+  ['Tea', o.items?.length ? rupee(orderLines(o).goods) : null],
+  ['Delivery', o.delivery_method ? (Number(o.delivery_fee) > 0 ? rupee(o.delivery_fee) : 'Free') : null],
+  ['GST', o.gst_amount != null ? rupee(o.gst_amount) : null],
+  ['Total', o.total_amount != null ? rupee(o.total_amount) : null],
+  ['Method', METHOD_LABELS[o.delivery_method] || o.delivery_method || (o.items?.length ? 'Not recorded (older website order)' : null)],
   ['Courier', o.courier_name],
   ['Tracking', o.tracking_reference],
   ['Delivered at', o.delivered_at ? formatWhen(o.delivered_at) : null],
@@ -76,7 +84,10 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
                 </div>
               ))}
             </dl>
-            {order.invoice_url && <a href={order.invoice_url} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-[#D4AF37] underline-offset-4 hover:underline" data-testid="delivery-panel-invoice-link">View invoice</a>}
+            <div className="flex flex-wrap gap-4">
+              {order.items?.length > 0 && <button type="button" onClick={() => { if (!openInvoice(order)) toast.error('Allow pop-ups to open the invoice'); }} className="text-sm text-[#D4AF37] underline-offset-4 hover:underline" data-testid="delivery-panel-invoice">View invoice</button>}
+              {order.invoice_url && <a href={order.invoice_url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 underline-offset-4 hover:underline" data-testid="delivery-panel-invoice-link">Razorpay payment link</a>}
+            </div>
           </Section>
           {steward && (
             <Section title="History" testId="delivery-panel-history">

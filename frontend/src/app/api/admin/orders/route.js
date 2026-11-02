@@ -32,6 +32,7 @@ export async function GET(request) {
             internal_order_id: order.order_id,
             display_order_number: order.estate_order_number || order.order_id,
             source: 'steward',
+            order_source: order.source,
             timestamp: order.created_at || order.timestamp,
             payment_status: order.payment_status || order.status,
             delivery_status: order.delivery_status || null,
