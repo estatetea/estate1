@@ -202,7 +202,7 @@ const CHATS = {
          { me: 'Great, thanks!', type: [6.0, 6.6] }],
 };
 const NOTES = [{ at: 1.0, app: 'Mail', icon: '✉', col: '#3D7BF7', title: 'Estate Tea', text: 'Your order ET-0042 is out for delivery.' },
-               { at: 2.9, app: 'Messages', icon: '💬', col: '#34C759', title: 'ET-ESTEA', text: 'Delivered ✓ Your Estate Tea order ET-0042 is at your door. Enjoy your chai!' }];
+               { at: 2.9, app: 'Mail', icon: '✉', col: '#3D7BF7', title: 'Estate Tea', text: 'Your Estate Tea order ET-0042 has been delivered ✓ Enjoy your chai!' }];   // real emails only (no delivery SMS exists)
 
 if (V3) {
   CHATS.kitchen = [{ me: 'Running low on tea. Can you send my usual 500 g?', type: [3.2, 4.5] },
@@ -210,7 +210,7 @@ if (V3) {
                    { br: 'Paid ✓ Your order’s placed. I’ll keep you posted 😊', at: 7.6 }];
   CHATS.desk = [{ me: 'Same as last time, please', type: [1.1, 2.0] },
                 { br: 'Done, Sam! 500 g to your home, as usual. Invoice sent ✓', at: 3.2 }];
-  NOTES[0].text = 'Your order ET-0042 is packed and on its way.';
+  NOTES[0].text = 'Your Estate Tea order ET-0042 is on its way.';
 }
 // sound events for the mix (computed from the same timeline)
 const EV = [];
