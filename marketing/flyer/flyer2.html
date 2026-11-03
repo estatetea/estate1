@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Estate Tea · Brew flyer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  :root { --bg:#070606; --gold:#C9A04E; --gold-soft:#E3C27A; --cream:#EDE6D8; --sub:#A79E8E; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:210mm; height:297mm; background:var(--bg); }
+  body { color:var(--cream); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { position:relative; width:210mm; height:297mm; overflow:hidden;
+          background: radial-gradient(ellipse 80% 45% at 50% 70%, rgba(201,160,78,.09), transparent 70%), var(--bg); }
+
+  /* top row: offer · logo · QR */
+  .top { position:absolute; left:16mm; right:16mm; top:14mm; display:grid; grid-template-columns:1fr auto 1fr; align-items:start; }
+  .offer { justify-self:start; text-align:center; width:34mm; }
+  .offer b { display:block; font-family:Cinzel, serif; font-weight:500; font-size:30pt; color:var(--gold-soft); line-height:1; letter-spacing:.02em; }
+  .offer span { display:block; margin-top:2.5mm; font-family:Cinzel, serif; font-size:7.6pt; letter-spacing:.28em; color:var(--cream); line-height:1.6; }
+  .logo { text-align:center; }
+  .logo img { width:36mm; opacity:.95; }
+  .qrbox { justify-self:end; text-align:center; width:34mm; }
+  .qr { width:34mm; height:34mm; background:#F4EFE3; padding:2.4mm; }
+  .qr img { width:100%; height:100%; display:block; }
+  .wa { margin-top:3mm; display:flex; justify-content:center; }
+  .wa svg { width:9mm; height:9mm; }
+
+  /* the two lines */
+  .lines { position:absolute; left:0; right:0; top:76mm; text-align:center; }
+  .l1 { font-family:Cinzel, serif; font-size:12.5pt; letter-spacing:.34em; color:var(--cream); }
+  .l2 { margin-top:5mm; font-family:Cinzel, serif; font-weight:500; font-size:27pt; letter-spacing:.2em; color:var(--cream); }
+  .l2 span { color:var(--gold-soft); }
+
+  /* the pack */
+  .hero { position:absolute; left:0; right:0; top:110mm; bottom:22mm; display:flex; justify-content:center; }
+  .hero img { height:100%; }
+
+  .foot { position:absolute; left:0; right:0; bottom:11mm; text-align:center; font-family:"Cormorant Garamond", serif; font-size:11pt; letter-spacing:.16em; color:var(--sub); }
+  .foot b { color:var(--gold-soft); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <div class="offer"><b>10%</b><span>OFF YOUR<br>FIRST ORDER</span></div>
+    <div class="logo"><img src="logo-antique.png" alt="Estate Tea"></div>
+    <div class="qrbox">
+      <div class="qr"><img src="qr.svg" alt="Chat with Brew on WhatsApp"></div>
+      <div class="wa"><svg viewBox="0 0 32 32" fill="none" stroke="#C9A04E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 3.5a12.5 12.5 0 0 0-10.8 18.8L3.5 28.5l6.4-1.7A12.5 12.5 0 1 0 16 3.5z"/>
+        <path d="M11.6 9.6c.4-.4 1.1-.4 1.5 0l1.4 2.3c.3.5.2 1.1-.2 1.5l-.8.8c.9 1.9 2.4 3.4 4.3 4.3l.8-.8c.4-.4 1-.5 1.5-.2l2.3 1.4c.4.4.4 1.1 0 1.5l-1 1.1c-.8.8-2 1-3 .6a13.6 13.6 0 0 1-7.8-7.8c-.4-1-.2-2.2.6-3z"/></svg></div>
+    </div>
+  </div>
+
+  <div class="lines">
+    <div class="l1">PREMIUM TEA · EVERYDAY PRICE</div>
+    <div class="l2">ORDER WITH <span>BREW</span></div>
+  </div>
+
+  <div class="hero"><img src="pack-close.png" alt="Estate Tea premium black CTC tea powder"></div>
+
+  <div class="foot">Scan to chat on WhatsApp &nbsp;·&nbsp; <b>Free delivery to Golden Palms</b></div>
+</div>
+</body>
+</html>
