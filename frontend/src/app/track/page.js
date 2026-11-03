@@ -9,6 +9,10 @@ function TrackOrder() {
   const params = useSearchParams();
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  // Round 1: the email used for the order. Round 2 (only if that didn't match, or they chose it): the phone number.
+  const [step, setStep] = useState('email');
+  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -20,14 +24,23 @@ function TrackOrder() {
   const lookup = async e => {
     e.preventDefault();
     setLoading(true); setResult(null);
+    const usePhone = step === 'phone';
     try {
       const r = await fetch('/api/website-orders/lookup', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estate_order_number: orderNumber.trim().toUpperCase(), email: email.trim() }),
+        body: JSON.stringify({ estate_order_number: orderNumber.trim().toUpperCase(), ...(usePhone ? { phone: phone.trim() } : { email: email.trim() }) }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || data.detail || 'We could not find that order. Check the order number and email address.');
-      setResult(data);
+      if (r.status === 404 && data.error === 'not_matched') {
+        if (!usePhone) {
+          setStep('phone');
+          setNote("We couldn't match that email to this order. No problem: enter the phone number you used for the order instead.");
+          return;
+        }
+        throw new Error("We couldn't find an order with that number and phone number. Please check both, or message us on WhatsApp at +91 97426 68951.");
+      }
+      if (!r.ok) throw new Error(data.error || data.detail || 'Order lookup is temporarily unavailable. Please try again.');
+      setNote(''); setResult(data);
     } catch (err) { setResult({ error: err.message || 'Order lookup is temporarily unavailable. Please try again.' }); }
     finally { setLoading(false); }
   };
@@ -45,21 +58,31 @@ function TrackOrder() {
         <div className="w-full max-w-md py-10">
           <p className="text-xs uppercase tracking-[.25em] text-[#D4AF37]">Order status</p>
           <h1 className="mt-2 text-4xl font-light gold-text">Track your order</h1>
-          <p className="mt-3 text-sm text-gray-400">Enter your Estate Tea order number (it starts with ET-) and the email address you used at checkout.</p>
+          <p className="mt-3 text-sm text-gray-400">Enter your Estate Tea order number (it starts with ET-) and the email address you used for the order. If that doesn't match, you can use your phone number instead.</p>
           <form onSubmit={lookup} className="mt-8 space-y-4">
             <label className="block text-xs text-gray-400">Order number
               <input required value={orderNumber} onChange={e => setOrderNumber(e.target.value)} placeholder="ET-0001" autoCapitalize="characters" className={`${input} font-mono tracking-wider`} />
             </label>
-            <label className="block text-xs text-gray-400">Email used for the order
-              <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" autoFocus={Boolean(orderNumber)} className={input} />
-            </label>
-            <button type="submit" disabled={loading || !orderNumber.trim() || !email.trim()} className="w-full rounded-lg bg-[#D4AF37] hover:bg-[#FDE047] text-black uppercase tracking-[.2em] py-3.5 text-sm disabled:opacity-50">{loading ? 'Checking…' : 'Check order status'}</button>
+            {step === 'email' ? (
+              <label className="block text-xs text-gray-400">Email used for the order
+                <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" autoFocus={Boolean(orderNumber)} className={input} />
+              </label>
+            ) : (
+              <label className="block text-xs text-gray-400">Phone number used for the order
+                <input required type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="98765 43210" autoComplete="tel" autoFocus className={input} />
+              </label>
+            )}
+            {note && <p className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] p-3 text-sm text-[#E9CF8A]">{note}</p>}
+            <button type="submit" disabled={loading || !orderNumber.trim() || !(step === 'phone' ? phone.replace(/\D/g, '').length >= 10 : email.trim())} className="w-full rounded-lg bg-[#D4AF37] hover:bg-[#FDE047] text-black uppercase tracking-[.2em] py-3.5 text-sm disabled:opacity-50">{loading ? 'Checking…' : 'Check order status'}</button>
+            <button type="button" onClick={() => { setStep(step === 'email' ? 'phone' : 'email'); setNote(''); setResult(null); }} className="w-full text-center text-xs text-gray-400 underline underline-offset-4 hover:text-[#D4AF37]">
+              {step === 'email' ? "Don't remember the email? Use your phone number instead" : 'Use your email address instead'}
+            </button>
           </form>
           <div className="mt-6">
             {result?.error && <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/20 p-3 text-sm text-red-200">{result.error}</p>}
             {result && !result.error && <OrderLookupResult order={result} />}
           </div>
-          <p className="mt-6 text-[11px] leading-5 text-gray-500">For your privacy, order details are only shown when the email matches the order.</p>
+          <p className="mt-6 text-[11px] leading-5 text-gray-500">For your privacy, order details are only shown when the email or phone number matches the order.</p>
         </div>
       </main>
     </div>
