@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Estate Tea poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { --bg:#090807; --ink:#F3EDE2; --soft:#CFC6B6; --gold:#E4C47F; --line:rgba(226,192,122,.55); }
+  html, body { width:210mm; height:297mm; background:var(--bg); }
+  body { color:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact; font-family:"Libre Baskerville", serif; }
+  .page { position:relative; width:210mm; height:297mm; overflow:hidden; background:var(--bg); }
+  .pack { position:absolute; left:0; width:210mm; top:141mm; height:166.5mm; background:url(pack-glow2.jpg) center top/100% 100% no-repeat; }
+  .grain { position:absolute; inset:0; background:url(grain.png); background-size:60mm; mix-blend-mode:overlay; opacity:.45; }
+  .c { position:absolute; left:0; right:0; text-align:center; }
+  .g { color:var(--gold); }
+  .brand { top:17mm; font-family:Cinzel, serif; font-weight:600; font-size:13pt; letter-spacing:.5em; margin-right:-.5em; color:var(--gold); }
+  h1 { top:32mm; font-weight:400; font-style:italic; font-size:29pt; line-height:1.3; }
+  .ans { top:66mm; font-weight:700; font-size:20pt; color:var(--gold); }
+  .rule { position:absolute; left:94mm; right:94mm; top:80mm; height:.3mm; background:var(--line); }
+  .qrc { position:absolute; left:0; right:0; top:86mm; display:flex; justify-content:center; }
+  .qr { width:32mm; height:32mm; padding:2.3mm; background:#F2ECDF; } .qr img { width:100%; height:100%; display:block; }
+  .scan { top:123mm; font-size:15.5pt; }
+  .scan b { font-weight:700; }
+  .off { top:132mm; font-weight:700; font-size:14pt; color:var(--gold); }
+  .del { top:140.5mm; font-weight:400; font-size:11pt; letter-spacing:.04em; color:var(--soft); }
+</style></head><body>
+<div class="page">
+  <div class="pack"></div><div class="grain"></div>
+  <div class="c brand">ESTATE TEA</div>
+  <h1 class="c">When did your tea<br>last <span class="g">surprise</span> you?</h1>
+  <div class="c ans">Your next cup will.</div>
+  <div class="rule"></div>
+  <div class="qrc"><div class="qr"><img src="qr.svg" alt="Scan to order from Brew"></div></div>
+  <div class="c scan">Scan to order from <b class="g">Brew</b>, your tea concierge</div>
+  <div class="c off">10% off your first order</div>
+  <div class="c del">Free delivery within Golden Palms Apartment</div>
+</div>
+</body></html>
