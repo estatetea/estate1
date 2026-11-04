@@ -22,6 +22,10 @@
   .scan b { font-weight:700; }
   .off { top:132mm; font-weight:700; font-size:14pt; color:var(--gold); }
   .del { top:140.5mm; font-weight:400; font-size:11pt; letter-spacing:.04em; color:var(--soft); }
+  .soc { position:absolute; bottom:8mm; display:flex; align-items:center; gap:2.2mm; font-size:11pt; color:var(--soft); letter-spacing:.03em; }
+  .soc svg { width:5mm; height:5mm; }
+  .soc.l { left:13mm; } .soc.r { right:13mm; }
+  .base { position:absolute; left:0; right:0; bottom:0; height:22mm; background:linear-gradient(rgba(9,8,7,0), rgba(9,8,7,.55)); }
 </style></head><body>
 <div class="page">
   <div class="pack"></div><div class="grain"></div>
@@ -33,5 +37,8 @@
   <div class="c scan">Scan to order from <b class="g">Brew</b>, your tea concierge</div>
   <div class="c off">10% off your first order</div>
   <div class="c del">Free delivery within Golden Palms Apartment</div>
+  <div class="base"></div>
+  <div class="soc l"><svg viewBox="0 0 24 24" fill="none" stroke="#CFC6B6" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="#CFC6B6" stroke="none"/></svg><span>@estateatea_</span></div>
+  <div class="soc r"><svg viewBox="0 0 24 24" fill="none" stroke="#CFC6B6" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3z"/></svg><span>estatetea.in</span></div>
 </div>
 </body></html>
