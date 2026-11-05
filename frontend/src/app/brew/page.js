@@ -1,9 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Toaster } from 'sonner';
+import Testimonials from '@/components/Testimonials';
 
 // "Meet Estate Tea": where Brew's welcome button leads. Everything a new customer usually asks, in one place,
 // so their WhatsApp messages go on ordering, not on questions. Facts match Brew's rulebook; prices are live from the shop.
 const WA = 'https://wa.me/919742668951?text=' + encodeURIComponent("Hi Brew, I'd like to order");
+const CHAT = 'https://wa.me/919742668951';   // Close: straight back to the chat, nothing typed
 const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 180 }, { product_id: '500g', weight: '500 g', price: 360 }, { product_id: '1kg', weight: '1 kg', price: 720 }];
 const LASTS = { '250g': 'about a month', '500g': 'about two months', '1kg': 'about four months' };
 const grams = w => String(w || '').replace(/grams?/i, 'g').replace(/\s+/g, ' ').trim();
@@ -22,10 +25,11 @@ export default function MeetEstateTea() {
       }
     }).catch(() => {});
   }, []);
-  return <div className="min-h-screen bg-[#0a0a0a] text-[#EDE6D8] pb-28">
+  return <div className="min-h-screen bg-[#0a0a0a] text-[#EDE6D8] pb-28"><Toaster position="top-center" richColors />
     <header className="border-b border-white/10"><div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
       <span className="text-2xl font-light text-[#D4AF37]">Estate Tea</span>
-      <a href={WA} className="text-xs uppercase tracking-[.2em] text-gray-400">Back to Brew</a></div></header>
+      <a href={CHAT} aria-label="Close and go back to the chat with Brew" className="flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-sm text-gray-200">
+        <span className="text-base leading-none">✕</span> Close</a></div></header>
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-5 text-[15px] leading-7">
       <div>
         <p className="text-xs uppercase tracking-[.25em] text-[#D4AF37]">Meet Estate Tea</p>
@@ -49,6 +53,8 @@ export default function MeetEstateTea() {
         <p className="mt-3 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
         <p className="mt-3 text-gray-400">For cafés, offices and shops: ₹420 per kg plus GST, minimum order 2 kg, with a proper GST invoice. Ask Brew about a free sample.</p>
       </Section>
+
+      <section className="rounded-2xl border border-white/10 bg-white/[.03] p-2 sm:p-4"><Testimonials /></section>
 
       <Section title="Delivery">
         <ul className="space-y-1.5 text-gray-300 list-disc pl-5">
