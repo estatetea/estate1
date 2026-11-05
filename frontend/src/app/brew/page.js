@@ -25,16 +25,22 @@ export default function MeetEstateTea() {
       }
     }).catch(() => {});
   }, []);
-  return <div className="min-h-screen bg-[#0a0a0a] text-[#EDE6D8] pb-28"><Toaster position="top-center" richColors />
-    <header className="border-b border-white/10"><div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-      <span className="text-2xl font-light text-[#D4AF37]">Estate Tea</span>
-      <a href={CHAT} aria-label="Close and go back to the chat with Brew" className="flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-sm text-gray-200">
-        <span className="text-base leading-none">✕</span> Close</a></div></header>
-    <main className="max-w-2xl mx-auto px-4 py-8 space-y-5 text-[15px] leading-7">
-      <div>
-        <p className="text-xs uppercase tracking-[.25em] text-[#D4AF37]">Meet Estate Tea</p>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-light">Premium tea powder, <span className="text-[#D4AF37]">at an everyday price.</span></h1>
-        <p className="mt-3 text-gray-300">Brew is your personal tea concierge on WhatsApp. Everything you need to know is here; when you're ready, tap the button below and tell him the pack you'd like.</p>
+  return <div className="meet min-h-screen bg-[#0a0a0a] text-[#EDE6D8] pb-28"><Toaster position="top-center" richColors />
+    {/* one soft gold on this page, including the shared reviews section */}
+    <style>{`.meet .gold-text,.meet .text-\\[\\#D4AF37\\]{color:#E9CF8A}.meet .fill-\\[\\#D4AF37\\]{fill:#E9CF8A}.meet .bg-\\[\\#D4AF37\\]{background-color:#E9CF8A}`}</style>
+    <header className="sticky top-0 z-30 border-b border-[#E9CF8A]/10 bg-[#0a0a0a]/90 backdrop-blur">
+      <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <span className="text-[13px] uppercase tracking-[.42em] text-[#E9CF8A]">Estate Tea</span>
+        <a href={CHAT} aria-label="Close and go back to the chat with Brew" className="flex items-center gap-1.5 rounded-full border border-[#E9CF8A]/25 px-3.5 py-1.5 text-sm text-[#EDE6D8]">
+          <span className="text-[13px] leading-none">✕</span> Close</a>
+      </div></header>
+    <main className="max-w-2xl mx-auto px-4 pb-8 space-y-5 text-[15px] leading-7">
+      <div className="pt-10 pb-6 text-center">
+        <img src="/estate-tea-icon-192.png" alt="" className="mx-auto h-20 w-20 rounded-full opacity-95" />
+        <p className="mt-6 text-[11px] uppercase tracking-[.35em] text-[#E9CF8A]/80">Meet Estate Tea</p>
+        <h1 className="mt-4 text-[34px] sm:text-[42px] font-light leading-[1.15]">Premium tea powder,<br/><span className="italic text-[#E9CF8A]">at an everyday price.</span></h1>
+        <div className="mx-auto mt-6 flex items-center justify-center gap-3"><span className="h-px w-10 bg-[#E9CF8A]/40"></span><span className="h-1.5 w-1.5 rotate-45 bg-[#E9CF8A]/70"></span><span className="h-px w-10 bg-[#E9CF8A]/40"></span></div>
+        <p className="mx-auto mt-6 max-w-sm text-[15px] leading-7 text-gray-400">Everything you'd like to know, in one place. When you're ready, tap the button below and tell Brew the pack you'd like.</p>
       </div>
 
       <Section title="Our story">
@@ -50,7 +56,7 @@ export default function MeetEstateTea() {
           </div>)}
         </div>
         <p className="mt-2 text-xs text-gray-500">*For a household having about 3 cups a day.</p>
-        <p className="mt-3 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
+        <p className="mt-3 rounded-xl border border-[#E9CF8A]/25 bg-[#E9CF8A]/[.05] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
         <p className="mt-3 text-gray-400">For cafés, offices and shops: ₹420 per kg plus GST, minimum order 2 kg, with a proper GST invoice. Ask Brew about a free sample.</p>
       </Section>
 
