@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { PackSwitches } from './PackSwitches';
 
 const kg = v => (v == null ? '—' : `${Math.round(Number(v) * 1000) / 1000} kg`);
 
@@ -73,5 +74,6 @@ export function InventorySection({ inventory, headers, onChange }) {
       {editingTotal && <button onClick={() => setEditingTotal(false)} className={secondary}>Cancel</button>}
     </div>
     {inv.updated_at && <p className="mt-4 text-[11px] text-gray-600">Last changed {new Date(inv.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</p>}
+    <div className="mt-5"><PackSwitches headers={headers} /></div>
   </div>;
 }
