@@ -7,8 +7,8 @@ import Testimonials from '@/components/Testimonials';
 // so their WhatsApp messages go on ordering, not on questions. Facts match Brew's rulebook; prices are live from the shop.
 const WA = 'https://wa.me/919742668951?text=' + encodeURIComponent("Hi Brew, I'd like to order");
 const CHAT = 'https://wa.me/919742668951';   // Close: straight back to the chat, nothing typed
-const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 180 }, { product_id: '500g', weight: '500 g', price: 360 }, { product_id: '1kg', weight: '1 kg', price: 720 }];
-const LASTS = { '250g': 'about a month', '500g': 'about two months', '1kg': 'about four months' };
+const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 180 }, { product_id: '500g', weight: '500 g', price: 360 }];   // our only packs (1 kg is two 500 g)
+const LASTS = { '250g': 'about a month', '500g': 'about two months' };
 const grams = w => String(w || '').replace(/grams?/i, 'g').replace(/\s+/g, ' ').trim();
 
 function Section({ title, children }) {
@@ -52,9 +52,12 @@ export default function MeetEstateTea() {
         <div className="divide-y divide-white/10">
           {packs.map(p => <div key={p.product_id} className="flex items-baseline justify-between py-2.5">
             <div><span className="text-white">{grams(p.weight)}</span><span className="ml-2 text-xs text-gray-500">lasts {LASTS[p.product_id]}*</span></div>
-            <span className="text-[#E9CF8A]">₹{Number(p.price).toLocaleString('en-IN')} <span className="text-xs text-gray-500">+ 5% GST</span></span>
+            {p.in_stock === false
+              ? <span className="text-sm text-gray-400">Just sold out<span className="block text-right text-[11px] text-gray-600">ask Brew about two 250 g packs</span></span>
+              : <span className="text-[#E9CF8A]">₹{Number(p.price).toLocaleString('en-IN')} <span className="text-xs text-gray-500">+ 5% GST</span></span>}
           </div>)}
         </div>
+        <p className="mt-2 text-xs text-gray-400">Need 1 kg? It comes as two 500 g packs (or four 250 g packs), ₹720 + 5% GST.</p>
         <p className="mt-2 text-xs text-gray-500">*For a household having about 3 cups a day.</p>
         <p className="mt-3 rounded-xl border border-[#E9CF8A]/25 bg-[#E9CF8A]/[.05] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
         <p className="mt-3 text-gray-400">For cafés, offices and shops: ₹420 per kg plus GST, minimum order 2 kg, with a proper GST invoice. Ask Brew about a free sample.</p>

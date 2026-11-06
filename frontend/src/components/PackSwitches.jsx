@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-const LABEL = { '250g': '250 g', '500g': '500 g', '1kg': '1 kg' };
+const LABEL = { '250g': '250 g', '500g': '500 g' };   // our only packs: 1 kg goes out as two 500 g
 
 // Which packs are on sale. The same switch the website and Brew use: change it here, by telling Brew, or in the website admin.
 export function PackSwitches({ headers }) {
