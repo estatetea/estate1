@@ -47,7 +47,8 @@ export function FriendsList({ headers }) {
       {rows?.length === 0 && <p className="py-3 text-xs text-gray-500">No friends added yet.</p>}
       {(rows || []).map(f => <div key={f.id} className="flex items-center justify-between gap-3 py-3">
         <div className="min-w-0"><p className="truncate text-[15px] text-gray-100">{f.name || 'No name'}</p>
-          <p className="truncate text-[11px] text-gray-500">{[f.phone, f.email].filter(Boolean).join(' · ')}{f.relationship_id ? ' · has messaged Brew' : ''}</p></div>
+          <p className="truncate text-[11px] text-gray-500">{[f.phone, f.email].filter(Boolean).join(' · ')}</p>
+          <p className={`text-[11px] ${f.relationship_id ? 'text-emerald-400' : 'text-gray-600'}`}>{f.relationship_id ? `Already chats with Brew${f.last_message_at ? ` · last message ${new Date(f.last_message_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''} · ${f.greeted ? 'told they\'re a friend of the boss' : 'Brew tells them in his next reply'}` : 'Hasn\'t messaged Brew yet'}</p></div>
         <button onClick={() => remove(f)} className="shrink-0 rounded-xl border border-white/10 px-3 py-1.5 text-[11px] text-gray-400 hover:border-red-400/30 hover:text-red-300">Remove</button>
       </div>)}
     </div>
