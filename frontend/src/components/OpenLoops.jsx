@@ -12,7 +12,7 @@ export function OpenLoops({ headers }) {
     const load = () => fetch('/api/admin/open-loops', { headers, cache: 'no-store' }).then(r => r.json().then(b => ({ ok: r.ok, b })))
       .then(({ ok, b }) => { if (!live) return; if (!ok) throw new Error(b.error || 'Unavailable'); setRows(b.items || []); setError(''); })
       .catch(e => live && setError(e.message));
-    load(); const t = setInterval(load, 60000); return () => { live = false; clearInterval(t); };
+    load(); const t = setInterval(() => { if (document.visibilityState==='visible') load(); }, 120000); return () => { live = false; clearInterval(t); };
   }, []);
   return <section className="rounded-[24px] border border-white/[.07] bg-white/[.02] p-4 sm:p-5">
     <div className="flex items-baseline justify-between"><p className="text-[10px] uppercase tracking-[.22em] text-[#b99043]">Unfinished with customers</p>

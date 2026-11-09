@@ -47,8 +47,8 @@ export function WhatsAppChats({ headers }) {
     } catch (e) { if (!quiet) setError(e.message); } finally { if (!quiet) setChatLoading(false); }
   };
 
-  useEffect(() => { loadList(); const t = setInterval(() => loadList({ quiet: true }), 20000); return () => clearInterval(t); }, []);
-  useEffect(() => { if (!openId) return; setChat(null); setInfo(null); lastCount.current = 0; loadChat(openId); const t = setInterval(() => loadChat(openId, { quiet: true }), 10000); return () => clearInterval(t); }, [openId]);
+  useEffect(() => { loadList(); const t = setInterval(() => { if (document.visibilityState==='visible') loadList({ quiet: true }); }, 30000); return () => clearInterval(t); }, []);
+  useEffect(() => { if (!openId) return; setChat(null); setInfo(null); lastCount.current = 0; loadChat(openId); const t = setInterval(() => { if (document.visibilityState==='visible') loadChat(openId, { quiet: true }); }, 15000); return () => clearInterval(t); }, [openId]);
   useEffect(() => { const n = chat?.messages?.length || 0; if (n && n !== lastCount.current) { lastCount.current = n; setTimeout(() => bottom.current?.scrollIntoView({ block: 'end' }), 0); } }, [chat]);
 
   const shown = useMemo(() => { const s = q.trim().toLowerCase(); return s ? chats.filter(c => `${c.name} ${c.phone || ''} ${c.whatsapp_name || ''}`.toLowerCase().includes(s)) : chats; }, [chats, q]);

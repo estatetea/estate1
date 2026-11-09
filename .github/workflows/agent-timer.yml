@@ -1,10 +1,10 @@
 # Aegis's clock while he runs on Vercel (until he moves back to always-on Render).
-# Every 5 minutes: one Aegis round (health, stuck work, Brew's duties, scheduled slots).
+# Every 10 minutes: one Aegis round (health, stuck work, Brew's duties, scheduled slots).
 # 10:00 and 10:10 IST Mon-Fri: Aegis sends Scout to research 2 businesses (4 a day, 20 a week).
 name: Agent timer
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/10 * * * *"
     - cron: "30 4 * * 1-5"
     - cron: "40 4 * * 1-5"
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         default: "aegis"
 jobs:
   aegis-round:
-    if: github.event.schedule == '*/5 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'aegis')
+    if: github.event.schedule == '*/10 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'aegis')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:

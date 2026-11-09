@@ -19,7 +19,7 @@ export function PrinterSettings({ headers }) {
     const load = () => fetch('/api/admin/print-helper/status', { headers: { Authorization: auth }, cache: 'no-store' })
       .then(r => r.ok ? r.json() : null).then(setStatus).catch(() => {});
     load();
-    const t = setInterval(load, 60000);
+    const t = setInterval(() => { if (document.visibilityState==='visible') load(); }, 120000);
     return () => clearInterval(t);
   }, [auth]);
   const download = async () => {

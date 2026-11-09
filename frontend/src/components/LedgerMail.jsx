@@ -16,7 +16,7 @@ export function LedgerMail({ headers }) {
       if (!r.ok) throw new Error(b.error || 'Invoice mail unavailable'); setData(b); setError('');
     } catch (e) { setError(e.message); } finally { if (!quiet) setLoading(false); }
   };
-  useEffect(() => { load(); const t = setInterval(() => load(true), 30000); return () => clearInterval(t); }, []);
+  useEffect(() => { load(); const t = setInterval(() => { if (document.visibilityState==='visible') load(true); }, 60000); return () => clearInterval(t); }, []);
   const orders = (data?.orders || []).filter(o => !only || o.needs_attention);
   return <div className="space-y-3">
     <div className="flex items-center justify-between gap-3">
