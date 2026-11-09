@@ -230,7 +230,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                 <DropdownMenuItem
                   className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
                   data-testid="nav-hampers"
-                  onClick={() => toast("Hampers — Coming Soon!", { description: "We're working on something special." })}
+                  onClick={() => navigate('hampers')}
                 >
                   Hampers
                 </DropdownMenuItem>
@@ -245,6 +245,13 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[160px]">
+                <DropdownMenuItem
+                  className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
+                  data-testid="nav-services-hampers"
+                  onClick={() => navigate('hampers')}
+                >
+                  Hampers
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
                   data-testid="nav-wedding-favours"

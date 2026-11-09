@@ -8,6 +8,7 @@ import MainStore from '@/components/MainStore';
 import WebsiteBrew from '@/components/WebsiteBrew';
 import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
+import Hampers from '@/components/Hampers';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentFailed from '@/components/PaymentFailed';
 import AdminDashboard from '@/components/AdminDashboard';
@@ -58,6 +59,7 @@ export default function App() {
     case 'store': case 'home': content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />; break;
     case 'cart': content = <CartComponent cart={cart} setCart={setCart} userInfo={userInfo} navigate={navigate} />; break;
     case 'checkout': content = <CheckoutComponent cart={cart} userInfo={userInfo} navigate={navigate} />; break;
+    case 'hampers': content = <Hampers userInfo={userInfo} navigate={navigate} />; break;
     case 'payment-success': content = <PaymentSuccess data={pageData} navigate={navigate} />; break;
     case 'payment-failed': content = <PaymentFailed data={pageData} navigate={navigate} />; break;
     default: content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />;
