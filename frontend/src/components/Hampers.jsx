@@ -58,7 +58,8 @@ export default function Hampers({ userInfo, navigate }) {
             <p className="text-[11px] uppercase tracking-[.35em] text-[#D4AF37]">{h.season} hamper</p>
             <h1 className="mt-3 text-3xl sm:text-4xl font-light">{h.name}</h1>
             <p className="mt-2 text-gray-400">A gift box for the Christmas season.</p>
-            <ul className="mt-6 space-y-2">{h.contents.map(c => <li key={c} className="flex gap-3 text-gray-200"><Gift className="w-4 h-4 mt-1 text-[#D4AF37] shrink-0" />{c}</li>)}</ul>
+            {h.contents?.length ? <ul className="mt-6 space-y-2">{h.contents.map(c => <li key={c} className="flex gap-3 text-gray-200"><Gift className="w-4 h-4 mt-1 text-[#D4AF37] shrink-0" />{c}</li>)}</ul>
+              : <p className="mt-6 flex items-center gap-3 text-gray-300"><Gift className="w-4 h-4 text-[#D4AF37] shrink-0" /><span>What's inside is a little surprise for now. <span className="text-[#D4AF37]">Revealed soon.</span></span></p>}
             <div className="mt-7 flex flex-wrap items-end gap-x-6 gap-y-2"><p className="text-3xl gold-text">{inr(h.price)}</p><p className="text-sm text-gray-400 pb-1">GST included · free delivery in Bangalore</p></div>
             <p className={`mt-5 rounded-xl px-4 py-3 text-sm ${open ? 'border border-[#D4AF37]/25 bg-[#D4AF37]/[.06] text-[#f0d58b]' : 'border border-white/10 bg-white/[.03] text-gray-300'}`}>{st.message}</p>
             {preorder && <a href={WA + brewText} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[#25D366]/90 px-4 py-3 text-sm font-medium text-black hover:bg-[#25D366]"><MessageCircle className="w-4 h-4" />Pre-order with Brew on WhatsApp and get {st.brew_discount_pct || 10}% off ({inr(h.price * (1 - (st.brew_discount_pct || 10) / 100))})</a>}
