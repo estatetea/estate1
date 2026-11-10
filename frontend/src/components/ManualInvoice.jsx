@@ -8,7 +8,7 @@ const PACKS = [
   { id: '500g', label: '500 g', price: 360, kg: 0.5 },
   { id: '1kg', label: '1 kg', price: 720, kg: 1 },
   // Christmas items: the price includes GST (split at the item's own rate on the invoice); delivery is added on top.
-  { id: 'christmas-spirit', label: 'Christmas Spirit 350 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18 },
+  { id: 'christmas-spirit', label: 'Christmas Spirit 350 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18, freeDeliveryUntil: '2026-11-12' },
   // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
@@ -45,7 +45,10 @@ export function ManualInvoice({ headers }) {
   const teaTotal = pack.price * qty;
   // Free delivery for more than 500 g within 10 km, and more than 750 g beyond (third-party; Estate Tea pays).
   const orderKg = pack.test ? 0 : pack.kg * qty;
-  const freeOwn = orderKg > 0.5 + 1e-9, freeFar = orderKg > 0.75 + 1e-9;
+  // A launch offer on an item (free delivery up to and including that day, India time), same rule as Steward.
+  const todayIST = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+  const offerFree = !!pack.freeDeliveryUntil && todayIST <= pack.freeDeliveryUntil;
+  const freeOwn = offerFree || orderKg > 0.5 + 1e-9, freeFar = offerFree || orderKg > 0.75 + 1e-9;
   const ownFee = freeOwn ? 0 : (quote?.own_delivery_fee ?? OWN_DELIVERY_FEE);
   const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
   // Delivery is charged with the tea, so GST applies to both.
