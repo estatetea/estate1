@@ -14,6 +14,7 @@ import {
 const API = '/api';
 
 const SLIDE_IMAGES = [
+  "/images/estate-noel-box.jpg",   // the Estate NÖEL Collection (Christmas hampers)
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/p3gkmb59_WhatsApp%20Image%202026-05-12%20at%2011.03.38%20AM.jpeg",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/aq9g7zq6_estate%207.jpg.jpeg",
   "/images/estate-250g-alt.jpg",
