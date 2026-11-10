@@ -7,6 +7,8 @@ const PACKS = [
   { id: '250g', label: '250 g', price: 180, kg: 0.25 },
   { id: '500g', label: '500 g', price: 360, kg: 0.5 },
   { id: '1kg', label: '1 kg', price: 720, kg: 1 },
+  // Christmas items: the price includes GST (split at the item's own rate on the invoice); delivery is added on top.
+  { id: 'christmas-spirit', label: 'Christmas Spirit 350 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18 },
   // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
@@ -48,8 +50,10 @@ export function ManualInvoice({ headers }) {
   const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
   // Delivery is charged with the tea, so GST applies to both.
   const subtotal = teaTotal + deliveryFee;
-  const gst = pack.test || !form.gst_enabled ? 0 : Math.round(subtotal * GST_RATE * 100) / 100;
-  const total = subtotal + gst;
+  const gst = pack.test || !form.gst_enabled ? 0 : pack.inclusive
+    ? Math.round((teaTotal - teaTotal / (1 + pack.gstRate) + deliveryFee * pack.gstRate) * 100) / 100
+    : Math.round(subtotal * GST_RATE * 100) / 100;
+  const total = pack.inclusive ? teaTotal + deliveryFee + (form.gst_enabled ? Math.round(deliveryFee * pack.gstRate * 100) / 100 : 0) : subtotal + gst;
   const needKg = Math.round(pack.kg * qty * 1000) / 1000;
   // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
   const stockLevel = !stock || pack.test || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
@@ -161,7 +165,7 @@ export function ManualInvoice({ headers }) {
       {form.delivery_method === 'third_party_courier' && freeFar && <p className="text-xs text-emerald-300/80">Over 750 g: delivery is free for the customer.</p>}{form.delivery_method === 'third_party_courier' && !freeFar && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
     </div>
     <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
-      <label className="text-[11px] text-gray-500">Packet size
+      <label className="text-[11px] text-gray-500">Item
         <select value={form.product_id} onChange={e => set('product_id', e.target.value)} className={`${input} mt-1`}>
           {PACKS.map(p => <option key={p.id} value={p.id} className="bg-[#111]">{p.label} · {rupees(p.price)}</option>)}
         </select>
@@ -173,10 +177,10 @@ export function ManualInvoice({ headers }) {
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
       <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(teaTotal)}</span></div>
       {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
-      {form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST (5%)</span><span>{rupees(gst)}</span></div>}{!form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST</span><span>Off</span></div>}
+      {form.gst_enabled && !pack.test && <div className="flex justify-between"><span>{pack.inclusive ? `GST (${pack.gstRate * 100}%, included in the price${deliveryFee > 0 ? ' and on delivery' : ''})` : 'GST (5%)'}</span><span>{rupees(gst)}</span></div>}{!form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST</span><span>Off</span></div>}
       <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>
-    {stock && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
+    {stock && pack.kg > 0 && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
       Available to sell: {stock.sellable} kg (+ {stock.reserve} kg protected reserve) · this invoice needs {needKg} kg
       {stockLevel === 'reserve' && ' — dips into your protected reserve'}
       {stockLevel === 'shortfall' && ` — more than the ${stock.onHand} kg in stock`}

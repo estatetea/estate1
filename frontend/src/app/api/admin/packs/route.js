@@ -16,7 +16,7 @@ export async function GET(request) {
 export async function PUT(request) {
   if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { product_id, available } = await request.json().catch(() => ({}));
-  if (!['250g', '500g'].includes(product_id)) return NextResponse.json({ error: 'Unknown pack' }, { status: 400 });
+  if (!['250g', '500g', 'christmas-spirit'].includes(product_id)) return NextResponse.json({ error: 'Unknown pack' }, { status: 400 });
   try {
     const live = await setStewardAvailability(product_id, Boolean(available), 'owner (web app)');
     try {

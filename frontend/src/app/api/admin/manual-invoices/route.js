@@ -21,7 +21,7 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const quantity = Number(body.quantity);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email || ''))) return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
-  if (!['250g', '500g', '1kg', 'test'].includes(body.product_id)) return NextResponse.json({ error: 'Choose a packet size' }, { status: 400 });
+  if (!['250g', '500g', '1kg', 'test', 'christmas-spirit'].includes(body.product_id)) return NextResponse.json({ error: 'Choose an item' }, { status: 400 });
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) return NextResponse.json({ error: 'Enter a quantity between 1 and 500' }, { status: 400 });
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, {
