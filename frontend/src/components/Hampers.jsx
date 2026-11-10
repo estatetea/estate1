@@ -67,7 +67,7 @@ export default function Hampers({ userInfo, navigate }) {
           <p className="text-[11px] uppercase tracking-[.35em] text-[#D4AF37]">Christmas</p>
           <h1 className="mt-3 text-3xl sm:text-4xl font-light">Estate Noel Collection</h1>
           <p className="mt-3 text-gray-300 leading-relaxed">This Christmas, make up your own gift: a festive drink, cookies, plum cake and our premium tea, each sold on its own, with premium gift boxes to put them in.</p>
-          <p className="mt-5 rounded-xl px-4 py-3 text-sm border border-[#D4AF37]/25 bg-[#D4AF37]/[.06] text-[#f0d58b]">Coming soon. Pre-orders open November 25th.</p>
+          <p className="mt-5 rounded-xl px-4 py-3 text-sm border border-[#D4AF37]/25 bg-[#D4AF37]/[.06] text-[#f0d58b]">Coming soon.</p>
           <a href={WA + encodeURIComponent('Hi Brew! I would like to know about the Estate Noel Christmas collection.')} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"><MessageCircle className="w-4 h-4" />Ask Brew about it</a>
         </div>
       </div>}
