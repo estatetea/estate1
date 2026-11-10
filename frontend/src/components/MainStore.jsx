@@ -233,7 +233,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                   data-testid="nav-hampers"
                   onClick={() => navigate('hampers')}
                 >
-                  Hampers
+                  Christmas collection
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -251,7 +251,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
                   data-testid="nav-services-hampers"
                   onClick={() => navigate('hampers')}
                 >
-                  Hampers
+                  Christmas collection
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"

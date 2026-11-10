@@ -61,7 +61,16 @@ export default function Hampers({ userInfo, navigate }) {
     <main className="max-w-6xl mx-auto px-4 py-8">
       <button onClick={() => navigate('store')} className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8"><ArrowLeft className="w-5 h-5" />Back to the shop</button>
       {hampers === null && <p className="text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Loading hampers…</p>}
-      {hampers && !h && <p className="text-gray-400">Our hampers will be back soon.</p>}
+      {hampers && !h && <div className="max-w-3xl card-surface rounded-2xl border border-[#D4AF37]/20 overflow-hidden">
+        <img src="/images/estate-noel-box.jpg" alt="The Estate NÖEL Collection" width="1600" height="1200" className="block w-full aspect-[4/3] object-cover" />
+        <div className="p-6 sm:p-8">
+          <p className="text-[11px] uppercase tracking-[.35em] text-[#D4AF37]">Christmas</p>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-light">Estate Noel Collection</h1>
+          <p className="mt-3 text-gray-300 leading-relaxed">This Christmas, make up your own gift: a festive drink, cookies, plum cake and our premium tea, each sold on its own, with premium gift boxes to put them in.</p>
+          <p className="mt-5 rounded-xl px-4 py-3 text-sm border border-[#D4AF37]/25 bg-[#D4AF37]/[.06] text-[#f0d58b]">Coming soon. Pre-orders open November 25th.</p>
+          <a href={WA + encodeURIComponent('Hi Brew! I would like to know about the Estate Noel Christmas collection.')} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"><MessageCircle className="w-4 h-4" />Ask Brew about it</a>
+        </div>
+      </div>}
       {h && <div className="grid lg:grid-cols-5 gap-8">
         <section className="lg:col-span-3 space-y-6">
           <div className="card-surface rounded-2xl p-6 sm:p-8 border border-[#D4AF37]/20 overflow-hidden">
