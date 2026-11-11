@@ -20,8 +20,8 @@ export async function refreshAccount() {
   return state;
 }
 export function signedIn(profile) { hint(true); loaded = true; set({ loading: false, signedIn: true, profile }); }
-export async function signOut() {
-  try { await fetch('/api/account/me', { method: 'DELETE' }); } catch {}
+export async function signOut(everywhere = false) {
+  try { await fetch('/api/account/me' + (everywhere === true ? '?everywhere=1' : ''), { method: 'DELETE' }); } catch {}
   hint(false); set({ signedIn: false, profile: null });
 }
 export async function saveAccount(details) {
@@ -37,9 +37,11 @@ let watching = false;
 function watch() {
   if (watching || typeof window === 'undefined') return;
   watching = true;
-  let last = 0;
-  const recheck = async () => {
-    if (!state.signedIn || document.visibilityState !== 'visible' || Date.now() - last < 5000) return;
+  let last = 0, active = Date.now();
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(e => window.addEventListener(e, () => { active = Date.now(); }, { passive: true }));
+  const recheck = async (timed) => {
+    if (!state.signedIn || document.visibilityState !== 'visible' || Date.now() - last < 4000) return;
+    if (timed === true && Date.now() - active > 10 * 60 * 1000) return;   // nobody using the page: check when they come back
     last = Date.now();
     const was = state.signedIn;
     const now = await refreshAccount();
@@ -47,9 +49,9 @@ function watch() {
       try { const { toast } = await import('sonner'); toast('You have been signed out of your Estate Tea account.'); } catch {}
     }
   };
-  document.addEventListener('visibilitychange', recheck);
-  window.addEventListener('focus', recheck);
-  setInterval(recheck, 60000);
+  document.addEventListener('visibilitychange', () => { active = Date.now(); recheck(); });
+  window.addEventListener('focus', () => { active = Date.now(); recheck(); });
+  setInterval(() => recheck(true), 8000);   // "NOT ME" on WhatsApp shows here within seconds, even with the page left open
 }
 
 export function useAccount() {

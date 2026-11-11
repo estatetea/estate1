@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
 import RecipeModal from "./RecipeModal";
+import AccountButton from "./AccountButton";
 import Testimonials from "./Testimonials";
 import {
   DropdownMenu,
@@ -266,6 +267,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
           <div className="flex items-center gap-1.5 sm:gap-4">
             <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>
+            <AccountButton />
             <button
               onClick={() => setLargeFont(f => !f)}
               className={`px-2 py-1 rounded-lg text-xs font-medium border transition-all touch-manipulation ${

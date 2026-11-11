@@ -29,6 +29,7 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
-  try { if (token(request)) await brew('/brew/website-account', { token: token(request), sign_out: true }); } catch {}
+  const everywhere = new URL(request.url).searchParams.get('everywhere') === '1';
+  try { if (token(request)) await brew('/brew/website-account', { token: token(request), sign_out: true, everywhere }); } catch {}
   return signedOut();
 }

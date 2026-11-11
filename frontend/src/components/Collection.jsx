@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
 import Hampers from './Hampers';
+import AccountButton from './AccountButton';
 
 const loadRazorpay = () => new Promise(res => { if (window.Razorpay) return res(true); const s = document.createElement('script'); s.src = 'https://checkout.razorpay.com/v1/checkout.js'; s.onload = () => res(true); s.onerror = () => res(false); document.body.appendChild(s); });
 const inr = n => { const v = Number(n || 0); return Number.isInteger(v) ? `₹${v.toLocaleString('en-IN')}` : `₹${v.toFixed(2)}`; };
@@ -126,7 +127,7 @@ export default function Collection({ userInfo, navigate }) {
 
 function Shell({ navigate, children }) {
   return <div className="min-h-screen bg-[#0a0a0a] text-white">
-    <header className="glass-surface sticky top-0 z-40 border-b border-white/10"><div className="max-w-6xl mx-auto px-4 py-4"><h2 className="text-2xl font-light gold-text">Estate Tea</h2></div></header>
+    <header className="glass-surface sticky top-0 z-40 border-b border-white/10"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="text-2xl font-light gold-text">Estate Tea</h2><AccountButton /></div></header>
     <main className="max-w-6xl mx-auto px-4 py-8">
       <button onClick={() => navigate('store')} className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8"><ArrowLeft className="w-5 h-5" />Back to the shop</button>
       {children}
