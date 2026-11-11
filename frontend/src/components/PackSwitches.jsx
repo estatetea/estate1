@@ -36,17 +36,6 @@ export function PackSwitches({ headers }) {
         </button>
       </div>)}
     </div>
-    {(cat?.seasonal || []).length > 0 && <div className="mt-3 border-t border-white/[.06] pt-2">
-      <p className="text-[10px] uppercase tracking-[.2em] text-gray-500">Christmas items · Brew & manual invoices only</p>
-      {cat.seasonal.map(p => <div key={p.product_id} className="flex items-center justify-between gap-3 py-3">
-        <div className="min-w-0"><p className="text-[15px] text-gray-100">{p.weight} · ₹{p.price}</p>
-          <p className={`text-[11px] ${p.enabled ? 'text-emerald-400' : 'text-amber-300'}`}>{p.enabled ? 'Brew can take orders' : 'Switched off: Brew says sold out'}</p></div>
-        <button disabled={busy === p.product_id} onClick={() => flip(p)} aria-label={`${p.enabled ? 'Switch off' : 'Switch on'} ${p.weight}`}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition ${p.enabled ? 'bg-[#d7a84b]' : 'bg-white/15'} disabled:opacity-50`}>
-          <span className={`absolute top-1 h-5 w-5 rounded-full bg-black transition-all ${p.enabled ? 'left-6' : 'left-1'}`} />
-        </button>
-      </div>)}
-    </div>}
     <p className="mt-1 text-[10px] leading-4 text-gray-600">Switching a pack off hides it from sale on the website, and Brew tells customers it's unavailable right now. You can also tell Brew "switch 500 g on".</p>
   </div>;
 }

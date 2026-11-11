@@ -42,3 +42,22 @@ export function verifyAdmin(request) {
     return false;
   }
 }
+
+// A preview pass for the owner to see the hidden collection page on the website. It only unlocks the preview
+// (not the admin APIs), lasts 6 hours, and is signed with ADMIN_PASSWORD like owner sessions.
+const PREVIEW_TTL_MS = 6 * 60 * 60 * 1000;
+
+export function issuePreviewToken() {
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret) return null;
+  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + PREVIEW_TTL_MS, nonce: crypto.randomBytes(9).toString('base64url') })).toString('base64url');
+  return `${payload}.${sign(`estate-tea-preview.${payload}`, secret)}`;
+}
+
+export function verifyPreview(request) {
+  const secret = process.env.ADMIN_PASSWORD;
+  const token = request.headers.get('x-collection-preview') || '';
+  const [payload, sig] = token.split('.');
+  if (!secret || !payload || !sig || !safeEqual(sig, sign(`estate-tea-preview.${payload}`, secret))) return false;
+  try { const { exp } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')); return Number.isFinite(exp) && exp > Date.now(); } catch { return false; }
+}
