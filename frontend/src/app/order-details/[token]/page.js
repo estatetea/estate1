@@ -67,6 +67,7 @@ export default function OrderDetailsPage() {
     const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]));
     payload.gstin = payload.gstin.toUpperCase();
     if (!payload.name || !payload.email || !payload.house || !payload.street || !payload.city || !payload.pincode) return setError('Please fill in all the required fields.');
+    if ((payload.name.match(/[A-Za-z]/g) || []).length < 3) return setError('Please enter your full name (at least 3 letters): it goes on your invoice.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return setError('Please enter a valid email address.');
     if (!/^[1-9][0-9]{5}$/.test(payload.pincode)) return setError('Please enter a valid 6-digit PIN code.');
     if (business && !payload.business_name) return setError('Please enter your business name.');
@@ -114,7 +115,7 @@ export default function OrderDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">Thank you.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} Brew will send you a quick summary to confirm, then your invoice.
+                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} Brew will confirm your order there and send your invoice.
               </p>
               <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
                 Back to WhatsApp
