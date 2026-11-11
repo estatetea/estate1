@@ -31,9 +31,30 @@ export async function saveAccount(details) {
   set({ profile: b.profile }); return b.profile;
 }
 
+// An open page keeps checking (when they come back to it, and every minute while it's on screen), so "NOT ME" on
+// WhatsApp or signing out elsewhere shows here straight away instead of only after a reload.
+let watching = false;
+function watch() {
+  if (watching || typeof window === 'undefined') return;
+  watching = true;
+  let last = 0;
+  const recheck = async () => {
+    if (!state.signedIn || document.visibilityState !== 'visible' || Date.now() - last < 5000) return;
+    last = Date.now();
+    const was = state.signedIn;
+    const now = await refreshAccount();
+    if (was && !now.signedIn) {
+      try { const { toast } = await import('sonner'); toast('You have been signed out of your Estate Tea account.'); } catch {}
+    }
+  };
+  document.addEventListener('visibilitychange', recheck);
+  window.addEventListener('focus', recheck);
+  setInterval(recheck, 60000);
+}
+
 export function useAccount() {
   const [s, setS] = useState(state);
-  useEffect(() => { subs.add(setS); if (!loaded) { loaded = true; refreshAccount(); } else setS(state); return () => subs.delete(setS); }, []);
+  useEffect(() => { subs.add(setS); watch(); if (!loaded) { loaded = true; refreshAccount(); } else setS(state); return () => subs.delete(setS); }, []);
   return s;
 }
 

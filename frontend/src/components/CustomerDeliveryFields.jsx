@@ -46,6 +46,15 @@ export default function CustomerDeliveryFields({ details, update }) {
     if (!detailsComplete(f)) setEditing(true);   // a new account: they fill the form once, then it's remembered
   }, [acct.signedIn, acct.profile]);
   if (!acct.signedIn) filled.current = false;
+  // Signed out while on this page (signed out here, or "NOT ME" on WhatsApp): their details leave the screen too.
+  const wasIn = useRef(false);
+  useEffect(() => {
+    if (acct.signedIn) { wasIn.current = true; return; }
+    if (!wasIn.current) return;
+    wasIn.current = false; setEditing(false);
+    const blank = { name: "", phone: "", email: "", house: "", street: "", landmark: "", city: "Bengaluru", pincode: "", customer_type: "home", business_name: "", gstin: "" };
+    for (const [k, v] of Object.entries(blank)) if (details[k] !== v) update(k, v);
+  }, [acct.signedIn]);
   // Signed in and the form is complete: keep it on their account straight away (a new customer "registers" just by
   // filling it in once), quietly, a moment after they stop typing.
   const lastSaved = useRef("");
