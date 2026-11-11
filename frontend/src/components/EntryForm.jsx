@@ -203,7 +203,7 @@ const EntryForm = ({ onSubmit }) => {
 
         {/* ── Section 2: Login Form ── */}
         <section
-          className="hero-bg min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 relative"
+          className="hero-bg h-screen h-[100dvh] w-full flex items-start justify-center overflow-y-auto p-4 sm:p-6 relative"
           data-testid="form-section"
         >
           {/* Top feather — fades from darkness into the form background */}
@@ -215,7 +215,7 @@ const EntryForm = ({ onSubmit }) => {
             }}
           />
           <div
-            className="rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full border border-white/10 relative z-10"
+            className="my-auto rounded-2xl p-5 sm:p-8 md:p-12 max-w-lg w-full border border-white/10 relative z-10"
             style={{
               background: 'rgba(0, 0, 0, 0.82)',
               backdropFilter: 'blur(30px)',
