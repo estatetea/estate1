@@ -46,6 +46,16 @@ export default function CustomerDeliveryFields({ details, update }) {
     if (!detailsComplete(f)) setEditing(true);   // a new account: they fill the form once, then it's remembered
   }, [acct.signedIn, acct.profile]);
   if (!acct.signedIn) filled.current = false;
+  // Signed in and the form is complete: keep it on their account straight away (a new customer "registers" just by
+  // filling it in once), quietly, a moment after they stop typing.
+  const lastSaved = useRef("");
+  useEffect(() => {
+    if (!acct.signedIn || !editing || !detailsComplete(details)) return;
+    const key = JSON.stringify(details);
+    if (key === lastSaved.current) return;
+    const t = setTimeout(() => { saveAccount(details).then(() => { lastSaved.current = key; setMsg(""); }).catch(() => {}); }, 1500);
+    return () => clearTimeout(t);
+  }, [acct.signedIn, editing, details]);
   const save = async () => {
     if (!detailsComplete(details)) { setMsg("Please fill in every detail (landmark is optional)."); return; }
     setSaving(true); setMsg("");
@@ -67,7 +77,7 @@ export default function CustomerDeliveryFields({ details, update }) {
       <p className="mt-1 mb-3 text-xs text-gray-500">Sign in with WhatsApp and your details fill in by themselves. Or just fill them in below.</p>
       <WhatsAppSignIn />
     </div>}
-    {acct.signedIn && <p className="text-xs text-gray-500">Signed in. {detailsComplete(details) ? "Change anything below, then save." : "Fill these in once and we'll remember them, here and on WhatsApp."}</p>}
+    {acct.signedIn && <p className="text-xs text-gray-500">Signed in. {detailsComplete(details) ? "Change anything below, then save." : "Fill these in once and we'll remember them, here and on WhatsApp (they're saved as you go)."}</p>}
     <Text k="name" title="Full Name" details={details} update={update} autoComplete="name"/>
     <Text k="phone" title="Phone Number (WhatsApp)" type="tel" details={details} update={update} autoComplete="tel" placeholder="98765 43210"/>
     <Text k="email" title="Email Address" type="email" details={details} update={update} autoComplete="email"/>
