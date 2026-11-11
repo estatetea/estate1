@@ -9,6 +9,7 @@ import WebsiteBrew from '@/components/WebsiteBrew';
 import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
 import Collection, { PREVIEW_KEY } from '@/components/Collection';
+import { probablySignedIn, refreshAccount } from '@/lib/useAccount';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentFailed from '@/components/PaymentFailed';
 import AdminDashboard from '@/components/AdminDashboard';
@@ -30,6 +31,16 @@ export default function App() {
     return 'home';
   });
   const [pageData, setPageData] = useState(null);
+  // Signed in with WhatsApp on this device: straight into the shop, no welcome form.
+  const [checkingAccount, setCheckingAccount] = useState(false);
+  useEffect(() => {
+    if (page !== 'home' || !probablySignedIn()) return;
+    setCheckingAccount(true);
+    const giveUp = setTimeout(() => setCheckingAccount(false), 2500);
+    refreshAccount().then(a => {
+      if (a.signedIn && a.profile) { setUserInfo(u => u || { name: (a.profile.name || a.profile.whatsapp_name || '').split(' ')[0] || 'there', place: null, signedIn: true }); setPage('store'); }
+    }).finally(() => { clearTimeout(giveUp); setCheckingAccount(false); });
+  }, []);
   // The preview pass is kept for this tab; take it out of the address bar once the page is up.
   useEffect(() => {
     if (window.location.hash.startsWith('#collection-preview=')) {
@@ -64,6 +75,7 @@ export default function App() {
   if (page === 'ai') return <><Toaster position="top-center" richColors /><AIOpsDashboard navigate={navigate} /></>;
   if (page === 'collection-preview') return <><Toaster position="top-center" richColors /><Collection userInfo={userInfo} navigate={p => navigate(p === 'store' ? 'home' : p)} /></>;
   if (showWelcome && userInfo) return <><Toaster position="top-center" richColors /><WelcomeScreen userName={userInfo.name} onComplete={handleWelcomeComplete} /></>;
+  if (!userInfo && checkingAccount) return <div className="min-h-screen bg-[#0C0B0A]" />;
   if (!userInfo && !['payment-success', 'payment-failed'].includes(page)) return <><Toaster position="top-center" richColors /><EntryForm onSubmit={handleEntrySubmit} /></>;
 
   let content;

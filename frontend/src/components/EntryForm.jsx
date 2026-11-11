@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "./ui/input";
+import WhatsAppSignIn from "./WhatsAppSignIn";
 import { Label } from "./ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -265,6 +266,11 @@ const EntryForm = ({ onSubmit }) => {
                 Enter Store
               </button>
             </form>
+            <div className="mt-5 border-t border-white/10 pt-5">
+              <p className="mb-3 text-center text-xs text-gray-400">Ordered with us before? Sign in and your details are ready at checkout.</p>
+              <WhatsAppSignIn onDone={p => onSubmit({ name: (p?.name || p?.whatsapp_name || "").split(" ")[0] || "there", place: detectedLocation ? detectedLocation.name : null,
+                latitude: detectedLocation ? detectedLocation.latitude : null, longitude: detectedLocation ? detectedLocation.longitude : null, signedIn: true })} />
+            </div>
           </div>
         </section>
       </div>
