@@ -88,7 +88,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
               ))}
             </dl>
             <div className="flex flex-wrap gap-4">
-              {order.items?.length > 0 && <button type="button" onClick={() => { if (!openInvoice(order)) toast.error('Allow pop-ups to open the invoice'); }} className="text-sm text-[#D4AF37] underline-offset-4 hover:underline" data-testid="delivery-panel-invoice">View invoice</button>}
+              {order.items?.length > 0 && !order.free_sample && <button type="button" onClick={() => { if (!openInvoice(order)) toast.error('Allow pop-ups to open the invoice'); }} className="text-sm text-[#D4AF37] underline-offset-4 hover:underline" data-testid="delivery-panel-invoice">View invoice</button>}
               {order.invoice_url && <a href={order.invoice_url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 underline-offset-4 hover:underline" data-testid="delivery-panel-invoice-link">Razorpay payment link</a>}
             </div>
           </Section>

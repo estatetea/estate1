@@ -2,7 +2,7 @@
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = v => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const SOURCE_LABELS = { website: 'Website', manual: 'Manual invoice', owner_test: 'Test invoice', brew: 'WhatsApp (Brew)', whatsapp: 'WhatsApp (Brew)' };
+export const SOURCE_LABELS = { website: 'Website', manual: 'Manual invoice', owner_test: 'Test invoice', brew: 'WhatsApp (Brew)', whatsapp: 'WhatsApp (Brew)', free_sample: 'Free sample (₹0, nothing to pay)' };
 
 export function orderLines(o) {
   const items = (o.items || []).map(i => ({ label: `Estate Tea black CTC tea powder, ${i.weight || i.product_id}`, qty: i.quantity, unit: i.unit_price, total: i.line_total ?? (i.unit_price || 0) * (i.quantity || 0) }));
