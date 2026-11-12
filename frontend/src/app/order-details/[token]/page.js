@@ -31,6 +31,9 @@ export default function OrderDetailsPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [justSent, setJustSent] = useState(false);
+  // "sample": the same form, for a free sample (no invoice); "order": for an order's invoice and delivery.
+  const [purpose, setPurpose] = useState('order');
+  const sample = purpose === 'sample';
 
   // Right after a successful send, go back to WhatsApp on its own (a short pause so "Thank you" is seen first).
   useEffect(() => {
@@ -49,6 +52,7 @@ export default function OrderDetailsPage() {
         if (cancelled) return;
         if (!r.ok) { setError(friendlyError(r.status, p)); setPageState('error'); return; }
         setPhone(p.phone || '');
+        setPurpose(p.purpose === 'sample' ? 'sample' : 'order');
         setForm(f => ({ ...f, ...Object.fromEntries(Object.entries(p).filter(([k, v]) => k in empty && v)) }));
         setPageState(p.submitted ? 'success' : 'form');
       } catch {
@@ -67,7 +71,7 @@ export default function OrderDetailsPage() {
     const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]));
     payload.gstin = payload.gstin.toUpperCase();
     if (!payload.name || !payload.email || !payload.house || !payload.street || !payload.city || !payload.pincode) return setError('Please fill in all the required fields.');
-    if ((payload.name.match(/[A-Za-z]/g) || []).length < 3) return setError('Please enter your full name (at least 3 letters): it goes on your invoice.');
+    if ((payload.name.match(/[A-Za-z]/g) || []).length < 3) return setError(sample ? 'Please enter your full name (at least 3 letters).' : 'Please enter your full name (at least 3 letters): it goes on your invoice.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return setError('Please enter a valid email address.');
     if (!/^[1-9][0-9]{5}$/.test(payload.pincode)) return setError('Please enter a valid 6-digit PIN code.');
     if (business && !payload.business_name) return setError('Please enter your business name.');
@@ -115,7 +119,7 @@ export default function OrderDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">Thank you.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} Brew will confirm your order there and send your invoice.
+                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} {sample ? 'We’ll let you know there when your free sample is on its way.' : 'Brew will confirm your order there and send your invoice.'}
               </p>
               <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
                 Back to WhatsApp
@@ -130,7 +134,7 @@ export default function OrderDetailsPage() {
                 <p className="text-xs uppercase tracking-[0.24em] text-[#D4AF37]">Estate Tea</p>
                 <h1 className="mt-3 text-3xl font-light tracking-wide sm:text-4xl">Your details</h1>
                 <p className="mx-auto mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                  For your invoice and delivery. We’ll keep them on file so you never have to enter them again.
+                  {sample ? 'Where should we send your free sample? We’ll keep these on file so you never have to enter them again.' : 'For your invoice and delivery. We’ll keep them on file so you never have to enter them again.'}
                 </p>
                 {phone && <p className="mt-4 text-xs text-white/45">For WhatsApp number <span className="text-white/80">{phone}</span></p>}
               </div>
@@ -142,7 +146,7 @@ export default function OrderDetailsPage() {
                   ))}
                 </div>
                 <Field label={business ? 'Your name' : 'Name'} required><input name="name" value={form.name} onChange={set} autoComplete="name" maxLength={80} className={input} /></Field>
-                <Field label="Email (your invoice goes here)" required><input name="email" value={form.email} onChange={set} type="email" inputMode="email" autoComplete="email" maxLength={254} className={input} /></Field>
+                <Field label={sample ? "Email" : "Email (your invoice goes here)"} required><input name="email" value={form.email} onChange={set} type="email" inputMode="email" autoComplete="email" maxLength={254} className={input} /></Field>
                 {business && <>
                   <Field label="Business name" required><input name="business_name" value={form.business_name} onChange={set} autoComplete="organization" maxLength={120} className={input} /></Field>
                   <Field label="GSTIN" required><input name="gstin" value={form.gstin} onChange={set} autoCapitalize="characters" maxLength={15} placeholder="29ABCDE1234F1Z5" className={`${input} uppercase`} /></Field>
@@ -163,7 +167,7 @@ export default function OrderDetailsPage() {
                   <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[#D4AF37]">Delivery</p>
                   Within Bangalore only. Free in PIN 560077 · ₹10 to ₹25 by distance up to 10 km · further away in Bangalore, a third-party delivery service at what it costs (we’ll confirm it before you pay). Outside Bangalore: bulk orders of 7 kg or more, plus delivery charges.
                 </div>
-                <p className="pt-1 text-center text-xs font-light leading-5 text-white/40">Used only for your Estate Tea orders and invoices.</p>
+                <p className="pt-1 text-center text-xs font-light leading-5 text-white/40">{sample ? 'Used only for your Estate Tea sample and orders.' : 'Used only for your Estate Tea orders and invoices.'}</p>
               </form>
             </>
           )}
