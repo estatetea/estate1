@@ -35,6 +35,7 @@ const details = o => [
   ['Courier', o.courier_name],
   ['Tracking', o.tracking_reference],
   ['Delivered at', o.delivered_at ? formatWhen(o.delivered_at) : null],
+  ['Paid by', o.paid_by === 'upi_qr' ? 'UPI QR code (the Razorpay invoice link was cancelled automatically, so they can\'t pay twice)' : o.paid_by === 'razorpay_link' ? 'Razorpay payment link (the UPI QR was closed automatically)' : null],
   ['Paid manually', o.manual_payment ? `${o.manual_payment.method.replace('_', ' ').toUpperCase()} · ₹${o.manual_payment.amount_received} · ref ${o.manual_payment.reference} · ${formatWhen(o.manual_payment.recorded_at)}` : null],
   ['Confirmation', o.delivery_confirmation_note],
   ['Delivery code', o.delivery_method === 'third_party_courier' ? 'Not used (delivery partner)' : null],
@@ -89,7 +90,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
             </dl>
             <div className="flex flex-wrap gap-4">
               {order.items?.length > 0 && !order.free_sample && <button type="button" onClick={() => { if (!openInvoice(order)) toast.error('Allow pop-ups to open the invoice'); }} className="text-sm text-[#D4AF37] underline-offset-4 hover:underline" data-testid="delivery-panel-invoice">View invoice</button>}
-              {order.invoice_url && <a href={order.invoice_url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 underline-offset-4 hover:underline" data-testid="delivery-panel-invoice-link">Razorpay payment link</a>}
+              {order.invoice_url && order.paid_by !== 'upi_qr' && <a href={order.invoice_url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 underline-offset-4 hover:underline" data-testid="delivery-panel-invoice-link">Razorpay payment link</a>}
             </div>
           </Section>
           {steward && (
