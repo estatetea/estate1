@@ -6,6 +6,9 @@ import { Check, Loader2 } from 'lucide-react';
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
 
+// After the form is sent, the page takes them straight back to Brew's WhatsApp chat (as the order form does).
+const BREW_CHAT_URL = 'https://wa.me/919742668951';
+
 const initialForm = {
   contact_name: '',
   phone: '',
@@ -119,6 +122,7 @@ export default function SampleDetailsPage() {
 
       if (result.status === 'received' || result.status === 'already_received') {
         setPageState('success');
+        setTimeout(() => { window.location.href = BREW_CHAT_URL; }, 1800);
       } else {
         setError('We couldn’t confirm your details. Please try again.');
       }
@@ -160,8 +164,9 @@ export default function SampleDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">You’re all set.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve received your delivery details. We’ll be in touch with an estimated delivery window.
+                We’ve received your delivery details. We’ll let you know on WhatsApp when your sample is on its way.
               </p>
+              <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">Back to WhatsApp</a>
               <div className="mt-8 h-px w-12 bg-[#D4AF37]" />
               <p className="mt-5 text-xs uppercase tracking-[0.22em] text-[#D4AF37]">Estate Tea</p>
             </div>
