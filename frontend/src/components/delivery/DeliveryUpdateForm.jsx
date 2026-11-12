@@ -11,6 +11,9 @@ import { DELIVERY_LABELS, EXCEPTION_STATUSES, nextStatuses, isPaymentVerified } 
 import { STATUS_ICONS, Field, inputClass } from './form-bits';
 import { ManualPaymentForm } from './ManualPaymentForm';
 
+// Partner deliveries (Porter) have no delivery code: nobody at the door asks for it.
+const usesCode = order => Boolean(order.has_delivery_code) && order.delivery_method !== 'third_party_courier';
+
 const draftFrom = order => ({
   targetStatus: '',
   deliveryMethod: order.delivery_method || '',
@@ -18,7 +21,7 @@ const draftFrom = order => ({
   trackingReference: order.tracking_reference || '',
   deliveryNote: '',
   // Orders with a code default to it; the customer reads it from their confirmation email.
-  confirmationType: order.delivery_confirmation_type || (order.has_delivery_code ? 'delivery_code' : 'customer_confirmation'),
+  confirmationType: order.delivery_confirmation_type || (usesCode(order) ? 'delivery_code' : 'customer_confirmation'),
   deliveryCode: '',
   confirmationNote: '',
   proofReference: '',
@@ -131,8 +134,8 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
       {draft.targetStatus === 'DELIVERED' && (
         <div className="space-y-3 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.03] p-4 animate-in fade-in" data-testid="delivery-proof-section">
           <p className="flex items-center gap-2 text-sm text-[#e6d4a2]"><CheckCircle2 className="h-4 w-4" />Delivery evidence required</p>
-          <div className={`grid gap-2 ${order.has_delivery_code ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            {[...(order.has_delivery_code ? [['delivery_code', 'Delivery code']] : []), ['customer_confirmation', 'Customer confirmed'], ['proof_of_delivery', 'Proof recorded']].map(([value, label]) => (
+          <div className={`grid gap-2 ${usesCode(order) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {[...(usesCode(order) ? [['delivery_code', 'Delivery code']] : []), ['customer_confirmation', 'Customer confirmed'], ['proof_of_delivery', 'Proof recorded']].map(([value, label]) => (
               <button key={value} type="button" onClick={() => set({ confirmationType: value })}
                 className={`h-10 rounded-lg border text-xs transition-colors ${draft.confirmationType === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}
                 data-testid={`delivery-confirmation-${value}`}>{label}</button>
@@ -180,7 +183,7 @@ export const DeliveryUpdateForm = ({ order, headers, onSaved }) => {
         {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {saving ? 'Saving…' : draft.targetStatus ? `Save · ${DELIVERY_LABELS[draft.targetStatus]}` : 'Choose a status'}
       </button>}
-      <p className="text-[11px] leading-5 text-gray-600">Owner-authenticated and audited. Customers are not notified yet — WhatsApp updates will be connected separately.</p>
+      <p className="text-[11px] leading-5 text-gray-600">Owner-authenticated and audited. Brew tells the customer when it's on the way and when it's delivered (on WhatsApp, or by email).</p>
     </div>
   );
 };

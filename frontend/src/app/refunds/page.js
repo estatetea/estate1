@@ -11,11 +11,15 @@ const CONTACT = 'brew@estatetea.in';
 const sections = [
   ['Cancelling an order', [
     'You can cancel any time before your order is dispatched. Send us a WhatsApp message or email ' + CONTACT + ' with your order number (it starts with ET-), and we will refund you in full, including any delivery charge.',
-    'Once your order has been dispatched (we send you an "on its way" message with your delivery code), it can no longer be cancelled. If something is wrong when it arrives, see below.',
+    'Once your order has been dispatched (we send you an "on its way" message), it can no longer be cancelled. If something is wrong when it arrives, see below.',
     'If you have an invoice you have not paid yet, simply do not pay it, or tell us and we will cancel it. Nothing is charged until you pay.',
   ]],
   ['Returns', [
     'Our tea is a food product. To keep every pack fresh and safe, we cannot take back opened packs or accept returns because you changed your mind.',
+  ]],
+  ['Orders sent with a delivery partner', [
+    'Within our own delivery area we deliver your order ourselves, and you share your delivery code at the door. Further away, your order travels with a delivery partner (such as Porter), who texts you a tracking link.',
+    'When the delivery partner marks your order delivered, we message you to check it arrived. If it has not reached you, please tell us within 24 hours of it being marked delivered. After that, the order is treated as received.',
   ]],
   ['Damaged, wrong or missing items', [
     'If your pack arrives damaged, you receive the wrong item, or something is missing, tell us within 48 hours of delivery. Please send a photo of the pack and its label.',

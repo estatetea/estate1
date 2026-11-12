@@ -6,6 +6,7 @@ import { StatusPill, PaymentPill } from './StatusPill';
 import { DeliveryProgress } from './DeliveryProgress';
 import { DeliveryUpdateForm } from './DeliveryUpdateForm';
 import { DeliveryHistory } from './DeliveryHistory';
+import { DeliveryProof } from './DeliveryProof';
 import { orderNumber, recipientName, isPaymentVerified, statusLabel, formatWhen, METHOD_LABELS } from '@/lib/delivery-status';
 import { openInvoice, orderLines, SOURCE_LABELS } from '@/lib/order-invoice';
 
@@ -36,6 +37,7 @@ const details = o => [
   ['Delivered at', o.delivered_at ? formatWhen(o.delivered_at) : null],
   ['Paid manually', o.manual_payment ? `${o.manual_payment.method.replace('_', ' ').toUpperCase()} · ₹${o.manual_payment.amount_received} · ref ${o.manual_payment.reference} · ${formatWhen(o.manual_payment.recorded_at)}` : null],
   ['Confirmation', o.delivery_confirmation_note],
+  ['Delivery code', o.delivery_method === 'third_party_courier' ? 'Not used (delivery partner)' : null],
   ['Proof ref', o.proof_of_delivery_reference],
 ].filter(([, v]) => v !== undefined && v !== null && v !== '');
 
@@ -68,6 +70,7 @@ export const DeliveryPanel = ({ order, headers, onClose, onSaved }) => {
               <Section title="Update status" testId="delivery-workflow-controls">
                 <DeliveryUpdateForm order={order} headers={headers} onSaved={onSaved} />
               </Section>
+              <DeliveryProof order={order} headers={headers} onSaved={onSaved} />
             </>
           ) : (
             <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.04] p-4 text-sm text-amber-100" data-testid="delivery-legacy-notice">
