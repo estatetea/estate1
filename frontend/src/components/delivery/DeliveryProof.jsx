@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Camera, Loader2, PackageCheck, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import { Camera, Loader2, PackageCheck, AlertTriangle, Clock, CheckCircle2, MessageCircle } from 'lucide-react';
 
 // Shrink a photo on the phone before it's sent: about 1280 px on the long side, JPEG, usually 100-200 KB.
 async function shrink(file) {
@@ -50,6 +50,15 @@ export function DeliveryProof({ order, headers, onSaved }) {
       toast.success('Brew is asking the customer whether it arrived'); onSaved?.(b);
     } catch (e) { toast.error(e.message); } finally { setBusy(''); }
   };
+  const askReceived = async () => {
+    setBusy('ask');
+    try {
+      const r = await fetch(`/api/admin/orders/${id}/ask-received`, { method: 'POST', headers });
+      const b = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(b.error || 'Could not send it');
+      (b.sent ? toast.success : toast.error)(b.message || 'Sent');
+    } catch (e) { toast.error(e.message); } finally { setBusy(''); }
+  };
   const check = order.receipt_check || {}, issue = order.delivery_issue || {};
   const paid = ['PAID', 'FULFILLED'].includes(String(order.status || '').toUpperCase());
   if (!paid && !photos?.length) return null;
@@ -57,6 +66,12 @@ export function DeliveryProof({ order, headers, onSaved }) {
     <h3 className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37]/70">Delivery proof</h3>
     {issue.open && <div className="flex gap-3 rounded-xl border border-red-400/30 bg-red-400/[0.06] p-3 text-sm text-red-200" data-testid="delivery-issue">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><p>The customer reported a problem {when(issue.reported_at)}{issue.note ? `: "${issue.note}"` : '.'} Photos are kept until it's sorted. Mark it delivered (with a note) once resolved.</p></div>}
+    {order.delivery_status === 'OUT_FOR_DELIVERY' && <div className="space-y-1">
+      <button type="button" onClick={askReceived} disabled={busy === 'ask'} data-testid="ask-received"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/50 bg-[#25D366]/10 px-4 py-3 text-sm text-[#7ee2a3] disabled:opacity-50">
+        {busy === 'ask' ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}Ask if received</button>
+      <p className="text-[11px] leading-4 text-gray-500">Sends the customer "Have you received your order?" with <b>Yes, I've received</b> and <b>No, not yet</b> buttons on WhatsApp (or an email if their WhatsApp chat is closed). Yes marks it delivered. You can also tell Brew on WhatsApp: "ask everyone if they've received their orders".</p>
+    </div>}
     {partner && order.delivery_status === 'OUT_FOR_DELIVERY' && !check.status && <div className="space-y-2">
       <button type="button" onClick={dropped} disabled={busy === 'drop'} data-testid="partner-dropped"
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-3 text-sm font-medium text-black disabled:opacity-50">
