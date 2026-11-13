@@ -27,7 +27,7 @@ function ItemForm({ start, onSave, onCancel, busy }) {
   };
   return <div className="mt-3 space-y-2 rounded-2xl border border-white/[.08] bg-black/30 p-3">
     <div className="grid grid-cols-2 gap-2">
-      <input className={box} value={f.name} onChange={e => set('name', e.target.value)} placeholder="Name, e.g. Plum Cake" />
+      <input className={box} value={f.name} onChange={e => set('name', e.target.value)} placeholder="Name, e.g. Christmas Classic" />
       <input className={box} value={f.size} onChange={e => set('size', e.target.value)} placeholder="Size, e.g. 500 g" />
       <input className={box} value={f.price} onChange={e => set('price', e.target.value)} inputMode="decimal" placeholder="Price ₹ (GST incl.)" />
       <select className={box} value={f.gst_rate} onChange={e => set('gst_rate', e.target.value)}>{[0, 5, 12, 18, 28].map(g => <option key={g} value={g}>GST {g}%</option>)}</select>
