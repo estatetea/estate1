@@ -19,9 +19,7 @@ export default function AccountButton() {
   }, [open]);
   const out = async everywhere => {
     setBusy(everywhere ? 'all' : 'one');
-    await signOut(everywhere);
-    setBusy(''); setOpen(false);
-    toast.success(everywhere ? 'Signed out on every device' : 'Signed out');
+    await signOut(everywhere);   // the page reloads as signed out, and says so
   };
   const p = acct.profile || {};
   const phone = String(p.phone || '').replace(/\D/g, '').slice(-10);

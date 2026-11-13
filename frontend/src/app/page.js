@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
 import Collection, { PREVIEW_KEY } from '@/components/Collection';
-import { probablySignedIn, refreshAccount, useAccount } from '@/lib/useAccount';
+import { probablySignedIn, refreshAccount, useAccount, SIGNED_OUT_NOTE } from '@/lib/useAccount';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentFailed from '@/components/PaymentFailed';
 import AdminDashboard from '@/components/AdminDashboard';
@@ -63,6 +63,10 @@ export default function App() {
     try { if (sessionStorage.getItem('et_boss_welcomed')) return; sessionStorage.setItem('et_boss_welcomed', '1'); } catch {}
     toast.success('Welcome back, boss', { description: 'Aegis is here for you: tap "Ask Aegis" at the bottom right.' });
   }, [boss]);
+  // Just signed out: the page reloaded as a visitor; say so once.
+  useEffect(() => {
+    try { const note = sessionStorage.getItem(SIGNED_OUT_NOTE); if (note) { sessionStorage.removeItem(SIGNED_OUT_NOTE); setTimeout(() => toast.success(note), 300); } } catch {}
+  }, []);
   // The account menu's owner shortcuts ("Christmas collection").
   useEffect(() => {
     const go = e => { if (e.detail) { setUserInfo(u => u || { name: 'there', place: null, signedIn: true }); navigate(e.detail); } };

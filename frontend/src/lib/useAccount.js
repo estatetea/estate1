@@ -23,6 +23,16 @@ export function signedIn(profile) { hint(true); loaded = true; set({ loading: fa
 export async function signOut(everywhere = false) {
   try { await fetch('/api/account/me' + (everywhere === true ? '?everywhere=1' : ''), { method: 'DELETE' }); } catch {}
   hint(false); set({ signedIn: false, profile: null });
+  freshStart(everywhere === true ? 'Signed out on every device' : 'Signed out');
+}
+
+// Signed out (here, on another device, or from WhatsApp): the page starts again as a visitor who isn't signed in,
+// with nothing of theirs left on screen. The note is shown once the page has reloaded.
+export const SIGNED_OUT_NOTE = 'et_signed_out_note';
+export function freshStart(note) {
+  if (typeof window === 'undefined') return;
+  try { sessionStorage.setItem(SIGNED_OUT_NOTE, note || 'Signed out'); sessionStorage.removeItem('et_boss_welcomed'); } catch {}
+  window.location.replace(window.location.pathname + window.location.search);
 }
 export async function saveAccount(details) {
   const r = await fetch('/api/account/me', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(details) });
@@ -46,7 +56,7 @@ function watch() {
     const was = state.signedIn;
     const now = await refreshAccount();
     if (was && !now.signedIn) {
-      try { const { toast } = await import('sonner'); toast('You have been signed out of your Estate Tea account.'); } catch {}
+      freshStart('You have been signed out of your Estate Tea account.');
     }
   };
   document.addEventListener('visibilitychange', () => { active = Date.now(); recheck(); });
