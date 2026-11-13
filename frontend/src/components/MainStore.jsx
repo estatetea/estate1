@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, ArrowRight, ChevronDown } from "lucide-react";
 import RecipeModal from "./RecipeModal";
 import AccountButton from "./AccountButton";
+import { useAccount } from "@/lib/useAccount";
 import Testimonials from "./Testimonials";
 import {
   DropdownMenu,
@@ -104,6 +105,7 @@ const ImageSlideshow = () => {
 };
 
 const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
+  const bossHere = !!useAccount().profile?.is_owner;
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [recipeType, setRecipeType] = useState(null);
@@ -266,7 +268,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-4">
-            <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>
+            <p className="text-xs sm:text-sm text-gray-400 hidden md:block">{bossHere ? 'Welcome back, boss' : `Welcome, ${userInfo.name}`}</p>
             <AccountButton />
             <button
               onClick={() => setLargeFont(f => !f)}

@@ -6,10 +6,12 @@ import EntryForm from '@/components/EntryForm';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import MainStore from '@/components/MainStore';
 import WebsiteBrew from '@/components/WebsiteBrew';
+import BossAegis from '@/components/BossAegis';
+import { toast } from 'sonner';
 import CartComponent from '@/components/Cart';
 import CheckoutComponent from '@/components/Checkout';
 import Collection, { PREVIEW_KEY } from '@/components/Collection';
-import { probablySignedIn, refreshAccount } from '@/lib/useAccount';
+import { probablySignedIn, refreshAccount, useAccount } from '@/lib/useAccount';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentFailed from '@/components/PaymentFailed';
 import AdminDashboard from '@/components/AdminDashboard';
@@ -53,6 +55,14 @@ export default function App() {
     setPage(path);
     window.scrollTo(0, 0);
   }, []);
+  // The boss signed in with his own WhatsApp number: "Welcome back, boss" (once per visit), and Aegis instead of Brew.
+  const acct = useAccount();
+  const boss = !!acct.profile?.is_owner;
+  useEffect(() => {
+    if (!boss) return;
+    try { if (sessionStorage.getItem('et_boss_welcomed')) return; sessionStorage.setItem('et_boss_welcomed', '1'); } catch {}
+    toast.success('Welcome back, boss', { description: 'Aegis is here for you: tap "Ask Aegis" at the bottom right.' });
+  }, [boss]);
   // The account menu's owner shortcuts ("Christmas collection").
   useEffect(() => {
     const go = e => { if (e.detail) { setUserInfo(u => u || { name: 'there', place: null, signedIn: true }); navigate(e.detail); } };
@@ -93,5 +103,5 @@ export default function App() {
     case 'payment-failed': content = <PaymentFailed data={pageData} navigate={navigate} />; break;
     default: content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />;
   }
-  return <><Toaster position="top-center" richColors />{content}{(page === 'store' || page === 'home') && <WebsiteBrew navigate={navigate} />}</>;
+  return <><Toaster position="top-center" richColors />{content}{(page === 'store' || page === 'home') && (boss ? <BossAegis /> : <WebsiteBrew navigate={navigate} />)}</>;
 }
