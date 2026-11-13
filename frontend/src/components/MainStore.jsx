@@ -251,13 +251,6 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
               <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-white/10 min-w-[160px]">
                 <DropdownMenuItem
                   className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
-                  data-testid="nav-services-hampers"
-                  onClick={() => navigate('hampers')}
-                >
-                  Christmas collection
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-gray-200 hover:text-[#D4AF37] focus:text-[#D4AF37] focus:bg-white/5 cursor-pointer"
                   data-testid="nav-wedding-favours"
                   onClick={() => toast("Wedding Favours — Coming Soon!", { description: "Custom tea hampers for your special day." })}
                 >
