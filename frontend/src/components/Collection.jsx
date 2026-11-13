@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
 import Hampers from './Hampers';
 import AccountButton from './AccountButton';
+import { useAccount } from '@/lib/useAccount';
 
 const loadRazorpay = () => new Promise(res => { if (window.Razorpay) return res(true); const s = document.createElement('script'); s.src = 'https://checkout.razorpay.com/v1/checkout.js'; s.onload = () => res(true); s.onerror = () => res(false); document.body.appendChild(s); });
 const inr = n => { const v = Number(n || 0); return Number.isInteger(v) ? `₹${v.toLocaleString('en-IN')}` : `₹${v.toFixed(2)}`; };
@@ -21,6 +22,10 @@ export default function Collection({ userInfo, navigate }) {
   const load = () => { const pass = previewPass();
     return fetch('/api/collection', { cache: 'no-store', headers: pass ? { 'x-collection-preview': pass } : {} }).then(r => r.json()).then(setShop).catch(() => setShop({ items: [] })); };
   useEffect(() => { window.scrollTo(0, 0); load(); }, []);
+  // The boss signing in (or out) with his WhatsApp number: the owner's view of the hidden collection appears (or goes).
+  const acct = useAccount(); const boss = !!acct.profile?.is_owner;
+  const first = useRef(true);
+  useEffect(() => { if (first.current) { first.current = false; return; } load(); }, [acct.signedIn, boss]);
   useEffect(() => { const pin = details.pincode || ''; if (!/^[0-9]{6}$/.test(pin)) { setDq(null); return; } let live = true;
     fetch(`/api/delivery-quote?pincode=${pin}`, { cache: 'no-store' }).then(r => r.json()).then(q => { if (live) setDq({ ...q, pin }); }).catch(() => live && setDq({ found: false, pin }));
     return () => { live = false; }; }, [details.pincode]);

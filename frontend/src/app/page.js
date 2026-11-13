@@ -53,6 +53,11 @@ export default function App() {
     setPage(path);
     window.scrollTo(0, 0);
   }, []);
+  // The account menu's owner shortcuts ("Christmas collection").
+  useEffect(() => {
+    const go = e => { if (e.detail) { setUserInfo(u => u || { name: 'there', place: null, signedIn: true }); navigate(e.detail); } };
+    window.addEventListener('estate:navigate', go); return () => window.removeEventListener('estate:navigate', go);
+  }, [navigate]);
 
   const handleEntrySubmit = async (data) => {
     try {

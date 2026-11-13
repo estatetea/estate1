@@ -14,3 +14,11 @@ export async function brew(path, body) {
 }
 
 export const cookieOptions = maxAge => ({ httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge });
+
+// The boss signed in on the website with his own WhatsApp number (Brew knows the owner numbers): the owner's view,
+// e.g. the hidden collection before it's public. Checked on the server from the httpOnly session cookie, never trusted from the browser.
+export async function ownerFromSession(request) {
+  const token = request.cookies.get(SESSION_COOKIE)?.value || '';
+  if (!token) return false;
+  try { const r = await brew('/brew/website-account', { token }); return !!(r.ok && r.data?.profile?.is_owner); } catch { return false; }
+}

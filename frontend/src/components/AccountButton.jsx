@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { UserRound, LogOut, MonitorSmartphone, X } from 'lucide-react';
+import { UserRound, LogOut, MonitorSmartphone, X, Crown, Gift, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import WhatsAppSignIn from './WhatsAppSignIn';
 import { useAccount, signOut } from '@/lib/useAccount';
@@ -43,6 +43,14 @@ export default function AccountButton() {
         <p className="mt-2 text-white">{name || 'Signed in'}</p>
         {phone && <p className="text-xs text-gray-400">WhatsApp +91 {phone.slice(0, 5)} {phone.slice(5)}</p>}
         {p.address && <p className="mt-2 text-xs leading-5 text-gray-400">Delivering to: {p.address}</p>}
+        {p.is_owner && <div className="mt-3 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] p-3" data-testid="owner-panel">
+          <p className="flex items-center gap-1.5 text-xs text-[#E9CF8A]"><Crown className="w-3.5 h-3.5" />Signed in as the owner</p>
+          <p className="mt-1 text-[11px] leading-4 text-gray-400">You see the website as the boss: the Christmas collection shows even before it's public.</p>
+          <button type="button" data-testid="owner-collection" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent('estate:navigate', { detail: 'collection' })); }}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-sm text-black"><Gift className="w-4 h-4" />Christmas collection</button>
+          <button type="button" data-testid="owner-webapp" onClick={() => { window.location.assign('/#ai'); window.location.reload(); }}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#D4AF37]/30 px-4 py-2 text-sm text-[#E9CF8A]"><LayoutDashboard className="w-4 h-4" />Owner web app</button>
+        </div>}
         <div className="mt-4 space-y-2">
           <button type="button" onClick={() => out(false)} disabled={!!busy} data-testid="sign-out"
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm text-gray-200 hover:border-[#D4AF37]/40 disabled:opacity-50">
