@@ -14,6 +14,8 @@ export default function BossAegis() {
     fetch('/api/boss/aegis', { cache: 'no-store' }).then(r => r.json()).then(b => setMsgs(b.messages || [])).catch(() => setMsgs([]));
   }, [open, msgs]);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [msgs, busy, open]);
+  // "Ask Aegis" on the boss's welcome opens this chat.
+  useEffect(() => { const o = () => setOpen(true); window.addEventListener('estate:open-aegis', o); return () => window.removeEventListener('estate:open-aegis', o); }, []);
   const send = async q => {
     const message = String(q ?? text).trim();
     if (!message || busy) return;

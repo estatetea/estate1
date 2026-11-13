@@ -5,6 +5,7 @@ import { ShoppingCart, Thermometer, Plus, Minus, Flame, Snowflake, BookOpen, Arr
 import RecipeModal from "./RecipeModal";
 import AccountButton from "./AccountButton";
 import { useAccount } from "@/lib/useAccount";
+import BossWelcome from "./BossWelcome";
 import Testimonials from "./Testimonials";
 import {
   DropdownMenu,
@@ -261,7 +262,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-4">
-            <p className="text-xs sm:text-sm text-gray-400 hidden md:block">{bossHere ? 'Welcome back, boss' : `Welcome, ${userInfo.name}`}</p>
+            {!bossHere && <p className="text-xs sm:text-sm text-gray-400 hidden md:block">Welcome, {userInfo.name}</p>}
             <AccountButton />
             <button
               onClick={() => setLargeFont(f => !f)}
@@ -292,6 +293,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">
+
+        {bossHere && <BossWelcome navigate={navigate} />}
 
         <section id="discover-tea" aria-label="Discover Estate Tea" className="scroll-mt-24">
         {/* Image Slideshow */}
