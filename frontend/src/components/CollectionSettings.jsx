@@ -13,7 +13,7 @@ function Switch({ on, onClick, busy, label }) {
   </button>;
 }
 
-const blank = { name: '', size: '', price: '', gst_rate: 18, quantity: '', uncounted: false, description: '', image: '' };
+const blank = { name: '', size: '', price: '', gst_rate: 18, quantity: '', uncounted: false, description: '', image: '', free_delivery_until: '' };
 
 function ItemForm({ start, onSave, onCancel, busy }) {
   const [f, setF] = useState(start);
@@ -22,7 +22,7 @@ function ItemForm({ start, onSave, onCancel, busy }) {
     if (!String(f.name).trim()) return toast.error('Give the item a name');
     if (!(Number(f.price) > 0)) return toast.error('Enter the price in rupees, GST included');
     if (!f.uncounted && (f.quantity === '' || !(Number(f.quantity) >= 0))) return toast.error('Enter how many are available, or tick "Not counted yet"');
-    onSave({ name: f.name.trim(), size: f.size.trim(), price: Number(f.price), gst_rate: Number(f.gst_rate), description: f.description.trim(), image: f.image.trim(),
+    onSave({ name: f.name.trim(), size: f.size.trim(), price: Number(f.price), gst_rate: Number(f.gst_rate), description: f.description.trim(), image: f.image.trim(), free_delivery_until: f.free_delivery_until || '',
       ...(f.uncounted ? { uncounted: true } : { quantity: Math.floor(Number(f.quantity)) }) });
   };
   return <div className="mt-3 space-y-2 rounded-2xl border border-white/[.08] bg-black/30 p-3">
@@ -36,6 +36,8 @@ function ItemForm({ start, onSave, onCancel, busy }) {
     </div>
     <textarea className={box} rows={2} value={f.description} onChange={e => set('description', e.target.value)} placeholder="Description for the website" />
     <input className={box} value={f.image} onChange={e => set('image', e.target.value)} placeholder="Image path, e.g. /images/collection/plum-cake.png" />
+    <label className="block text-xs text-gray-400">Free delivery on this item until (leave empty for none)
+      <input type="date" className={`${box} mt-1`} value={f.free_delivery_until || ''} onChange={e => set('free_delivery_until', e.target.value)} /></label>
     <div className="flex gap-2"><button className={btn} disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button><button className={ghost} onClick={onCancel}>Cancel</button></div>
   </div>;
 }
@@ -112,7 +114,7 @@ export function CollectionSettings({ headers }) {
             <div className="min-w-0"><p className="text-[15px] text-gray-100">{it.name}{it.size ? `, ${it.size}` : ''} · ₹{it.price}</p>
               <p className={`text-[11px] ${!it.active ? 'text-gray-500' : it.available > 0 ? 'text-emerald-400' : 'text-amber-300'}`}>
                 {!it.active ? 'Switched off' : !it.counted ? 'On sale · not counted yet (no limit)' : it.available > 0 ? `On sale · ${it.available} left` : 'Sold out'}
-                {it.held > 0 ? ` · ${it.held} held by unpaid orders` : ''}{it.sold > 0 ? ` · ${it.sold} sold` : ''}</p></div>
+                {it.held > 0 ? ` · ${it.held} held by unpaid orders` : ''}{it.free_delivery_until && it.free_delivery_until >= new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10) ? ` · free delivery until ${new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}{it.sold > 0 ? ` · ${it.sold} sold` : ''}</p></div>
             <Switch on={!!it.active} busy={busy === it.product_id} label={`${it.active ? 'Switch off' : 'Switch on'} ${it.name}`}
               onClick={() => put(it.product_id, { product_id: it.product_id, item: { active: !it.active } }, `${it.name} ${it.active ? 'switched off' : 'on sale'}`)} />
           </div>
@@ -123,7 +125,7 @@ export function CollectionSettings({ headers }) {
             <button className="text-xs text-[#d7a84b]" onClick={() => setEditing(it.product_id)}>Edit</button>
           </div>
           {editing === it.product_id && <ItemForm busy={busy === it.product_id}
-            start={{ ...blank, name: it.name, size: it.size || '', price: it.price, gst_rate: Math.round((it.gst_rate ?? 0.18) * 100), quantity: it.quantity ?? '', uncounted: !it.counted, description: it.description || '', image: it.image || '' }}
+            start={{ ...blank, name: it.name, size: it.size || '', price: it.price, gst_rate: Math.round((it.gst_rate ?? 0.18) * 100), quantity: it.quantity ?? '', uncounted: !it.counted, description: it.description || '', image: it.image || '', free_delivery_until: it.free_delivery_until || '' }}
             onCancel={() => setEditing(null)} onSave={item => put(it.product_id, { product_id: it.product_id, item }, `${item.name} saved`).then(ok => ok && setEditing(null))} />}
         </div>)}
       </div>

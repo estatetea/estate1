@@ -42,10 +42,12 @@ export default function Collection({ userInfo, navigate }) {
   const goods = lines.reduce((s, l) => s + l.price * l.quantity, 0);
   const pinOk = /^[0-9]{6}$/.test(details.pincode || '');
   const beyond = !!(dq && dq.found && !dq.local) || !!(dq && !dq.found && pinOk);
-  const fee = shop.free_delivery ? 0 : (!pinOk || !dq || !dq.found || !dq.local) ? null : Number(dq.own_delivery_fee) || 0;
+  // Free delivery: the whole collection's offer, or every item in the cart has its own (e.g. Christmas Spirit until 16 Nov).
+  const freeDelivery = shop.free_delivery || (lines.length > 0 && lines.every(l => l.free_delivery_until));
+  const fee = freeDelivery ? 0 : (!pinOk || !dq || !dq.found || !dq.local) ? null : Number(dq.own_delivery_fee) || 0;
   const feeGst = fee ? Math.round(fee * 0.18 * 100) / 100 : 0;
   const total = goods + (fee || 0) + feeGst;
-  const valid = lines.length > 0 && detailsComplete(details) && pinOk && !beyond && (shop.free_delivery || fee !== null);
+  const valid = lines.length > 0 && detailsComplete(details) && pinOk && !beyond && (freeDelivery || fee !== null);
 
   const pay = async () => {
     if (paying || !valid) return; setPaying(true); setError(null);
@@ -92,6 +94,7 @@ export default function Collection({ userInfo, navigate }) {
               <h2 className="text-lg text-gray-100">{it.name}</h2>
               {it.size && <p className="text-xs text-gray-500">{it.size}</p>}
               {it.description && <p className="mt-2 text-sm leading-relaxed text-gray-400">{it.description}</p>}
+              {!shop.free_delivery && it.free_delivery_until && <p className="mt-2 text-xs text-[#f0d58b]">Free delivery until {new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>}
               <div className="mt-auto pt-4 flex items-end justify-between gap-3">
                 <div><p className="text-xl gold-text">{inr(it.price)}</p><p className="text-[11px] text-gray-500">GST included</p></div>
                 {it.sold_out ? <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400">Sold out</span>
@@ -116,7 +119,7 @@ export default function Collection({ userInfo, navigate }) {
         {lines.map(l => <div key={l.product_id} className="flex justify-between gap-3 text-sm py-2 border-b border-white/10"><span className="text-gray-400">{l.name}{l.size ? `, ${l.size}` : ''} × {l.quantity}</span><span>{inr(l.price * l.quantity)}</span></div>)}
         {lines.length > 0 && <>
           <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">Delivery{feeGst ? ' (+ GST)' : ''}</span>
-            <span>{shop.free_delivery ? 'Free' : beyond ? 'Message us' : fee === null ? (pinOk ? 'Checking…' : 'Enter your PIN') : fee === 0 ? 'Free' : inr(fee + feeGst)}</span></div>
+            <span>{freeDelivery ? 'Free' : beyond ? 'Message us' : fee === null ? (pinOk ? 'Checking…' : 'Enter your PIN') : fee === 0 ? 'Free' : inr(fee + feeGst)}</span></div>
           <div className="flex justify-between mt-4 text-xl"><span>Total</span><span className="gold-text">{inr(total)}</span></div>
           <p className="mt-1 text-xs text-gray-500">GST included.</p>
           {beyond && <p className="mt-3 text-xs text-amber-200">This address is beyond our own delivery area. Please message us on WhatsApp at +91 97426 68951 and we'll arrange it.</p>}
