@@ -52,7 +52,7 @@ export default function OrderDetailsPage() {
         if (cancelled) return;
         if (!r.ok) { setError(friendlyError(r.status, p)); setPageState('error'); return; }
         setPhone(p.phone || '');
-        setPurpose(p.purpose === 'sample' ? 'sample' : 'order');
+        setPurpose(p.purpose === 'sample' || p.purpose === 'friend' ? p.purpose : 'order');
         setForm(f => ({ ...f, ...Object.fromEntries(Object.entries(p).filter(([k, v]) => k in empty && v)) }));
         setPageState(p.submitted ? 'success' : 'form');
       } catch {
@@ -119,7 +119,7 @@ export default function OrderDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">Thank you.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} {sample ? 'We’ll let you know there when your free sample is on its way.' : 'Brew will confirm your order there and send your invoice.'}
+                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} {sample ? 'We’ll let you know there when your free sample is on its way.' : purpose === 'friend' ? 'They’re ready for whenever you’d like some tea: just message Brew.' : 'Brew will confirm your order there and send your invoice.'}
               </p>
               <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
                 Back to WhatsApp
@@ -134,7 +134,7 @@ export default function OrderDetailsPage() {
                 <p className="text-xs uppercase tracking-[0.24em] text-[#D4AF37]">Estate Tea</p>
                 <h1 className="mt-3 text-3xl font-light tracking-wide sm:text-4xl">Your details</h1>
                 <p className="mx-auto mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                  {sample ? 'Where should we send your free sample? We’ll keep these on file so you never have to enter them again.' : 'For your invoice and delivery. We’ll keep them on file so you never have to enter them again.'}
+                  {sample ? 'Where should we send your free sample? We’ll keep these on file so you never have to enter them again.' : purpose === 'friend' ? 'For your tea deliveries and invoices. We’ll keep them on file so you never have to enter them again.' : 'For your invoice and delivery. We’ll keep them on file so you never have to enter them again.'}
                 </p>
                 {phone && <p className="mt-4 text-xs text-white/45">For WhatsApp number <span className="text-white/80">{phone}</span></p>}
               </div>
