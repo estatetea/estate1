@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" fill="none" stroke="#D4AF37" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a plum cake loaf with one slice cut -->
+  <ellipse cx="160" cy="305" rx="130" ry="16" stroke-opacity=".25"/>
+  <path d="M40 285V200q0-28 30-34l130-14q30 0 30 30v103z"/>
+  <path d="M40 200q0-28 30-34l130-14q30 0 30 30" stroke-opacity=".5" transform="translate(0 10)"/>
+  <path d="M230 182l20 3q20 6 20 28v72h-40" />
+  <g stroke-width="5">
+    <path d="M70 230l5 3M100 255l4-4M130 220l3 5M160 248l5 1M190 215l-4 4M85 270l4 1M205 262l3-4M115 240l1 0M175 268l4 2"/>
+    <path d="M244 225l4 3M256 250l3-4M246 268l4 1"/>
+  </g>
+  <path d="M66 70l5-12 5 12 12 5-12 5-5 12-5-12-12-5z" stroke-width="2" stroke-opacity=".7"/>
+  <path d="M262 92l4-9 4 9 9 4-9 4-4 9-4-9-9-4z" stroke-width="2" stroke-opacity=".6"/>
+</svg>
