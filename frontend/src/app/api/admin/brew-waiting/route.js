@@ -11,7 +11,7 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const id = String(body.relationship_id || '');
   if (!/^[a-f0-9]{24}$/i.test(id)) return NextResponse.json({ error: 'Missing customer reference' }, { status: 400 });
-  if (!['reply', 'done'].includes(body.action)) return NextResponse.json({ error: 'Choose reply or done' }, { status: 400 });
+  if (!['reply', 'done', 'sample_yes', 'sample_later', 'sample_no'].includes(body.action)) return NextResponse.json({ error: 'Choose reply or done' }, { status: 400 });
   try {
     const r = await fetch(`${BREW_URL}/brew/relationships/${id}/waiting`, {
       method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'x-owner-key': OWNER_KEY },
