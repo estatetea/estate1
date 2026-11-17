@@ -1,0 +1,178 @@
+// A small, dependency-free PDF writer for Aegis's reports (A4, Helvetica, text and lists). Phones can't print the HTML
+// report from the owner app (pop-ups and printing are blocked in the home-screen app), so the server builds a real PDF
+// file that downloads or shares like any other document.
+
+const W = 595.28, H = 841.89, M = 46;
+// Helvetica character widths (per 1000 em) for ASCII 32..126, from the standard AFM metrics.
+const HW = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+  1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+  333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+
+// Text in the fonts' own encoding (WinAnsi): the rupee sign and characters outside it are written out or left out.
+export function clean(v) {
+  return String(v ?? '')
+    .replace(/₹\s?/g, 'Rs ').replace(/[–—]/g, '-').replace(/…/g, '...').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+    .replace(/→/g, '->').replace(/[•●]/g, '\u0095').replace(/ /g, ' ')
+    .replace(/[^ -~\u0095 -ÿ\n]/g, '').replace(/[ \t]+/g, ' ');
+}
+
+const width = (s, size, bold) => {
+  let w = 0;
+  for (const ch of s) { const c = ch.charCodeAt(0); w += (c >= 32 && c <= 126 ? HW[c - 32] : 556) * (bold ? 1.06 : 1); }
+  return (w * size) / 1000;
+};
+
+function wrap(text, size, bold, max) {
+  const out = [];
+  for (const para of clean(text).split('\n')) {
+    let line = '';
+    for (const word of para.split(' ')) {
+      const next = line ? line + ' ' + word : word;
+      if (width(next, size, bold) <= max || !line) {
+        if (width(next, size, bold) > max && !line) {   // one very long word: cut it
+          let part = '';
+          for (const ch of word) { if (width(part + ch, size, bold) > max) { out.push(part); part = ''; } part += ch; }
+          line = part;
+        } else line = next;
+      } else { out.push(line); line = word; }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+const esc = (s) => s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+
+export class PdfDoc {
+  constructor() { this.pages = []; this.newPage(); }
+  newPage() { this.ops = []; this.pages.push(this.ops); this.y = H - M; }
+  need(h) { if (this.y - h < M + 14) this.newPage(); }
+  text(s, x, y, size = 10, bold = false, color = [0.1, 0.1, 0.1]) {
+    this.ops.push(`${color.join(' ')} rg BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${esc(s)}) Tj ET`);
+  }
+  line(x1, y1, x2, y2, color = [0.72, 0.54, 0.2], w = 1) { this.ops.push(`${color.join(' ')} RG ${w} w ${x1} ${y1} m ${x2} ${y2} l S`); }
+  para(s, { size = 10, bold = false, color, indent = 0, gap = 4 } = {}) {
+    if (s == null || s === '') return;
+    const lh = size * 1.35;
+    for (const l of wrap(s, size, bold, W - 2 * M - indent)) { this.need(lh); this.y -= lh; this.text(l, M + indent, this.y, size, bold, color); }
+    this.y -= gap;
+  }
+  title(s, sub) {
+    this.text('ESTATE TEA · AEGIS', M, this.y - 10, 8, true, [0.6, 0.45, 0.17]); this.y -= 18;
+    this.para(s, { size: 18, bold: true, gap: 2 });
+    if (sub) this.para(sub, { size: 9, color: [0.4, 0.4, 0.4], gap: 6 });
+    this.line(M, this.y, W - M, this.y, undefined, 2); this.y -= 12;
+  }
+  heading(s) { this.need(40); this.y -= 8; this.para(s, { size: 12.5, bold: true, color: [0.43, 0.33, 0.13], gap: 3 }); }
+  bullets(items, empty = 'None.') {
+    const list = (items || []).filter((x) => x != null && x !== '');
+    if (!list.length) { this.para(empty, { size: 9.5, color: [0.45, 0.45, 0.45] }); return; }
+    for (const it of list) {
+      const lines = wrap(it, 9.5, false, W - 2 * M - 14);
+      lines.forEach((l, i) => { this.need(13); this.y -= 13; if (!i) this.text('\u0095', M + 2, this.y, 9.5); this.text(l, M + 14, this.y, 9.5); });
+    }
+    this.y -= 4;
+  }
+  boxes(pairs) {   // a row of number boxes
+    const n = pairs.length, gap = 8, bw = (W - 2 * M - gap * (n - 1)) / n;
+    this.need(46); this.y -= 44;
+    pairs.forEach(([label, value], i) => {
+      const x = M + i * (bw + gap);
+      this.ops.push(`0.97 0.95 0.9 rg ${x.toFixed(2)} ${this.y.toFixed(2)} ${bw.toFixed(2)} 40 re f`);
+      this.text(clean(label).toUpperCase().slice(0, 22), x + 7, this.y + 27, 7, true, [0.5, 0.4, 0.2]);
+      this.text(clean(value).slice(0, 18), x + 7, this.y + 9, 13, true);
+    });
+    this.y -= 8;
+  }
+  output() {
+    const objs = [];
+    const add = (s) => { objs.push(s); return objs.length; };
+    const catalog = add(''), pagesObj = add('');
+    const f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    const f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const kids = [];
+    this.pages.forEach((ops, i) => {
+      const footer = `0.5 0.5 0.5 rg BT /F1 7.5 Tf ${M} 24 Td (Estate Tea - generated by Aegis) Tj ET 0.5 0.5 0.5 rg BT /F1 7.5 Tf ${W - M - 40} 24 Td (Page ${i + 1} of ${this.pages.length}) Tj ET`;
+      const stream = ops.join('\n') + '\n' + footer;
+      const content = add(`<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream`);
+      kids.push(add(`<< /Type /Page /Parent ${pagesObj} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${content} 0 R >>`));
+    });
+    objs[catalog - 1] = `<< /Type /Catalog /Pages ${pagesObj} 0 R >>`;
+    objs[pagesObj - 1] = `<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(' ')}] /Count ${kids.length} >>`;
+    let out = '%PDF-1.4\n%âãÏÓ\n';
+    const offsets = [];
+    objs.forEach((o, i) => { offsets.push(Buffer.byteLength(out, 'latin1')); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = Buffer.byteLength(out, 'latin1');
+    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+    out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return Buffer.from(out, 'latin1');
+  }
+}
+
+const rs = (v) => 'Rs ' + Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+const when = (v) => { try { return v ? new Date(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''; } catch { return ''; } };
+
+// The PDF for one Aegis report (the end-of-day / midday report, or a sales report).
+export function reportPdf(report) {
+  const d = new PdfDoc();
+  const b = report.owner_brief || {};
+  if (report.type === 'weekly_sales') {
+    const w = report.weekly_sales || {}, s = w.sales || {};
+    d.title(b.headline || 'Estate Tea - sales report', `Made ${when(report.created_at)}`);
+    d.para(b.plain_summary, { size: 10.5 });
+    d.boxes([['Sales (paid)', rs(s.revenue)], ['Paid orders', s.paid_orders ?? 0], ['Payments in', rs((w.payments_in || {}).total)], ['Not paid yet', `${(w.unpaid || []).length} / ${rs(w.unpaid_total)}`]]);
+    const trend = s.change_pct == null ? '' : ` (${s.change_pct >= 0 ? 'up' : 'down'} ${Math.abs(s.change_pct)}% on the period before, ${rs(s.previous_week_revenue)})`;
+    d.heading('Sales' + trend);
+    d.bullets([...Object.entries(s.by_channel || {}).map(([k, v]) => `${k}: ${v.orders} order${v.orders === 1 ? '' : 's'}, ${rs(v.revenue)}`), `Tea sold: ${s.quantity_kg ?? 0} kg`]);
+    d.heading('What sold');
+    d.bullets(Object.entries(s.packs || {}).map(([k, v]) => `${k}: ${v}`));
+    d.heading('Not paid yet');
+    d.bullets((w.unpaid || []).map((u) => `${u.number} · ${u.name}${u.phone || u.email ? ` (${u.phone || u.email})` : ''} · ${u.items || ''} · ${rs(u.amount)} · placed ${u.placed || '?'} · waiting ${u.days_waiting ?? '?'} days${u.this_week === false ? ' · from earlier' : ''}`), 'Every invoice has been paid.');
+    d.heading('Paid');
+    d.bullets((w.paid || []).map((r) => `${r.number} · ${r.name} · ${r.items || ''} · ${rs(r.amount)} · ${r.channel || ''}${r.paid_on ? ` · paid ${r.paid_on}` : ''}`), 'No paid orders in this period.');
+    if ((w.payments_in?.from_earlier_orders || []).length) {
+      d.heading('Also paid in this period (orders placed earlier)');
+      d.bullets(w.payments_in.from_earlier_orders.map((r) => `${r.number} · ${r.name} · ${rs(r.amount)} · placed ${r.placed}${r.paid_on ? ` · paid ${r.paid_on}` : ''}`));
+    }
+    d.heading('Cancelled');
+    d.bullets((w.cancelled || []).map((r) => `${r.number} · ${r.name} · ${rs(r.amount)} · placed ${r.placed}`));
+    d.heading('Top customers');
+    d.bullets((w.top_customers || []).map((t) => `${t.name}: ${rs(t.spent)}`), 'No paid orders in this period.');
+    d.para('Test orders, practice orders, free samples and cancelled orders are never counted.', { size: 8, color: [0.45, 0.45, 0.45] });
+    return d.output();
+  }
+  const n = b.numbers || {}, snap = report.snapshot || {};
+  d.title(b.headline || 'Estate Tea - Aegis report', `${report.type === 'end_of_day' ? 'End of day' : 'Midday update'} · ${when(report.created_at)}`);
+  d.para(b.plain_summary, { size: 10.5 });
+  if (b.aegis_independent_take) d.para(b.aegis_independent_take, { size: 10, color: [0.5, 0.38, 0.12] });
+  if (n.paid_revenue_today != null) d.boxes([['Paid today', rs(n.paid_revenue_today)], ['Paid orders', n.paid_orders_today ?? 0], ['Not paid yet', n.unpaid_count ?? 0], ['Unpaid', rs(n.unpaid_total)]]);
+  d.boxes([['Approvals', n.pending_approvals ?? report.summary?.pending_owner_approvals ?? 0], ['Open issues', n.open_issues ?? report.summary?.open_incidents ?? 0], ['Samples', n.sample_requests ?? 0], ['Orders today', n.order_requests ?? 0]]);
+  if (b.paid_today || b.unpaid) {
+    d.heading('Paid today');
+    d.bullets((b.paid_today || []).map((r) => `${r.number} · ${r.customer || 'Customer'} · ${rs(r.amount)}`), 'No paid sales today.');
+    d.heading('Not paid yet');
+    d.bullets((b.unpaid || []).map((r) => `${r.number} · ${r.customer || 'Customer'}${r.phone ? ` (${r.phone})` : ''} · ${rs(r.amount)}${r.earlier ? ' · from an earlier day' : ''}`), 'Every invoice is paid.');
+  } else if (b.sales_today) {
+    d.heading('Sales today'); d.para(b.sales_today);
+  }
+  d.heading('What needs you');
+  d.bullets(b.what_needs_you || [], 'Nothing needs your immediate attention.');
+  const sections = b.agent_sections || [];
+  if (sections.length) {
+    d.heading('The team today');
+    for (const a of sections) {
+      d.para(`${a.agent} - ${a.completed_count ?? 0} completed · ${a.activity_count ?? 0} activities`, { size: 10, bold: true, gap: 1 });
+      d.para(`Focus: ${a.focus || 'No active task'}`, { size: 9, color: [0.35, 0.35, 0.35], gap: 1 });
+      d.bullets((a.work || []).slice(0, 3).map((x) => `${x.summary || 'Activity'}${x.status ? ` (${x.status})` : ''}`), 'No recorded work.');
+    }
+  }
+  d.heading('Problems and recoveries');
+  d.bullets(b.problems_and_recoveries || []);
+  d.heading('Tomorrow');
+  d.bullets(b.tomorrow_priorities || []);
+  if ((report.approvals?.items || snap.approvals?.items || []).length) {
+    d.heading('Waiting for your approval');
+    d.bullets((report.approvals?.items || snap.approvals?.items).slice(0, 20).map((a) => a.summary || a.title || a.kind || 'Approval'));
+  }
+  return d.output();
+}
