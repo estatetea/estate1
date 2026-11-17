@@ -113,11 +113,13 @@ export function CollectionSettings({ headers }) {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0"><p className="text-[15px] text-gray-100">{it.name}{it.size ? `, ${it.size}` : ''} · ₹{it.price}</p>
               <p className={`text-[11px] ${!it.active ? 'text-gray-500' : it.available > 0 ? 'text-emerald-400' : 'text-amber-300'}`}>
-                {!it.active ? 'Switched off' : !it.counted ? 'On sale · not counted yet (no limit)' : it.available > 0 ? `On sale · ${it.available} left` : 'Sold out'}
+                {!it.active ? 'Switched off' : it.coming_soon ? 'Coming soon: shown on the website, not orderable yet' : !it.counted ? 'On sale · not counted yet (no limit)' : it.available > 0 ? `On sale · ${it.available} left` : 'Sold out'}
                 {it.held > 0 ? ` · ${it.held} held by unpaid orders` : ''}{it.free_delivery_until && it.free_delivery_until >= new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10) ? ` · free delivery until ${new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}{it.sold > 0 ? ` · ${it.sold} sold` : ''}</p></div>
             <Switch on={!!it.active} busy={busy === it.product_id} label={`${it.active ? 'Switch off' : 'Switch on'} ${it.name}`}
               onClick={() => put(it.product_id, { product_id: it.product_id, item: { active: !it.active } }, `${it.name} ${it.active ? 'switched off' : 'on sale'}`)} />
           </div>
+          {it.coming_soon && it.active && <button onClick={() => put(it.product_id, { product_id: it.product_id, item: { coming_soon: false } }, `${it.name} is now on sale`)}
+            className="mt-2 rounded-lg border border-emerald-400/30 bg-emerald-400/[.06] px-3 py-1.5 text-xs text-emerald-300">Open {it.name} for orders</button>}
           <div className="mt-2 flex items-center gap-2">
             <input className={`${box} max-w-[9rem]`} inputMode="numeric" placeholder={it.counted ? `Available: ${it.quantity}` : 'How many?'}
               value={counts[it.product_id] ?? ''} onChange={e => setCounts(c => ({ ...c, [it.product_id]: e.target.value }))} />

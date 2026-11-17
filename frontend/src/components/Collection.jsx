@@ -97,7 +97,8 @@ export default function Collection({ userInfo, navigate }) {
               {!shop.free_delivery && it.free_delivery_until && <p className="mt-2 text-xs text-[#f0d58b]">Free delivery until {new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>}
               <div className="mt-auto pt-4 flex items-end justify-between gap-3">
                 <div><p className="text-xl gold-text">{inr(it.price)}</p><p className="text-[11px] text-gray-500">GST included</p></div>
-                {it.sold_out ? <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400">Sold out</span>
+                {it.coming_soon ? <span className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] px-3 py-2 text-xs text-[#f0d58b]">Coming soon</span>
+                  : it.sold_out ? <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400">Sold out</span>
                   : qty(it.product_id) === 0 ? <button onClick={() => setQty(it, 1)} className="rounded-lg bg-[#D4AF37] px-4 py-2 text-sm text-black">Add</button>
                   : <div className="flex items-center gap-2" aria-label={`How many ${it.name}`}>
                       <button onClick={() => setQty(it, qty(it.product_id) - 1)} className="h-9 w-9 rounded-lg border border-white/15 flex items-center justify-center" aria-label="One less"><Minus className="w-4 h-4" /></button>
@@ -105,7 +106,7 @@ export default function Collection({ userInfo, navigate }) {
                       <button onClick={() => setQty(it, qty(it.product_id) + 1)} disabled={qty(it.product_id) >= it.available} className="h-9 w-9 rounded-lg border border-white/15 flex items-center justify-center disabled:opacity-30" aria-label="One more"><Plus className="w-4 h-4" /></button>
                     </div>}
               </div>
-              {!it.sold_out && it.few_left && <p className="mt-2 text-xs text-amber-300">Only {it.available} left</p>}
+              {!it.sold_out && !it.coming_soon && it.few_left && <p className="mt-2 text-xs text-amber-300">Only {it.available} left</p>}
               {!it.sold_out && qty(it.product_id) > 0 && qty(it.product_id) >= it.available && it.available < 999 && <p className="mt-2 text-xs text-amber-300">That's all we have left right now.</p>}
             </div>
           </div>)}
