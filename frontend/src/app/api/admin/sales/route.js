@@ -32,7 +32,9 @@ export async function GET(request) {
     for (const o of rows) {
       if (String(o.source || '').toLowerCase() === 'owner_test') continue; // ₹1 live payment tests are not sales
       const source = String(o.source || '').toLowerCase();
-      const channel = source === 'website' ? 'website' : source === 'manual' && !rules.manual_as_agent_sales ? 'manual' : 'ai_sales';
+      // Brew's WhatsApp orders go through the invoice desk (source "manual") but are marked order_channel "whatsapp": agent sales.
+      const viaBrew = String(o.order_channel || o.channel || '').toLowerCase() === 'whatsapp';
+      const channel = source === 'website' ? 'website' : viaBrew ? 'ai_sales' : source === 'manual' && !rules.manual_as_agent_sales ? 'manual' : 'ai_sales';
       const paid = Boolean(o.payment_verified) || PAID.has(String(o.payment_status || '').toUpperCase()) || PAID.has(String(o.status || '').toUpperCase());
       const row = {
         order_id: o.order_id,
