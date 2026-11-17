@@ -23,10 +23,16 @@ export async function POST(request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email || ''))) return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
   if (!['250g', '500g', '1kg', 'test', 'christmas-spirit'].includes(body.product_id)) return NextResponse.json({ error: 'Choose an item' }, { status: 400 });
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) return NextResponse.json({ error: 'Enter a quantity between 1 and 500' }, { status: 400 });
+  // More items on the same invoice (tea packs; with Christmas Spirit or another pack first), and the owner's own total.
+  const extra = Array.isArray(body.extra_items) ? body.extra_items.slice(0, 4).map(i => ({ product_id: String(i?.product_id || ''), quantity: Number(i?.quantity) })) : [];
+  if (extra.some(i => !['250g', '500g', '1kg'].includes(i.product_id) || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 500))
+    return NextResponse.json({ error: 'Extra items can be our 250 g, 500 g or 1 kg tea, 1 to 500 each' }, { status: 400 });
+  const ownerTotal = Math.round(Math.max(0, Number(body.owner_total) || 0) * 100) / 100;
+  if (ownerTotal > 500000) return NextResponse.json({ error: 'That amount is too large' }, { status: 400 });
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, {
       method: 'POST', headers, cache: 'no-store',
-      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), delivery_address: String(body.delivery_address || '').slice(0, 500), pincode: String(body.pincode || '').replace(/\D/g, '').slice(0, 6), delivery_method: ['own_delivery', 'third_party_courier'].includes(body.delivery_method) ? body.delivery_method : '', courier_fee: Math.max(0, Number(body.courier_fee) || 0), customer_type: body.customer_type === 'business' ? 'business' : 'home', business_name: String(body.business_name || '').slice(0, 120), gstin: String(body.gstin || '').toUpperCase().replace(/\s/g, '').slice(0, 15), gst_enabled: body.gst_enabled !== false, product_id: body.product_id, quantity, override_stock: body.override_stock === true }),
+      body: JSON.stringify({ owner_key: OWNER_KEY, name: String(body.name || '').slice(0, 120), email: body.email, phone: String(body.phone || '').slice(0, 20), delivery_address: String(body.delivery_address || '').slice(0, 500), pincode: String(body.pincode || '').replace(/\D/g, '').slice(0, 6), delivery_method: ['own_delivery', 'third_party_courier'].includes(body.delivery_method) ? body.delivery_method : '', courier_fee: Math.max(0, Number(body.courier_fee) || 0), customer_type: body.customer_type === 'business' ? 'business' : 'home', business_name: String(body.business_name || '').slice(0, 120), gstin: String(body.gstin || '').toUpperCase().replace(/\s/g, '').slice(0, 15), gst_enabled: body.gst_enabled !== false, product_id: body.product_id, quantity, override_stock: body.override_stock === true, ...(extra.length ? { extra_items: extra } : {}), ...(ownerTotal > 0 && body.product_id !== 'test' ? { owner_total: ownerTotal } : {}) }),
     });
     const data = await r.json().catch(() => ({}));
     if (r.ok) return NextResponse.json(data, { status: r.status });

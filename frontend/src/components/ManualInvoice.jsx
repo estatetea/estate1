@@ -26,7 +26,11 @@ function statusLabel(row) {
 
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', product_id: '250g', quantity: 1, customer_type: 'home', business_name: '', gstin: '', gst_enabled: true });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true });
+  // What's on the invoice: any number of lines (tea packs, Christmas Spirit), each with its own quantity.
+  const [lines, setLines] = useState([{ id: '250g', qty: 1 }]);
+  // The owner's own amount (the total to charge, GST included); empty = shop prices.
+  const [ownAmount, setOwnAmount] = useState('');
   // Steward's distance check for the PIN: which delivery options apply.
   const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -40,26 +44,47 @@ export function ManualInvoice({ headers }) {
   headersRef.current = headers;
   const auth = headers?.Authorization;
 
-  const pack = PACKS.find(p => p.id === form.product_id) || PACKS[0];
-  const qty = pack.test ? 1 : Math.max(1, Math.floor(Number(form.quantity) || 1));
-  const teaTotal = pack.price * qty;
+  const packOf = id => PACKS.find(p => p.id === id) || PACKS[0];
+  const isTest = lines.some(l => l.id === 'test');
+  const qtyOf = l => isTest ? 1 : Math.max(1, Math.floor(Number(l.qty) || 1));
+  // The same item on two lines counts once, added up.
+  const merged = Object.values(lines.reduce((m, l) => { const q = qtyOf(l); m[l.id] = { id: l.id, qty: (m[l.id]?.qty || 0) + q }; return m; }, {}));
+  const teaRows = merged.filter(l => !packOf(l.id).inclusive && !packOf(l.id).test);
+  const drinkRow = merged.find(l => packOf(l.id).inclusive);
+  const pack = packOf(merged[0]?.id);   // the first item (for the test invoice and older wording)
+  const qty = merged[0] ? merged[0].qty : 1;
+  const teaTotal = teaRows.reduce((s, l) => s + packOf(l.id).price * l.qty, 0);
+  const drinkPack = drinkRow ? packOf(drinkRow.id) : null;
+  const drinkTotal = drinkRow ? drinkPack.price * drinkRow.qty : 0;
+  const testTotal = isTest ? 1 : 0;
   // Free delivery for more than 500 g within 10 km, and more than 750 g beyond (third-party; Estate Tea pays).
-  const orderKg = pack.test ? 0 : pack.kg * qty;
-  // A launch offer on an item (free delivery up to and including that day, India time), same rule as Steward.
-  const todayIST = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
-  const offerFree = !!pack.freeDeliveryUntil && todayIST <= pack.freeDeliveryUntil;
-  const freeOwn = offerFree || orderKg > 0.5 + 1e-9, freeFar = offerFree || orderKg > 0.75 + 1e-9;
+  const orderKg = isTest ? 0 : teaRows.reduce((s, l) => s + packOf(l.id).kg * l.qty, 0);
+  const freeOwn = orderKg > 0.5 + 1e-9, freeFar = orderKg > 0.75 + 1e-9;
   const ownFee = freeOwn ? 0 : (quote?.own_delivery_fee ?? OWN_DELIVERY_FEE);
-  const deliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
-  // Delivery is charged with the tea, so GST applies to both.
-  const subtotal = teaTotal + deliveryFee;
-  const gst = pack.test || !form.gst_enabled ? 0 : pack.inclusive
-    ? Math.round((teaTotal - teaTotal / (1 + pack.gstRate) + deliveryFee * pack.gstRate) * 100) / 100
-    : Math.round(subtotal * GST_RATE * 100) / 100;
-  const total = pack.inclusive ? teaTotal + deliveryFee + (form.gst_enabled ? Math.round(deliveryFee * pack.gstRate * 100) / 100 : 0) : subtotal + gst;
-  const needKg = Math.round(pack.kg * qty * 1000) / 1000;
+  const shopDeliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
+  const agreed = !isTest && Number(ownAmount) > 0 ? Math.round(Number(ownAmount) * 100) / 100 : 0;
+  const deliveryFee = agreed ? 0 : shopDeliveryFee;   // your own amount includes delivery
+  const round2 = v => Math.round(v * 100) / 100;
+  // GST: tea and its delivery at 5%; Christmas Spirit's price already includes its 18% (delivery goes at 18% when it's the drink alone).
+  const drinkGst = drinkRow && form.gst_enabled ? round2(drinkTotal - drinkTotal / (1 + drinkPack.gstRate)) : 0;
+  const deliveryRate = teaRows.length ? GST_RATE : (drinkPack?.gstRate || GST_RATE);
+  const teaGst = form.gst_enabled && !isTest ? round2((teaTotal + deliveryFee) * (teaRows.length || !drinkRow ? GST_RATE : 0) + (!teaRows.length && drinkRow ? deliveryFee * deliveryRate : 0)) : 0;
+  const shopTotal = round2(isTest ? testTotal : teaTotal + drinkTotal + deliveryFee + teaGst);
+  const gst = isTest ? 0 : round2(drinkGst + teaGst);
+  const total = agreed || shopTotal;
+  const subtotal = teaTotal + drinkTotal + deliveryFee;
+  const needKg = Math.round(orderKg * 1000) / 1000;
   // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
-  const stockLevel = !stock || pack.test || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
+  const stockLevel = !stock || isTest || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
+  // What Steward gets: Christmas Spirit first when it's there (the tea rides along), else the first tea pack; 1 kg is two 500 g packs.
+  const invoiceItems = () => {
+    if (isTest) return { product_id: 'test', quantity: 1, extra_items: [] };
+    const tea = teaRows.flatMap(l => l.id === '1kg' && (teaRows.length > 1 || drinkRow) ? [{ id: '500g', qty: l.qty * 2 }] : [l]);
+    const teaMerged = Object.values(tea.reduce((m, l) => { m[l.id] = { id: l.id, qty: (m[l.id]?.qty || 0) + l.qty }; return m; }, {}));
+    if (drinkRow) return { product_id: drinkRow.id, quantity: drinkRow.qty, extra_items: teaMerged.map(l => ({ product_id: l.id, quantity: l.qty })) };
+    const [first, ...rest] = teaMerged;
+    return { product_id: first.id, quantity: first.qty, extra_items: rest.map(l => ({ product_id: l.id, quantity: l.qty })) };
+  };
 
   const load = useCallback(async () => {
     try {
@@ -87,7 +112,9 @@ export function ManualInvoice({ headers }) {
     if (form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
     setBusy(true);
     try {
-      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, quantity: qty, override_stock: overrideStock }) });
+      if (!merged.length) { setBusy(false); return toast.error('Add at least one item'); }
+      if (ownAmount && !(Number(ownAmount) > 0)) { setBusy(false); return toast.error('Enter the amount in rupees, or leave it empty for shop prices'); }
+      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, ...invoiceItems(), owner_total: agreed || 0, override_stock: overrideStock }) });
       const data = await r.json().catch(() => ({}));
       if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
       if (!r.ok) throw new Error(data.error || 'Could not send the invoice');
@@ -96,7 +123,8 @@ export function ManualInvoice({ headers }) {
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
-      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', quantity: 1, customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
+      setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
+      setLines([{ id: '250g', qty: 1 }]); setOwnAmount('');
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -123,7 +151,7 @@ export function ManualInvoice({ headers }) {
     : `${quote.message} ${quote.rule || ''}`.trim() + (form.delivery_method !== autoMethod ? ' You changed it by hand.' : '');
 
   // A new pack or quantity needs a fresh check.
-  useEffect(() => { setStockWarning(null); }, [form.product_id, qty]);
+  useEffect(() => { setStockWarning(null); }, [JSON.stringify(lines)]);
 
   const input = 'w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-[#d7a84b]/40';
   return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
@@ -167,23 +195,39 @@ export function ManualInvoice({ headers }) {
       </div>
       {form.delivery_method === 'third_party_courier' && freeFar && <p className="text-xs text-emerald-300/80">Over 750 g: delivery is free for the customer.</p>}{form.delivery_method === 'third_party_courier' && !freeFar && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
     </div>
-    <div className="mt-2 grid grid-cols-[1fr_6.5rem] gap-2">
-      <label className="text-[11px] text-gray-500">Item
-        <select value={form.product_id} onChange={e => set('product_id', e.target.value)} className={`${input} mt-1`}>
-          {PACKS.map(p => <option key={p.id} value={p.id} className="bg-[#111]">{p.label} · {rupees(p.price)}</option>)}
-        </select>
-      </label>
-      <label className="text-[11px] text-gray-500">Quantity
- <input value={pack.test ? 1 : form.quantity} disabled={pack.test} onChange={e => set('quantity', e.target.value)} type="number" min="1" max="500" inputMode="numeric" className={`${input} mt-1`} />
-      </label>
+    <div className="mt-3">
+      <p className="text-[11px] text-gray-500 mb-1">Items</p>
+      <div className="space-y-2">
+        {lines.map((l, idx) => <div key={idx} className="grid grid-cols-[1fr_5.5rem_2.5rem] gap-2">
+          <select value={l.id} onChange={e => setLines(ls => e.target.value === 'test' ? [{ id: 'test', qty: 1 }] : ls.map((x, k) => k === idx ? { ...x, id: e.target.value } : x).filter(x => x.id !== 'test'))}
+            aria-label={`Item ${idx + 1}`} className={input}>
+            {PACKS.map(p => <option key={p.id} value={p.id} className="bg-[#111]">{p.label} · {rupees(p.price)}{p.inclusive ? ' incl. GST' : ''}</option>)}
+          </select>
+          <input value={isTest ? 1 : l.qty} disabled={isTest} onChange={e => setLines(ls => ls.map((x, k) => k === idx ? { ...x, qty: e.target.value } : x))}
+            type="number" min="1" max="500" inputMode="numeric" aria-label={`How many of item ${idx + 1}`} className={input} />
+          <button type="button" onClick={() => setLines(ls => ls.length > 1 ? ls.filter((_, k) => k !== idx) : ls)} disabled={lines.length < 2}
+            aria-label={`Remove item ${idx + 1}`} className="rounded-2xl border border-white/10 text-gray-400 disabled:opacity-30">×</button>
+        </div>)}
+      </div>
+      {!isTest && <button type="button" onClick={() => setLines(ls => [...ls, { id: ls.some(x => x.id === '250g') ? 'christmas-spirit' : '250g', qty: 1 }])}
+        className="mt-2 rounded-2xl border border-dashed border-[#D4AF37]/40 px-3 py-2 text-xs text-[#f1dc9c]">+ Add another item</button>}
     </div>
+    {!isTest && <div className="mt-3">
+      <label className="text-[11px] text-gray-500">Your own amount (optional)
+        <input value={ownAmount} onChange={e => setOwnAmount(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder={`Leave empty for shop prices (${rupees(shopTotal)})`} className={`${input} mt-1`} />
+      </label>
+      <p className="mt-1 text-[11px] text-gray-500">{agreed ? `The customer pays exactly ${rupees(agreed)}${form.gst_enabled ? ', GST worked out inside it' : ''}, delivery included. The first-order discount doesn't apply.` : 'Type the total you want to charge (GST included) to set your own price.'}</p>
+    </div>}
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
-      <div className="flex justify-between"><span>{pack.label} × {qty}</span><span>{rupees(teaTotal)}</span></div>
-      {deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
-      {form.gst_enabled && !pack.test && <div className="flex justify-between"><span>{pack.inclusive ? `GST (${pack.gstRate * 100}%, included in the price${deliveryFee > 0 ? ' and on delivery' : ''})` : 'GST (5%)'}</span><span>{rupees(gst)}</span></div>}{!form.gst_enabled && !pack.test && <div className="flex justify-between"><span>GST</span><span>Off</span></div>}
-      <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
+      {merged.map(l => <div key={l.id} className="flex justify-between"><span>{packOf(l.id).label} × {l.qty}{packOf(l.id).inclusive ? ' (GST included)' : ''}</span><span>{agreed ? '' : rupees(packOf(l.id).price * l.qty)}</span></div>)}
+      {!agreed && deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
+      {!agreed && form.gst_enabled && !isTest && teaGst > 0 && <div className="flex justify-between"><span>GST ({teaRows.length ? `5% on tea${deliveryFee > 0 ? ' and delivery' : ''}` : `${(drinkPack?.gstRate || 0) * 100}% on delivery`})</span><span>{rupees(teaGst)}</span></div>}
+      {!agreed && form.gst_enabled && drinkRow && <div className="flex justify-between text-gray-500"><span>GST inside Christmas Spirit (18%)</span><span>{rupees(drinkGst)}</span></div>}
+      {!form.gst_enabled && !isTest && <div className="flex justify-between text-gray-500"><span>GST</span><span>Off</span></div>}
+      {agreed > 0 && <div className="flex justify-between text-gray-500"><span>Shop price would be</span><span>{rupees(shopTotal)}</span></div>}
+      <div className="flex justify-between text-sm text-white"><span>Total{agreed ? ' (your amount)' : ''}</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
     </div>
-    {stock && pack.kg > 0 && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
+    {stock && needKg > 0 && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
       Available to sell: {stock.sellable} kg (+ {stock.reserve} kg protected reserve) · this invoice needs {needKg} kg
       {stockLevel === 'reserve' && ' — dips into your protected reserve'}
       {stockLevel === 'shortfall' && ` — more than the ${stock.onHand} kg in stock`}
@@ -206,7 +250,7 @@ export function ManualInvoice({ headers }) {
           return <div key={row.order_id} className="p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm text-white truncate">{row.is_test && <span className="mr-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">TEST</span>}{row.business_name || row.customer_name || row.email} <span className="text-gray-500 font-mono">· {row.estate_order_number || '—'}</span></p>
-              <p className="text-xs text-gray-500 mt-0.5">{row.gstin && <span className="font-mono">GSTIN {row.gstin} · </span>}{item.weight} × {item.quantity} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}{row.qr_image_url && row.status === 'AWAITING_PAYMENT' && <> · <a href={row.qr_image_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">scan-to-pay QR</a></>}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{row.gstin && <span className="font-mono">GSTIN {row.gstin} · </span>}{(row.items || []).map(i => `${i.name || i.weight} × ${i.quantity}`).join(' + ') || `${item.weight} × ${item.quantity}`} · {rupees(row.total_amount)}{row.invoice_url && <> · <a href={row.invoice_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">invoice link</a></>}{row.qr_image_url && row.status === 'AWAITING_PAYMENT' && <> · <a href={row.qr_image_url} target="_blank" rel="noreferrer" className="text-[#d7a84b]">scan-to-pay QR</a></>}</p>
             </div>
             <p className={`text-[11px] text-right shrink-0 ${tone}`}>{label}</p>
           </div>;
