@@ -163,7 +163,7 @@ export default function OrderPage() {
                   {!data.friend && <div className="mt-1 flex justify-between text-white/50"><span>GST ({data.gst_pct}%)</span><span>{rupees(gst)}</span></div>}
                   <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-base"><span>Total</span><span className="text-[#D4AF37]">{rupees(subtotal + gst)}</span></div>
                   <p className="mt-2 text-xs font-light leading-5 text-white/45">
-                    {data.business_rate ? `Your business rate: ${rupees(data.business_rate)} a kg + GST, 2 kg minimum, delivery included.` : <>{data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.</>}
+                    {data.business_rate ? `Your price: ${rupees(data.business_rate)} a kg + GST, 2 kg minimum, delivery included.` : <>{data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.</>}
                   </p>
                 </div>
 

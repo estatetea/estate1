@@ -61,7 +61,7 @@ export default function MeetEstateTea() {
         <p className="mt-2 text-xs text-gray-400">Need 1 kg? It comes as two 500 g packs (or four 250 g packs), ₹720 + 5% GST.</p>
         <p className="mt-2 text-xs text-gray-500">*For a household having about 3 cups a day.</p>
         <p className="mt-3 rounded-xl border border-[#E9CF8A]/25 bg-[#E9CF8A]/[.05] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
-        <p className="mt-3 text-gray-400">For cafés, offices and shops: ₹420 per kg plus GST, minimum order 2 kg, with a proper GST invoice. Ask Brew about a free sample.</p>
+        <p className="mt-3 text-gray-400">For cafés, offices and shops: we share business prices personally. Call or WhatsApp us on <a href="tel:+918197959005" className="text-[#E9CF8A] underline-offset-2 hover:underline">+91 81979 59005</a>, or just ask Brew and he'll pass it on.</p>
       </Section>
 
       <section className="rounded-2xl border border-white/10 bg-white/[.03] p-2 sm:p-4"><Testimonials /></section>
