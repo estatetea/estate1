@@ -109,8 +109,15 @@ export function ManualInvoice({ headers }) {
   // Payments arrive from the customer's phone, so keep the list fresh while this is open.
   useEffect(() => { load(); const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, 30000); return () => clearInterval(t); }, [load]);
 
+  // What still stops the invoice, in plain words (shown under the button, never a silently greyed-out button).
+  const missing = [
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && 'the customer\'s email address',
+    form.customer_type === 'business' && !form.business_name.trim() && 'the business name',
+    form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin) && 'a valid GSTIN',
+    form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0) && 'the third-party delivery cost',
+  ].filter(Boolean);
   const send = async (overrideStock = false) => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Enter the customer\'s email address');
+    if (missing.length) return toast.error(`Please add ${missing.join(', ')}`);
     if (form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
     if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
     if (form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
@@ -119,7 +126,7 @@ export function ManualInvoice({ headers }) {
       if (!merged.length) { setBusy(false); return toast.error('Add at least one item'); }
       if (priceMode === 'total' && ownAmount && !(Number(ownAmount) > 0)) { setBusy(false); return toast.error('Enter the amount in rupees, or leave it empty for shop prices'); }
       if (priceMode === 'kg' && ownRate && !(Number(ownRate) > 0 && orderKg > 0)) { setBusy(false); return toast.error('Enter the price per kg, with at least one tea pack on the invoice'); }
-      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, ...invoiceItems(), owner_total: agreed || 0, override_stock: overrideStock }) });
+      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, email: form.email.trim(), name: form.name.trim(), phone: form.phone.trim(), ...invoiceItems(), owner_total: agreed || 0, override_stock: overrideStock }) });
       const data = await r.json().catch(() => ({}));
       if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
       if (!r.ok) throw new Error(data.error || 'Could not send the invoice');
@@ -185,7 +192,7 @@ export function ManualInvoice({ headers }) {
         </div>
       </>}
       <input value={form.name} onChange={e => set('name', e.target.value)} placeholder={form.customer_type === 'business' ? 'Contact person' : 'Customer name'} className={input} />
-      <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="Email address" className={input} />
+      <input value={form.email} onChange={e => set('email', e.target.value)} onBlur={e => set('email', e.target.value)} type="email" autoComplete="off" autoCapitalize="none" placeholder="Email address" className={input} />
       <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (for SMS)" className={input} />
       <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
       <input value={form.pincode} onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="PIN code" className={input} />
@@ -255,7 +262,8 @@ export function ManualInvoice({ headers }) {
         <button onClick={() => setStockWarning(null)} disabled={busy} className="rounded-2xl border border-white/10 py-2.5 text-sm text-gray-300">Cancel</button>
         <button onClick={() => send(true)} disabled={busy} className="rounded-2xl bg-amber-500 text-black py-2.5 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : 'Send anyway'}</button>
       </div>
-    </div> : <button onClick={() => send(false)} disabled={busy || !form.email} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(total)}`}</button>}
+    </div> : <button onClick={() => send(false)} disabled={busy} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(total)}`}</button>}
+    {!stockWarning && missing.length > 0 && <p className="mt-2 text-center text-xs text-amber-300/90">Still needed: {missing.join(', ')}.</p>}
     {sent.length > 0 && <div className="mt-5">
       <p className="text-xs uppercase tracking-[.14em] text-gray-500">Sent invoices</p>
       <div className="mt-2 divide-y divide-white/[.06] rounded-2xl border border-white/[.07]">
