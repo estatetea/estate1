@@ -31,6 +31,11 @@ const sections = [
   ['Late or lost deliveries', [
     'If your order has not reached you within 7 days of dispatch, please contact us. If it has been lost on the way, we will send it again or refund you in full, whichever you prefer.',
   ]],
+  ['Christmas Spirit', [
+    'Christmas Spirit is a final sale. You can cancel it any time before you pay, and nothing is charged.',
+    'Once you have paid for Christmas Spirit, the order cannot be cancelled and, due to technical reasons, we are unable to offer a refund: the full amount is non-refundable. Please check the number of bottles and your delivery address before paying.',
+    'The rest of this policy applies to our tea; it does not apply to Christmas Spirit.',
+  ]],
   ['How refunds are paid', [
     'Refunds go back to the way you paid (UPI, card or net banking) through our payment provider, Razorpay. We start the refund within 2 working days of agreeing it; your bank usually takes 5 to 7 working days to show it.',
     'A full refund includes the GST and any delivery charge you paid.',

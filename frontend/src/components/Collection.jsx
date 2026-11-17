@@ -127,6 +127,7 @@ export default function Collection({ userInfo, navigate }) {
           {error && <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex gap-2"><AlertTriangle className="w-4 h-4 text-red-400 shrink-0" /><p className="text-xs text-red-300">{error}</p></div>}
           <button onClick={pay} disabled={!valid || paying} className="mt-5 w-full bg-[#D4AF37] disabled:opacity-40 text-black uppercase tracking-[.2em] py-4 rounded-lg flex justify-center gap-3">{paying && <Loader2 className="w-5 h-5 animate-spin" />}{paying ? 'Preparing payment…' : `Pay · ${inr(total)}`}</button>
           {!valid && !paying && <p className="mt-2 text-xs text-gray-500 text-center">{detailsComplete(details) ? 'Check your PIN code.' : 'Fill in your delivery details to pay.'}</p>}
+          {qty('christmas-spirit') > 0 && <p className="text-xs text-amber-200/80 text-center mt-3">Christmas Spirit is a final sale: once paid, it can't be cancelled or refunded. <a href="/refunds" className="underline">Refund policy</a></p>}
           <p className="text-xs text-gray-500 text-center mt-3">Secured by Razorpay</p>
         </>}
       </div></aside>
