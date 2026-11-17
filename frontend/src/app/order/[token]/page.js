@@ -63,6 +63,7 @@ export default function OrderPage() {
   const count = packs.reduce((s, p) => s + (qty[p.id] || 0), 0);
   const kg = packs.reduce((s, p) => s + (qty[p.id] || 0) * (p.id === '500g' ? 0.5 : 0.25), 0);
   const subtotal = data?.business_rate ? kg * data.business_rate : packs.reduce((s, p) => s + (qty[p.id] || 0) * p.price, 0);
+  const belowMin = !!data?.business_rate && kg < 2 - 1e-9;
   const gst = data?.friend ? 0 : subtotal * (data?.gst_pct || 0) / 100;
   const canAdd = (data?.addresses?.length || 0) < (data?.max_addresses || 3);
   const setA = e => { const { name, value } = e.target; setAddr(a => ({ ...a, [name]: value })); if (error) setError(''); };
@@ -162,7 +163,7 @@ export default function OrderPage() {
                   {!data.friend && <div className="mt-1 flex justify-between text-white/50"><span>GST ({data.gst_pct}%)</span><span>{rupees(gst)}</span></div>}
                   <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-base"><span>Total</span><span className="text-[#D4AF37]">{rupees(subtotal + gst)}</span></div>
                   <p className="mt-2 text-xs font-light leading-5 text-white/45">
-                    {data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.
+                    {data.business_rate ? `Your business rate: ${rupees(data.business_rate)} a kg + GST, 2 kg minimum, delivery included.` : <>{data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.</>}
                   </p>
                 </div>
 
@@ -199,9 +200,9 @@ export default function OrderPage() {
                 </div>
 
                 {error && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm leading-5 text-red-200">{error}</p>}
-                <button type="submit" disabled={busy || !count}
+                <button type="submit" disabled={busy || !count || belowMin}
                   className="flex min-h-12 w-full items-center justify-center rounded-lg border border-[#D4AF37] bg-[#D4AF37] px-5 py-3 text-sm font-medium tracking-wide text-[#0A0A0A] transition hover:bg-[#E1C15A] disabled:cursor-not-allowed disabled:opacity-60">
-                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Placing your order…</> : count ? `Place order · ${rupees(subtotal + gst)}` : 'Choose your packs'}
+                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Placing your order…</> : belowMin && count ? 'Choose at least 2 kg' : count ? `Place order · ${rupees(subtotal + gst)}` : 'Choose your packs'}
                 </button>
                 <p className="text-center text-xs font-light leading-5 text-white/40">Your invoice comes to you on WhatsApp, with a secure payment link and a QR code.</p>
               </form>
