@@ -19,7 +19,8 @@ const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFracti
 
 function statusLabel(row) {
   if (row.status === 'CANCELLED') return ['Cancelled', 'text-gray-500'];
-  if (!row.payment_verified) return ['Invoice sent · awaiting payment', 'text-amber-400'];
+  if (!row.payment_verified) return [row.email || row.phone ? 'Invoice sent · awaiting payment' : 'Link ready to share · awaiting payment', 'text-amber-400'];
+  if (row.confirmation_email === 'blocked') return ['Paid · no email to confirm', 'text-emerald-400'];
   if (row.confirmation_email === 'sent') return ['Paid · confirmation emailed', 'text-emerald-400'];
   return ['Paid · confirmation sending', 'text-emerald-400'];
 }
@@ -111,7 +112,7 @@ export function ManualInvoice({ headers }) {
 
   // What still stops the invoice, in plain words (shown under the button, never a silently greyed-out button).
   const missing = [
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && 'the customer\'s email address',
+    form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && 'a correct email address (or leave it empty)',
     form.customer_type === 'business' && !form.business_name.trim() && 'the business name',
     form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin) && 'a valid GSTIN',
     form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0) && 'the third-party delivery cost',
@@ -134,7 +135,11 @@ export function ManualInvoice({ headers }) {
       if (overrideStock) toast.warning(stockLevel === 'shortfall'
         ? `Sent: ${data.estate_order_number} needs more tea than is in stock. Restock and update Inventory before fulfilling it.`
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
-      toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
+      if (data.email || data.phone) toast.success(`Invoice ${data.estate_order_number} sent to ${[data.email, data.phone].filter(Boolean).join(' and ')}`);
+      else {
+        try { if (data.invoice_url) await navigator.clipboard.writeText(data.invoice_url); } catch { /* copying is a convenience */ }
+        toast.success(`Invoice ${data.estate_order_number} is ready. No email or mobile, so share the link yourself${data.invoice_url ? ' (copied): ' + data.invoice_url : ''}`, { duration: 15000 });
+      }
       setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
       setLines([{ id: '250g', qty: 1 }]); setOwnAmount(''); setOwnRate('');
       load();
@@ -191,11 +196,11 @@ export function ManualInvoice({ headers }) {
           {form.gstin && !GSTIN.test(form.gstin) && <p className="mt-1 px-1 text-[11px] text-amber-400">GSTIN is 15 characters, like 29AAGCB7383J1Z4.</p>}
         </div>
       </>}
-      <input value={form.name} onChange={e => set('name', e.target.value)} placeholder={form.customer_type === 'business' ? 'Contact person' : 'Customer name'} className={input} />
-      <input value={form.email} onChange={e => set('email', e.target.value)} onBlur={e => set('email', e.target.value)} type="email" autoComplete="off" autoCapitalize="none" placeholder="Email address" className={input} />
-      <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (for SMS)" className={input} />
-      <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address (printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
-      <input value={form.pincode} onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="PIN code" className={input} />
+      <input value={form.name} onChange={e => set('name', e.target.value)} placeholder={form.customer_type === 'business' ? 'Contact person (optional)' : 'Customer name (optional)'} className={input} />
+      <input value={form.email} onChange={e => set('email', e.target.value)} onBlur={e => set('email', e.target.value)} type="email" autoComplete="off" autoCapitalize="none" placeholder="Email address (optional)" className={input} />
+      <input value={form.phone} onChange={e => set('phone', e.target.value)} inputMode="tel" placeholder="Mobile number (optional, for SMS)" className={input} />
+      <textarea value={form.delivery_address} onChange={e => set('delivery_address', e.target.value)} rows={2} placeholder="Delivery address (optional, printed on the bill)" className={`${input} sm:col-span-2 resize-none`} />
+      <input value={form.pincode} onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="PIN code (optional)" className={input} />
       <p className={`self-center text-xs ${quote?.found === false ? 'text-amber-400' : 'text-gray-400'}`}>{quote?.loading ? 'Measuring the distance…' : quote?.message || 'Type the PIN to measure the distance.'}</p>
     </div>
     <div className="mt-2">
