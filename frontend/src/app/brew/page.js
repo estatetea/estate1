@@ -5,7 +5,8 @@ import Testimonials from '@/components/Testimonials';
 
 // "Meet Estate Tea": where Brew's welcome button leads. Everything a new customer usually asks, in one place,
 // so their WhatsApp messages go on ordering, not on questions. Facts match Brew's rulebook; prices are live from the shop.
-const WA = 'https://wa.me/919742668951?text=' + encodeURIComponent("Hi Brew, I'd like to order");
+// Back in the chat, Brew answers this with his option buttons (order, prices, delivery, refunds...): never a push to order.
+const WA = 'https://wa.me/919742668951?text=' + encodeURIComponent("Hi Brew, show me the options");
 const CHAT = 'https://wa.me/919742668951';   // Close: straight back to the chat, nothing typed
 const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 180 }, { product_id: '500g', weight: '500 g', price: 360 }];   // our only packs (1 kg is two 500 g)
 const LASTS = { '250g': 'about a month', '500g': 'about two months' };
