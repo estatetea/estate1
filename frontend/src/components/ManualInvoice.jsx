@@ -31,6 +31,9 @@ export function ManualInvoice({ headers }) {
   const [lines, setLines] = useState([{ id: '250g', qty: 1 }]);
   // The owner's own amount (the total to charge, GST included); empty = shop prices.
   const [ownAmount, setOwnAmount] = useState('');
+  // ...or a price per kg for the tea (e.g. Prem at ₹420 a kg): the total is worked out from it.
+  const [priceMode, setPriceMode] = useState('total');
+  const [ownRate, setOwnRate] = useState('');
   // Steward's distance check for the PIN: which delivery options apply.
   const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -62,7 +65,8 @@ export function ManualInvoice({ headers }) {
   const freeOwn = orderKg > 0.5 + 1e-9, freeFar = orderKg > 0.75 + 1e-9;
   const ownFee = freeOwn ? 0 : (quote?.own_delivery_fee ?? OWN_DELIVERY_FEE);
   const shopDeliveryFee = form.delivery_method === 'own_delivery' ? ownFee : form.delivery_method === 'third_party_courier' ? (freeFar ? 0 : Math.max(0, Number(form.courier_fee) || 0)) : 0;
-  const agreed = !isTest && Number(ownAmount) > 0 ? Math.round(Number(ownAmount) * 100) / 100 : 0;
+  const rateTotal = Number(ownRate) > 0 && orderKg > 0 ? Math.round((orderKg * Number(ownRate) * (form.gst_enabled ? 1 + GST_RATE : 1) + drinkTotal) * 100) / 100 : 0;
+  const agreed = isTest ? 0 : priceMode === 'kg' ? rateTotal : (Number(ownAmount) > 0 ? Math.round(Number(ownAmount) * 100) / 100 : 0);
   const deliveryFee = agreed ? 0 : shopDeliveryFee;   // your own amount includes delivery
   const round2 = v => Math.round(v * 100) / 100;
   // GST: tea and its delivery at 5%; Christmas Spirit's price already includes its 18% (delivery goes at 18% when it's the drink alone).
@@ -113,7 +117,8 @@ export function ManualInvoice({ headers }) {
     setBusy(true);
     try {
       if (!merged.length) { setBusy(false); return toast.error('Add at least one item'); }
-      if (ownAmount && !(Number(ownAmount) > 0)) { setBusy(false); return toast.error('Enter the amount in rupees, or leave it empty for shop prices'); }
+      if (priceMode === 'total' && ownAmount && !(Number(ownAmount) > 0)) { setBusy(false); return toast.error('Enter the amount in rupees, or leave it empty for shop prices'); }
+      if (priceMode === 'kg' && ownRate && !(Number(ownRate) > 0 && orderKg > 0)) { setBusy(false); return toast.error('Enter the price per kg, with at least one tea pack on the invoice'); }
       const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, ...invoiceItems(), owner_total: agreed || 0, override_stock: overrideStock }) });
       const data = await r.json().catch(() => ({}));
       if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
@@ -124,7 +129,7 @@ export function ManualInvoice({ headers }) {
         : `Sent: ${data.estate_order_number} uses tea from your protected reserve.`);
       toast.success(`Invoice ${data.estate_order_number} sent to ${data.email}${data.phone ? ' and ' + data.phone : ''}`);
       setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
-      setLines([{ id: '250g', qty: 1 }]); setOwnAmount('');
+      setLines([{ id: '250g', qty: 1 }]); setOwnAmount(''); setOwnRate('');
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -213,10 +218,20 @@ export function ManualInvoice({ headers }) {
         className="mt-2 rounded-2xl border border-dashed border-[#D4AF37]/40 px-3 py-2 text-xs text-[#f1dc9c]">+ Add another item</button>}
     </div>
     {!isTest && <div className="mt-3">
-      <label className="text-[11px] text-gray-500">Your own amount (optional)
-        <input value={ownAmount} onChange={e => setOwnAmount(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder={`Leave empty for shop prices (${rupees(shopTotal)})`} className={`${input} mt-1`} />
-      </label>
-      <p className="mt-1 text-[11px] text-gray-500">{agreed ? `The customer pays exactly ${rupees(agreed)}${form.gst_enabled ? ', GST worked out inside it' : ''}, delivery included. The first-order discount doesn't apply.` : 'Type the total you want to charge (GST included) to set your own price.'}</p>
+      <p className="text-[11px] text-gray-500">Your own price (optional)</p>
+      <div className="mt-1 grid grid-cols-2 gap-2">
+        {[['total', 'Total amount'], ['kg', 'Price per kg']].map(([v, label]) =>
+          <button key={v} type="button" onClick={() => setPriceMode(v)}
+            className={`rounded-2xl border px-2 py-2 text-xs ${priceMode === v ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
+      </div>
+      {priceMode === 'total'
+        ? <input value={ownAmount} onChange={e => setOwnAmount(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" aria-label="Your own total amount"
+            placeholder={`Total to charge, GST included (shop price ${rupees(shopTotal)})`} className={`${input} mt-2`} />
+        : <input value={ownRate} onChange={e => setOwnRate(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" aria-label="Price per kg"
+            placeholder="Price per kg of tea, before GST (e.g. 420)" className={`${input} mt-2`} />}
+      <p className="mt-1 text-[11px] text-gray-500">{priceMode === 'kg'
+        ? (rateTotal ? `${Math.round(orderKg * 1000) / 1000} kg × ${rupees(Number(ownRate))}${form.gst_enabled ? ' + 5% GST' : ''}${drinkRow ? ` + Christmas Spirit ${rupees(drinkTotal)}` : ''} = ${rupees(rateTotal)}, delivery included. The first-order discount doesn't apply.` : 'Type the rate per kg (before GST) for the tea on this invoice.')
+        : (agreed ? `The customer pays exactly ${rupees(agreed)}${form.gst_enabled ? ', GST worked out inside it' : ''}, delivery included. The first-order discount doesn't apply.` : 'Type the total you want to charge (GST included) to set your own price.')}</p>
     </div>}
     <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
       {merged.map(l => <div key={l.id} className="flex justify-between"><span>{packOf(l.id).label} × {l.qty}{packOf(l.id).inclusive ? ' (GST included)' : ''}</span><span>{agreed ? '' : rupees(packOf(l.id).price * l.qty)}</span></div>)}
