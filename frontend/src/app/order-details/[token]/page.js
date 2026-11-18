@@ -34,13 +34,16 @@ export default function OrderDetailsPage() {
   // "sample": the same form, for a free sample (no invoice); "order": for an order's invoice and delivery.
   const [purpose, setPurpose] = useState('order');
   const sample = purpose === 'sample';
+  // A form the owner forwarded by hand: blank, and it asks for their mobile (that's how it becomes theirs).
+  const shared = purpose === 'shared';
+  const [mobile, setMobile] = useState('');
 
   // Right after a successful send, go back to WhatsApp on its own (a short pause so "Thank you" is seen first).
   useEffect(() => {
-    if (!justSent) return;
+    if (!justSent || shared) return;
     const t = setTimeout(() => { window.location.href = BREW_CHAT_URL; }, 1500);
     return () => clearTimeout(t);
-  }, [justSent]);
+  }, [justSent, shared]);
 
   useEffect(() => {
     if (!token) return;
@@ -52,7 +55,7 @@ export default function OrderDetailsPage() {
         if (cancelled) return;
         if (!r.ok) { setError(friendlyError(r.status, p)); setPageState('error'); return; }
         setPhone(p.phone || '');
-        setPurpose(p.purpose === 'sample' || p.purpose === 'friend' ? p.purpose : 'order');
+        setPurpose(['sample', 'friend', 'shared'].includes(p.purpose) ? p.purpose : 'order');
         setForm(f => ({ ...f, ...Object.fromEntries(Object.entries(p).filter(([k, v]) => k in empty && v)) }));
         setPageState(p.submitted ? 'success' : 'form');
       } catch {
@@ -74,6 +77,10 @@ export default function OrderDetailsPage() {
     if ((payload.name.match(/[A-Za-z]/g) || []).length < 3) return setError(sample ? 'Please enter your full name (at least 3 letters).' : 'Please enter your full name (at least 3 letters): it goes on your invoice.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return setError('Please enter a valid email address.');
     if (!/^[1-9][0-9]{5}$/.test(payload.pincode)) return setError('Please enter a valid 6-digit PIN code.');
+    if (shared) {
+      if (!/^(\+?91)?[6-9][0-9]{9}$/.test(mobile.replace(/[\s-]/g, ''))) return setError('Please enter a valid 10-digit mobile number.');
+      payload.phone = mobile.trim();
+    }
     if (business && !payload.business_name) return setError('Please enter your business name.');
     if (business && !GSTIN_RE.test(payload.gstin)) return setError('Please check your GSTIN: 15 characters, like 29ABCDE1234F1Z5.');
     if (!business) { payload.business_name = null; payload.gstin = null; }
@@ -119,11 +126,11 @@ export default function OrderDetailsPage() {
               </div>
               <h1 className="text-3xl font-light tracking-wide sm:text-4xl">Thank you.</h1>
               <p className="mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                We’ve saved your details. {justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} {sample ? 'We’ll let you know there when your free sample is on its way.' : purpose === 'friend' ? 'They’re ready for whenever you’d like some tea: just message Brew.' : 'Brew will confirm your order there and send your invoice.'}
+                We’ve saved your details. {shared ? 'Estate Tea will be in touch with you soon.' : <>{justSent ? 'Taking you back to WhatsApp…' : 'Head back to WhatsApp:'} {sample ? 'We’ll let you know there when your free sample is on its way.' : purpose === 'friend' ? 'They’re ready for whenever you’d like some tea: just message Brew.' : 'Brew will confirm your order there and send your invoice.'}</>}
               </p>
-              <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
+              {!shared && <a href={BREW_CHAT_URL} className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-black hover:bg-[#c9a432]">
                 Back to WhatsApp
-              </a>
+              </a>}
               <div className="mt-8 h-px w-12 bg-[#D4AF37]" />
               <p className="mt-5 text-xs uppercase tracking-[0.22em] text-[#D4AF37]">Estate Tea</p>
             </div>
@@ -146,6 +153,7 @@ export default function OrderDetailsPage() {
                   ))}
                 </div>
                 <Field label={business ? 'Your name' : 'Name'} required><input name="name" value={form.name} onChange={set} autoComplete="name" maxLength={80} className={input} /></Field>
+                {shared && <Field label="Mobile number (WhatsApp)" required><input name="mobile" value={mobile} onChange={e => { setMobile(e.target.value); if (error) setError(''); }} type="tel" inputMode="tel" autoComplete="tel" maxLength={14} placeholder="98765 43210" className={input} /></Field>}
                 <Field label={sample ? "Email" : "Email (your invoice goes here)"} required><input name="email" value={form.email} onChange={set} type="email" inputMode="email" autoComplete="email" maxLength={254} className={input} /></Field>
                 {business && <>
                   <Field label="Business name" required><input name="business_name" value={form.business_name} onChange={set} autoComplete="organization" maxLength={120} className={input} /></Field>
