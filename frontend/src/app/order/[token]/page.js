@@ -43,7 +43,7 @@ export default function OrderPage() {
         if (cancelled) return;
         if (!r.ok) { setError(friendlyError(r.status, p)); setState('error'); return; }
         setData(p);
-        setWhere(p.addresses?.length ? p.addresses[0].id : 'new');
+        setWhere(p.gift ? 'new' : (p.addresses?.length ? p.addresses[0].id : 'new'));
         setState('form');
       } catch {
         if (!cancelled) { setError('We’re unable to load this page right now. Please try again shortly.'); setState('error'); }
@@ -69,18 +69,24 @@ export default function OrderPage() {
   const drink = data?.drink || null;
   const bottles = drink ? (qty[drink.id] || 0) : 0;
   const drinkTotal = drink ? bottles * drink.price : 0;
-  const canAdd = (data?.addresses?.length || 0) < (data?.max_addresses || 3);
+  // 🎁 A gift link: only other people's saved addresses, a new one is always possible (an old one makes room).
+  const gift = !!data?.gift;
+  const shown = (data?.addresses || []).filter(a => !gift || !a.own);
+  const canAdd = gift || (data?.addresses?.length || 0) < (data?.max_addresses || 3);
+  const recipient = gift || !!data?.addresses?.length;
   const setA = e => { const { name, value } = e.target; setAddr(a => ({ ...a, [name]: value })); if (error) setError(''); };
 
   const submit = async e => {
     e.preventDefault();
     if (busy) return;
     if (!count && !bottles) return setError(drink ? 'Please choose at least one pack or bottle.' : 'Please choose at least one pack.');
-    const body = { items: [...packs.filter(p => qty[p.id]).map(p => ({ id: p.id, quantity: qty[p.id] })), ...(bottles ? [{ id: drink.id, quantity: bottles }] : [])] };
+    const body = { gift, items: [...packs.filter(p => qty[p.id]).map(p => ({ id: p.id, quantity: qty[p.id] })), ...(bottles ? [{ id: drink.id, quantity: bottles }] : [])] };
     if (where === 'new') {
       const a = Object.fromEntries(Object.entries(addr).map(([k, v]) => [k, v.trim()]));
       if (a.address.length < 8) return setError('Please enter the full delivery address.');
       if (!/^[1-9][0-9]{5}$/.test(a.pincode)) return setError('Please enter a valid 6-digit PIN code.');
+      if (gift && a.name.replace(/[^A-Za-z]/g, '').length < 2) return setError('Please enter the name of the person receiving the gift.');
+      if (gift && !a.phone) return setError('Please enter their mobile number, so we can reach them for the delivery.');
       if (a.phone && !/^(\+?91)?[6-9][0-9]{9}$/.test(a.phone.replace(/\s|-/g, ''))) return setError('Please enter a valid 10-digit mobile number for the person receiving it.');
       body.new_address = a;
     } else {
@@ -134,7 +140,7 @@ export default function OrderPage() {
             <>
               <div className="text-center">
                 <p className="text-xs uppercase tracking-[0.24em] text-[#D4AF37]">Estate Tea</p>
-                <h1 className="mt-3 text-3xl font-light tracking-wide sm:text-4xl">{data.name ? `Your order, ${data.name}` : 'Your order'}</h1>
+                <h1 className="mt-3 text-3xl font-light tracking-wide sm:text-4xl">{gift ? '🎁 Send a gift' : data.name ? `Your order, ${data.name}` : 'Your order'}</h1>
                 <p className="mx-auto mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
                   {drink ? 'Premium tea from the Nilgiris, and Christmas Spirit for the season. Choose as many as you like.' : 'Premium black CTC tea powder from the Nilgiris. Choose as many packs as you like.'}
                 </p>
@@ -192,9 +198,10 @@ export default function OrderPage() {
                 </div>
 
                 <div>
-                  <p className="mb-3 text-sm text-white/80">Deliver to</p>
+                  <p className="mb-3 text-sm text-white/80">{gift ? 'Who is it for?' : 'Deliver to'}</p>
+                  {gift && <p className="-mt-2 mb-3 text-xs font-light leading-5 text-white/50">We deliver it straight to them. Your invoice comes to you on WhatsApp.</p>}
                   <div className="space-y-2">
-                    {(data.addresses || []).map(a => (
+                    {shown.map(a => (
                       <label key={a.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 ${where === a.id ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-white/10'}`}>
                         <input type="radio" name="where" className="mt-1 accent-[#D4AF37]" checked={where === a.id} onChange={() => setWhere(a.id)} />
                         <span className="text-sm leading-5"><span className="text-white">{a.label}</span><br /><span className="text-white/55">{a.address}{a.name ? ` · for ${a.name}` : ''}</span></span>
@@ -203,24 +210,24 @@ export default function OrderPage() {
                     {canAdd && (
                       <label className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 ${where === 'new' ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-white/10'}`}>
                         <input type="radio" name="where" className="accent-[#D4AF37]" checked={where === 'new'} onChange={() => setWhere('new')} />
-                        <span className="text-sm">{data.addresses?.length ? 'A new address (a gift, the office…)' : 'My delivery address'}</span>
+                        <span className="text-sm">{gift ? (shown.length ? 'Someone new' : 'The person receiving it') : data.addresses?.length ? 'A new address (a gift, the office…)' : 'My delivery address'}</span>
                       </label>
                     )}
                   </div>
                   {where === 'new' && (
                     <div className="mt-4 space-y-4">
-                      {data.addresses?.length ? <>
-                        <Field label="Name this address" optional><input name="label" value={addr.label} onChange={setA} maxLength={30} placeholder="Mom, Office…" className={input} /></Field>
+                      {recipient ? <>
+                        {!gift && <Field label="Name this address" optional><input name="label" value={addr.label} onChange={setA} maxLength={30} placeholder="Mom, Office…" className={input} /></Field>}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
-                          <Field label="Who receives it" optional><input name="name" value={addr.name} onChange={setA} maxLength={60} className={input} /></Field>
-                          <Field label="Their mobile" optional><input name="phone" value={addr.phone} onChange={setA} inputMode="tel" maxLength={14} className={input} /></Field>
+                          <Field label={gift ? 'Their name' : 'Who receives it'} optional={!gift} required={gift}><input name="name" value={addr.name} onChange={setA} maxLength={60} className={input} /></Field>
+                          <Field label="Their mobile" optional={!gift} required={gift}><input name="phone" value={addr.phone} onChange={setA} inputMode="tel" maxLength={14} className={input} /></Field>
                         </div>
                       </> : null}
                       <Field label="Full address (house, street, area, city)" required><input name="address" value={addr.address} onChange={setA} maxLength={300} className={input} /></Field>
                       <Field label="PIN code" required><input name="pincode" value={addr.pincode} onChange={setA} inputMode="numeric" maxLength={6} className={input} /></Field>
                     </div>
                   )}
-                  <p className="mt-2 text-xs font-light text-white/40">You can save up to {data.max_addresses} addresses.</p>
+                  {!gift && <p className="mt-2 text-xs font-light text-white/40">You can save up to {data.max_addresses} addresses.</p>}
                 </div>
 
                 {error && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm leading-5 text-red-200">{error}</p>}
