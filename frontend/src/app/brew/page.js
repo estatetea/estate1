@@ -5,7 +5,6 @@ import Testimonials from '@/components/Testimonials';
 
 // "Meet Estate Tea": where Brew's welcome button leads. Everything a new customer usually asks, in one place,
 // so their WhatsApp messages go on ordering, not on questions. Facts match Brew's rulebook; prices are live from the shop.
-// Back in the chat, Brew answers this with his option buttons (order, prices, delivery, refunds...): never a push to order.
 // Back to the chat with nothing typed for them: the Order / Send a gift / Help & info buttons are already waiting there.
 const WA = 'https://wa.me/919742668951';
 const CHAT = 'https://wa.me/919742668951';   // Close: straight back to the chat, nothing typed
