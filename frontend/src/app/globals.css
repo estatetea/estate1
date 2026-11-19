@@ -84,7 +84,7 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
 
 .hero-bg {
   /* CTC tea granules (the owner, 19 Nov: "make it look like tea powder"), served from our own site */
-  background-image: url('/images/tea-powder-bg.jpg');
+  background-image: url('/images/tea-grains-bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
