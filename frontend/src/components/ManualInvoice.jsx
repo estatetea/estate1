@@ -42,6 +42,14 @@ export function ManualInvoice({ headers }) {
   const [stock, setStock] = useState(null);
   // Set when Steward says this invoice is over stock; the owner can still send it.
   const [stockWarning, setStockWarning] = useState(null);
+  // The owner's own item (19 Nov): a title, a quantity and his amount, GST none/5%/18% inside it. Never touches stock.
+  const [mode, setMode] = useState('products');
+  const [custom, setCustom] = useState({ title: '', qty: 1, amount: '', gst: null });
+  const [saved, setSaved] = useState([]);
+  const [saveIt, setSaveIt] = useState(false);
+  const [editing, setEditing] = useState(null);   // a saved item loaded into the form (so it can be renamed or re-priced)
+  const setC = (key, value) => setCustom(c => ({ ...c, [key]: value }));
+  const isCustom = mode === 'custom';
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
   // The panel rebuilds `headers` every render; follow the login token so the list doesn't reload in a loop.
   const headersRef = useRef(headers);
@@ -78,7 +86,10 @@ export function ManualInvoice({ headers }) {
   const gst = isTest ? 0 : round2(drinkGst + teaGst);
   const total = agreed || shopTotal;
   const subtotal = teaTotal + drinkTotal + deliveryFee;
-  const needKg = Math.round(orderKg * 1000) / 1000;
+  const cQty = Math.max(1, Math.floor(Number(custom.qty) || 1));
+  const cTotal = Number(custom.amount) > 0 ? round2(Number(custom.amount)) : 0;
+  const cGst = custom.gst ? round2(cTotal - round2(round2(cTotal / (1 + custom.gst / 100) / cQty) * cQty)) : 0;
+  const needKg = isCustom ? 0 : Math.round(orderKg * 1000) / 1000;
   // 'ok' | 'reserve' (tea is there but inside the protected reserve) | 'shortfall' (not enough tea at all)
   const stockLevel = !stock || isTest || needKg <= stock.sellable ? 'ok' : needKg <= stock.onHand ? 'reserve' : 'shortfall';
   // What Steward gets: Christmas Spirit first when it's there (the tea rides along), else the first tea pack; 1 kg is two 500 g packs.
@@ -95,6 +106,8 @@ export function ManualInvoice({ headers }) {
     try {
       const r = await fetch('/api/admin/manual-invoices', { headers: headersRef.current, cache: 'no-store' });
       if (r.ok) setSent(await r.json());
+      const si = await fetch('/api/admin/saved-items', { headers: headersRef.current, cache: 'no-store' });
+      if (si.ok) setSaved((await si.json()).items || []);
       const inv = await fetch('/api/admin/inventory', { headers: headersRef.current, cache: 'no-store' });
       if (inv.ok) {
         const body = await inv.json();
@@ -112,22 +125,26 @@ export function ManualInvoice({ headers }) {
 
   // What still stops the invoice, in plain words (shown under the button, never a silently greyed-out button).
   const missing = [
+    isCustom && custom.title.trim().length < 2 && 'the item title',
+    isCustom && !(cTotal > 0) && 'the amount',
+    isCustom && custom.gst === null && 'the GST (none, 5% or 18%)',
     form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && 'a correct email address (or leave it empty)',
     form.customer_type === 'business' && !form.business_name.trim() && 'the business name',
-    form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin) && 'a valid GSTIN',
+    !isCustom && form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin) && 'a valid GSTIN',
     form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0) && 'the third-party delivery cost',
   ].filter(Boolean);
   const send = async (overrideStock = false) => {
     if (missing.length) return toast.error(`Please add ${missing.join(', ')}`);
     if (form.delivery_method === 'third_party_courier' && !freeFar && !(Number(form.courier_fee) > 0)) return toast.error('Enter what the third-party delivery service will cost');
     if (form.customer_type === 'business' && !form.business_name.trim()) return toast.error('Enter the business name');
-    if (form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
+    if (!isCustom && form.gst_enabled && form.customer_type === 'business' && !GSTIN.test(form.gstin)) return toast.error('With GST on, a business invoice needs a valid 15-character GSTIN');
     setBusy(true);
     try {
-      if (!merged.length) { setBusy(false); return toast.error('Add at least one item'); }
+      if (!isCustom && !merged.length) { setBusy(false); return toast.error('Add at least one item'); }
       if (priceMode === 'total' && ownAmount && !(Number(ownAmount) > 0)) { setBusy(false); return toast.error('Enter the amount in rupees, or leave it empty for shop prices'); }
       if (priceMode === 'kg' && ownRate && !(Number(ownRate) > 0 && orderKg > 0)) { setBusy(false); return toast.error('Enter the price per kg, with at least one tea pack on the invoice'); }
-      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, email: form.email.trim(), name: form.name.trim(), phone: form.phone.trim(), ...invoiceItems(), owner_total: agreed || 0, override_stock: overrideStock }) });
+      const items = isCustom ? { product_id: 'custom', quantity: cQty, custom_title: custom.title.trim(), custom_gst_pct: custom.gst, extra_items: [] } : invoiceItems();
+      const r = await fetch('/api/admin/manual-invoices', { method: 'POST', headers: headersRef.current, body: JSON.stringify({ ...form, email: form.email.trim(), name: form.name.trim(), phone: form.phone.trim(), ...items, owner_total: isCustom ? cTotal : (agreed || 0), override_stock: overrideStock }) });
       const data = await r.json().catch(() => ({}));
       if (r.status === 409 && data.code === 'stock_warning') { setStockWarning(data); return; }
       if (!r.ok) throw new Error(data.error || 'Could not send the invoice');
@@ -141,9 +158,26 @@ export function ManualInvoice({ headers }) {
         toast.success(`Invoice ${data.estate_order_number} is ready. No email or mobile, so share the link yourself${data.invoice_url ? ' (copied): ' + data.invoice_url : ''}`, { duration: 15000 });
       }
       setForm(f => ({ ...f, name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true }));
+      if (isCustom && saveIt) await saveItem({ id: editing || '', title: custom.title.trim(), price: round2(cTotal / cQty), gst_pct: custom.gst }, true);
       setLines([{ id: '250g', qty: 1 }]); setOwnAmount(''); setOwnRate('');
+      setCustom({ title: '', qty: 1, amount: '', gst: null }); setSaveIt(false); setEditing(null);
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
+  };
+
+  const saveItem = async (item, quiet = false) => {
+    try {
+      const r = await fetch('/api/admin/saved-items', { method: 'POST', headers: headersRef.current, body: JSON.stringify(item) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Could not save the item');
+      if (!quiet || item.delete) toast.success(item.delete ? 'Saved item removed' : `Saved: ${data.title}`);
+      else toast.success(`Also saved "${data.title}" for next time`);
+      load();
+    } catch (e) { toast.error(e.message); }
+  };
+  const pickSaved = it => {
+    setMode('custom'); setEditing(it.id);
+    setCustom({ title: it.title, qty: 1, amount: it.price ? String(it.price) : '', gst: it.gst_pct ?? null });
   };
 
   // Measure the distance once a full PIN is typed, and pick the delivery that applies.
@@ -179,7 +213,7 @@ export function ManualInvoice({ headers }) {
         <button key={value} type="button" onClick={() => set('customer_type', value)}
           className={`rounded-2xl border px-2 py-2.5 text-xs ${form.customer_type === value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
     </div>
-    <div className="mt-3">
+    {!isCustom && <div className="mt-3">
       <p className="text-[11px] text-gray-500 mb-1">GST for this manual invoice</p>
       <div className="grid grid-cols-2 gap-2">
         {[{ value: true, label: 'Normal GST · 5%' }, { value: false, label: 'GST off' }].map(option =>
@@ -187,7 +221,7 @@ export function ManualInvoice({ headers }) {
             className={`rounded-2xl border px-3 py-2.5 text-xs ${form.gst_enabled === option.value ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{option.label}</button>)}
       </div>
       <p className="mt-1 text-[11px] text-gray-500">{form.gst_enabled ? 'GST is calculated at 5% on tea and delivery.' : 'GST will not be added to this manual invoice.'}</p>
-    </div>
+    </div>}
     <div className="mt-2 grid gap-2 sm:grid-cols-2">
       {form.customer_type === 'business' && <>
         <input value={form.business_name} onChange={e => set('business_name', e.target.value)} placeholder="Business name (on the tax invoice)" className={input} />
@@ -212,7 +246,41 @@ export function ManualInvoice({ headers }) {
       </div>
       {form.delivery_method === 'third_party_courier' && freeFar && <p className="text-xs text-emerald-300/80">Over 750 g: delivery is free for the customer.</p>}{form.delivery_method === 'third_party_courier' && !freeFar && <input value={form.courier_fee} onChange={e => set('courier_fee', e.target.value)} type="number" min="1" inputMode="decimal" placeholder="What the third-party delivery service will cost (₹)" className={`${input} mt-2`} />}
     </div>
-    <div className="mt-3">
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {[['products', 'Our products'], ['custom', 'Custom item']].map(([v, label]) =>
+        <button key={v} type="button" onClick={() => { setMode(v); if (v === 'products') setEditing(null); }}
+          className={`rounded-2xl border px-2 py-2.5 text-xs ${mode === v ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
+    </div>
+    {isCustom && <div className="mt-3 space-y-2">
+      {saved.length > 0 && <div>
+        <p className="text-[11px] text-gray-500 mb-1">Saved items</p>
+        <div className="flex flex-wrap gap-2">
+          {saved.map(it => <span key={it.id} className={`inline-flex items-center rounded-full border text-xs ${editing === it.id ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-300'}`}>
+            <button type="button" onClick={() => pickSaved(it)} className="py-1.5 pl-3 pr-1">{it.title}{it.price ? ` · ${rupees(it.price)}` : ''}</button>
+            <button type="button" aria-label={`Remove ${it.title}`} onClick={() => { if (window.confirm(`Remove "${it.title}" from saved items?`)) { saveItem({ delete: it.id }); if (editing === it.id) setEditing(null); } }} className="py-1.5 pl-1 pr-3 text-gray-500">×</button>
+          </span>)}
+        </div>
+      </div>}
+      <div className="grid grid-cols-[1fr_5.5rem] gap-2">
+        <input value={custom.title} onChange={e => setC('title', e.target.value.slice(0, 80))} placeholder="Item title (e.g. Gift box)" aria-label="Item title" className={input} />
+        <input value={custom.qty} onChange={e => setC('qty', e.target.value)} type="number" min="1" max="500" inputMode="numeric" aria-label="Quantity" className={input} />
+      </div>
+      <input value={custom.amount} onChange={e => setC('amount', e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" aria-label="Amount" placeholder="Total amount to charge (₹, GST included)" className={input} />
+      <div>
+        <p className="text-[11px] text-gray-500 mb-1">GST (included in the amount)</p>
+        <div className="grid grid-cols-3 gap-2">
+          {[[0, 'No GST'], [5, '5% GST'], [18, '18% GST']].map(([v, label]) =>
+            <button key={v} type="button" onClick={() => setC('gst', v)}
+              className={`rounded-2xl border px-2 py-2.5 text-xs ${custom.gst === v ? 'border-[#D4AF37]/70 bg-[#D4AF37]/10 text-[#f1dc9c]' : 'border-white/10 text-gray-400'}`}>{label}</button>)}
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-xs text-gray-400"><input type="checkbox" checked={saveIt} onChange={e => setSaveIt(e.target.checked)} className="accent-[#D4AF37]" />
+        {editing ? 'Update this saved item (title, price and GST) when I send' : 'Save this item for next time'}</label>
+      {editing && <button type="button" disabled={custom.title.trim().length < 2} onClick={() => saveItem({ id: editing, title: custom.title.trim(), price: cTotal ? round2(cTotal / cQty) : null, gst_pct: custom.gst })}
+        className="rounded-2xl border border-white/10 px-3 py-2 text-xs text-gray-300 disabled:opacity-40">Update saved item now (without sending)</button>}
+      <p className="text-[11px] text-gray-500">Custom items never change your stock.</p>
+    </div>}
+    {!isCustom && <div className="mt-3">
       <p className="text-[11px] text-gray-500 mb-1">Items</p>
       <div className="space-y-2">
         {lines.map((l, idx) => <div key={idx} className="grid grid-cols-[1fr_5.5rem_2.5rem] gap-2">
@@ -228,8 +296,8 @@ export function ManualInvoice({ headers }) {
       </div>
       {!isTest && <button type="button" onClick={() => setLines(ls => [...ls, { id: ls.some(x => x.id === '250g') ? 'christmas-spirit' : '250g', qty: 1 }])}
         className="mt-2 rounded-2xl border border-dashed border-[#D4AF37]/40 px-3 py-2 text-xs text-[#f1dc9c]">+ Add another item</button>}
-    </div>
-    {!isTest && <div className="mt-3">
+    </div>}
+    {!isTest && !isCustom && <div className="mt-3">
       <p className="text-[11px] text-gray-500">Your own price (optional)</p>
       <div className="mt-1 grid grid-cols-2 gap-2">
         {[['total', 'Total amount'], ['kg', 'Price per kg']].map(([v, label]) =>
@@ -245,7 +313,11 @@ export function ManualInvoice({ headers }) {
         ? (rateTotal ? `${Math.round(orderKg * 1000) / 1000} kg × ${rupees(Number(ownRate))}${form.gst_enabled ? ' + 5% GST' : ''}${drinkRow ? ` + Christmas Spirit ${rupees(drinkTotal)}` : ''} = ${rupees(rateTotal)}, delivery included. The first-order discount doesn't apply.` : 'Type the rate per kg (before GST) for the tea on this invoice.')
         : (agreed ? `The customer pays exactly ${rupees(agreed)}${form.gst_enabled ? ', GST worked out inside it' : ''}, delivery included. The first-order discount doesn't apply.` : 'Type the total you want to charge (GST included) to set your own price.')}</p>
     </div>}
-    <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
+    {isCustom ? <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
+      <div className="flex justify-between"><span>{custom.title.trim() || 'Your item'} × {cQty}</span><span>{rupees(round2(cTotal - cGst))}</span></div>
+      {custom.gst > 0 && <div className="flex justify-between text-gray-500"><span>GST ({custom.gst}%, inside the amount)</span><span>{rupees(cGst)}</span></div>}
+      <div className="flex justify-between text-sm text-white"><span>Total</span><span className="text-[#efbd63]">{rupees(cTotal)}</span></div>
+    </div> : <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
       {merged.map(l => <div key={l.id} className="flex justify-between"><span>{packOf(l.id).label} × {l.qty}{packOf(l.id).inclusive ? ' (GST included)' : ''}</span><span>{agreed ? '' : rupees(packOf(l.id).price * l.qty)}</span></div>)}
       {!agreed && deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
       {!agreed && form.gst_enabled && !isTest && teaGst > 0 && <div className="flex justify-between"><span>GST ({teaRows.length ? `5% on tea${deliveryFee > 0 ? ' and delivery' : ''}` : `${(drinkPack?.gstRate || 0) * 100}% on delivery`})</span><span>{rupees(teaGst)}</span></div>}
@@ -253,7 +325,7 @@ export function ManualInvoice({ headers }) {
       {!form.gst_enabled && !isTest && <div className="flex justify-between text-gray-500"><span>GST</span><span>Off</span></div>}
       {agreed > 0 && <div className="flex justify-between text-gray-500"><span>Shop price would be</span><span>{rupees(shopTotal)}</span></div>}
       <div className="flex justify-between text-sm text-white"><span>Total{agreed ? ' (your amount)' : ''}</span><span className="text-[#efbd63]">{rupees(total)}</span></div>
-    </div>
+    </div>}
     {stock && needKg > 0 && <p className={`mt-2 text-xs ${stockLevel === 'shortfall' ? 'text-red-400' : stockLevel === 'reserve' ? 'text-amber-400' : 'text-gray-500'}`}>
       Available to sell: {stock.sellable} kg (+ {stock.reserve} kg protected reserve) · this invoice needs {needKg} kg
       {stockLevel === 'reserve' && ' — dips into your protected reserve'}
@@ -267,7 +339,7 @@ export function ManualInvoice({ headers }) {
         <button onClick={() => setStockWarning(null)} disabled={busy} className="rounded-2xl border border-white/10 py-2.5 text-sm text-gray-300">Cancel</button>
         <button onClick={() => send(true)} disabled={busy} className="rounded-2xl bg-amber-500 text-black py-2.5 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : 'Send anyway'}</button>
       </div>
-    </div> : <button onClick={() => send(false)} disabled={busy} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(total)}`}</button>}
+    </div> : <button onClick={() => send(false)} disabled={busy} className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black py-3 text-sm font-medium disabled:opacity-50">{busy ? 'Sending…' : `Send invoice for ${rupees(isCustom ? cTotal : total)}`}</button>}
     {!stockWarning && missing.length > 0 && <p className="mt-2 text-center text-xs text-amber-300/90">Still needed: {missing.join(', ')}.</p>}
     {sent.length > 0 && <div className="mt-5">
       <p className="text-xs uppercase tracking-[.14em] text-gray-500">Sent invoices</p>
