@@ -83,7 +83,8 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
 
 .hero-bg {
-  background-image: url('https://static.prod-images.emergentagent.com/jobs/c66468c3-ee7d-4745-ae1d-81e215b8ce47/images/207aceeea4bdc23e544a4e8bcd58ed838ddcfa706ccbfb0ec60ddeee06ce1fd6.png');
+  /* CTC tea granules (the owner, 19 Nov: "make it look like tea powder"), served from our own site */
+  background-image: url('/images/tea-powder-bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
