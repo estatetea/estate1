@@ -31,11 +31,17 @@ export function TeamMembers({ headers }) {
     <h2 className="text-xl text-[#efbd63]">Team members</h2>
     <p className="mt-1 text-xs text-gray-500">Add someone with their email: they get a link, open it on their phone and choose their own PIN. After that they just type their PIN at <b className="text-gray-300">estatetea.in/team</b>, and it opens their own account. They get Deliveries, Sales, Inventory (stock and purchases, not the packs-on-sale switches), Send invoice, Reports and invoice emails. Never WhatsApp, Brew, Aegis, approvals or settings.</p>
     {shared && <div className="mt-4 rounded-2xl border border-[#d7a84b]/30 bg-[#d7a84b]/[.05] p-4 text-xs text-gray-300">
-      <p>{shared.emailed ? `Emailed ${shared.name} their link.` : `The email didn't go out, so share this link with ${shared.name} yourself (only with them):`}</p>
-      <div className="mt-2 flex gap-2"><input readOnly value={shared.link} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-gray-400" />
-        <button onClick={() => { navigator.clipboard?.writeText(shared.link).then(() => toast.success('Link copied')).catch(() => {}); }} className="shrink-0 rounded-xl border border-white/10 px-3 text-xs text-gray-300">Copy</button></div>
-      {shared.code && !shared.emailed && <p className="mt-2 text-gray-300">Or they type this code in the app: <b className="font-mono tracking-widest text-[#efbd63]">{shared.code}</b></p>}
-      <p className="mt-2 text-[10px] text-gray-500">The link and code work once and last 7 days.</p>
+      <p className="text-sm text-white">{shared.name}'s sign-in code</p>
+      {shared.code && <div className="mt-2 flex items-center gap-3">
+        <b className="font-mono text-2xl tracking-[.25em] text-[#efbd63]">{shared.code}</b>
+        <button onClick={() => { navigator.clipboard?.writeText(shared.code).then(() => toast.success('Code copied')).catch(() => {}); }} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">Copy</button>
+      </div>}
+      <p className="mt-2 leading-5">{shared.emailed ? `It was also emailed to ${shared.name} (ask them to check spam if it isn't there). ` : "The email didn't go out, so give it to them yourself. "}
+        They open <b>estatetea.in/team</b> (or the ET Team Beta app), type this code under "Have a code?", and choose their own PIN.</p>
+      <details className="mt-2"><summary className="cursor-pointer text-[11px] text-gray-500">Or send the link instead</summary>
+        <div className="mt-2 flex gap-2"><input readOnly value={shared.link} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-gray-400" />
+          <button onClick={() => { navigator.clipboard?.writeText(shared.link).then(() => toast.success('Link copied')).catch(() => {}); }} className="shrink-0 rounded-xl border border-white/10 px-3 text-xs text-gray-300">Copy</button></div></details>
+      <p className="mt-2 text-[10px] text-gray-500">The code and link work once and last 7 days. Share them only with {shared.name}.</p>
     </div>}
     <div className="mt-4 divide-y divide-white/[.06] rounded-2xl border border-white/[.07]">
       {data.members.length === 0 && <p className="p-4 text-sm text-gray-500">No team members yet.</p>}
@@ -44,7 +50,7 @@ export function TeamMembers({ headers }) {
           <p className="text-xs text-gray-500">{[m.email, m.phone].filter(Boolean).join(' · ')}</p>
           <p className="text-[11px] text-gray-500">{m.has_pin ? `PIN set · ${m.phones} phone${m.phones === 1 ? '' : 's'} · last signed in ${when(m.last_login_at)}` : m.link_pending ? 'Link sent, waiting for them to choose their PIN' : 'No PIN yet: send them a link'}</p></div>
         <div className="flex flex-wrap gap-2">
-          <button disabled={busy} onClick={() => post({ action: 'send_link', member_id: m.member_id }, m.has_pin ? `New-phone link made for ${m.name}` : `Link sent to ${m.name}`)} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">{m.has_pin ? 'Link for a new phone' : 'Send link again'}</button>
+          <button disabled={busy} onClick={() => post({ action: 'send_link', member_id: m.member_id }, m.has_pin ? `New-phone link made for ${m.name}` : `Link sent to ${m.name}`)} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">{m.has_pin ? 'Code for a new phone' : 'Get their code again'}</button>
           {m.has_pin && <button disabled={busy} onClick={() => window.confirm(`Reset ${m.name}'s PIN? They're signed out and choose a new PIN from a fresh link.`) && post({ action: 'reset_pin', member_id: m.member_id }, `${m.name}'s PIN was reset: a link to choose a new one is on its way`)} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">Reset PIN</button>}
           {m.phones > 0 && <button disabled={busy} onClick={() => window.confirm(`Sign ${m.name} out of all their phones? They'll need a new link to sign in again.`) && post({ action: 'signout_phones', member_id: m.member_id }, `${m.name} is signed out of all phones`)} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">Sign out phones</button>}
           <button disabled={busy} onClick={() => post({ action: 'active', member_id: m.member_id, active: !m.active }, m.active ? `${m.name} is switched off (signed out now)` : `${m.name} can sign in again`)}

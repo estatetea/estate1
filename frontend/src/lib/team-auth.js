@@ -173,6 +173,7 @@ export async function emailLink(member, { token, code }, origin, kind = 'invite'
       headers: { 'Content-Type': 'application/json', 'x-internal-service-key': process.env.INTERNAL_SERVICE_KEY || '' },
       body: JSON.stringify({ to: member.email, name: member.name, link, code, kind }) });
     const b = await r.json().catch(() => ({}));
+    if (!(r.ok && b.sent)) console.log(`[team] invite email not sent to member ${member.member_id}: HTTP ${r.status} ${JSON.stringify(b).slice(0, 200)}`);
     return { link, code, sent: !!(r.ok && b.sent) };
-  } catch { return { link, code, sent: false }; }
+  } catch (e) { console.log(`[team] invite email failed for member ${member.member_id}: ${e?.name || 'error'}`); return { link, code, sent: false }; }
 }

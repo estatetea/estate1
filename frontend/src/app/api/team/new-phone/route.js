@@ -16,6 +16,7 @@ export async function POST(request) {
   if (!email) return NextResponse.json({ error: 'Enter your email' }, { status: 400 });
   try {
     const m = await (await teamMembers()).findOne({ email, deleted: { $ne: true } });
+    if (!m) console.log('[team] new-phone code asked for an email that is not on the team');
     if (m && m.active !== false) {
       const link = await createLink(m, m.pin_hash ? 'device' : 'invite');
       await emailLink(m, link, new URL(request.url).origin, m.pin_hash ? 'device' : 'invite');

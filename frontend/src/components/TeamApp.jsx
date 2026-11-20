@@ -59,17 +59,20 @@ function NewPhone({ onBack, onCode }) {
   const send = async e => { e.preventDefault(); setBusy(true); setErr('');
     try { setMsg((await post('/api/team/new-phone', { email: email.trim() })).message); } catch (e2) { setErr(e2.message); } finally { setBusy(false); } };
   const useCode = e => { e.preventDefault(); const c = code.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length === 8) onCode(c); else setErr('The code has 8 letters and numbers, like K7QM-2XPA.'); };
-  return <Card title="Sign in on this phone" sub="Your sign-in code comes by email. After this, it's just your PIN.">
-    {msg ? <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-sm text-emerald-200">{msg}</p> :
-      <form onSubmit={send} className="space-y-3">
-        <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} type="email" autoCapitalize="none" placeholder="Your email" className={input} />
-        <Gold busy={busy} disabled={!email.trim()}>Email me a code</Gold>
-      </form>}
-    <form onSubmit={useCode} className="space-y-3 border-t border-white/[.07] pt-4">
-      <p className="text-xs text-gray-400">Have a code from the email? Type it here:</p>
+  return <Card title="Sign in on this phone" sub="First time? The owner adds you to the team and gives you a sign-in code (it's also emailed to you). After this, it's just your PIN.">
+    <form onSubmit={useCode} className="space-y-3">
+      <p className="text-xs text-gray-400">Have a code? Type it here:</p>
       <input value={code} onChange={e => { setCode(e.target.value.toUpperCase().slice(0, 12)); setErr(''); }} autoCapitalize="characters" autoComplete="one-time-code" placeholder="K7QM-2XPA" className={`${input} text-center font-mono tracking-[.3em]`} />
-      <button disabled={code.replace(/[^A-Za-z0-9]/g, '').length !== 8} className="w-full rounded-xl border border-[#D4AF37]/60 py-3 text-sm text-[#efbd63] disabled:opacity-40">Use this code</button>
+      <Gold disabled={code.replace(/[^A-Za-z0-9]/g, '').length !== 8}>Use this code</Gold>
     </form>
+    <div className="space-y-3 border-t border-white/[.07] pt-4">
+      <p className="text-xs text-gray-400">Already on the team and need a new code? We'll email it to you.</p>
+      {msg ? <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-sm text-emerald-200">{msg}</p> :
+        <form onSubmit={send} className="space-y-3">
+          <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} type="email" autoCapitalize="none" placeholder="Your email" className={input} />
+          <button disabled={busy || !email.trim()} className="w-full rounded-xl border border-[#D4AF37]/60 py-3 text-sm text-[#efbd63] disabled:opacity-40">{busy ? 'Sending…' : 'Email me a new code'}</button>
+        </form>}
+    </div>
     <Err>{err}</Err>
     {onBack && <button onClick={onBack} className="w-full text-center text-xs text-gray-500">Back</button>}
   </Card>;
