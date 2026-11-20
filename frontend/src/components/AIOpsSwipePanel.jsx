@@ -2,6 +2,7 @@
 import { OpenLoops } from './OpenLoops';
 import { FriendsList } from './FriendsList';
 import { TeamMembers } from './TeamMembers';
+import { AccountsPanel } from './AccountsPanel';
 import { LedgerMail } from './LedgerMail';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {Home,Users,Boxes,BarChart3,Settings,RefreshCw,ChevronLeft,ChevronRight,Save,ScanFace,ShieldCheck,Activity,CheckCircle2,HeartPulse,Sparkles,Play,Pause,ChevronDown,RotateCcw,Square,MessageCircle,Send,Paperclip,Mic,X,ClipboardCheck,Download,Mail,Truck,IndianRupee,Search,Command as CommandIcon,CornerDownLeft,AlertTriangle,List as ListIcon,LayoutGrid} from 'lucide-react';
@@ -32,6 +33,7 @@ const GROUPS=[
  {id:'today',icon:Home,label:'Today',sections:[['home','Overview'],['attention','Needs you']]},
  {id:'aegis',icon:MessageCircle,label:'Aegis',sections:[['chat','Chat']]},
  {id:'orders',icon:Truck,label:'Orders',sections:[['deliveries','Deliveries'],['sales','Sales'],['inventory','Inventory'],['invoice','Send invoice']]},
+ {id:'accounts',icon:IndianRupee,label:'Accounts',sections:[['accounts','Accounts']]},
  {id:'inbox',icon:ClipboardCheck,label:'Inbox',sections:[['approvals','Approvals'],['chats','WhatsApp'],['enquiries','Enquiries'],['mail','Mail']]},
  {id:'team',icon:Users,label:'Team',sections:[['agents','Agents'],['activity','Activity'],['reports','Reports']]},
 ];
@@ -45,7 +47,7 @@ function Nav({group,badge,go,settingsActive}){
     <I className="h-[17px] w-[17px]" strokeWidth={1.6}/><span className="flex-1 text-left">{g.label}</span>{dot(badge(g))}</button>})}
   </aside>
   <nav aria-label="Sections" className="lg:hidden fixed inset-x-0 bottom-0 z-[60] border-t border-white/[.07] bg-[#0a0a0a]/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
-   <div className="mx-auto grid max-w-md grid-cols-5">
+   <div className="mx-auto grid max-w-md grid-cols-6">
     {GROUPS.map(g=>{const on=group?.id===g.id&&!settingsActive,I=g.icon,n=badge(g);return <button key={g.id} onClick={()=>go(g.sections[0][0])} className={`relative flex flex-col items-center gap-1 py-2.5 text-[10px] tracking-wide transition-colors ${on?'text-[#efbd63]':'text-gray-500'}`}>
      <span className={`absolute top-0 h-[2px] w-8 rounded-full transition-opacity ${on?'bg-[#efbd63] opacity-100':'opacity-0'}`}/>
      <span className="relative"><I className="h-5 w-5" strokeWidth={1.6}/>{n>0&&<span className="absolute -right-2.5 -top-1.5 min-w-[16px] rounded-full bg-[#efbd63] px-1 text-center text-[9px] font-medium leading-4 text-black">{n>99?'99+':n}</span>}</span>{g.label}</button>})}
@@ -142,7 +144,7 @@ export default function AIOpsSwipePanel({token,faceIDReady=false,faceIDBusy=fals
  {section==='enquiries'&&<EnquiriesPanel headers={headers} token={token} onCount={setNewEnquiries}/>}
  {section==='deliveries'&&<DeliveriesSection token={token}/>} 
  {section==='inventory'&&<InventorySection inventory={inv} headers={headers} onChange={setInventory}/>}
- {section==='sales'&&<SalesSection sales={sales} loading={salesLoading}/>}
+ {section==='accounts'&&<AccountsPanel headers={headers}/>}{section==='sales'&&<SalesSection sales={sales} loading={salesLoading}/>}
  {section==='invoice'&&<ManualInvoice headers={headers}/>}
  {section==='reports'&&<div className="space-y-4"><ReportsPanel headers={headers}/><GstReport headers={headers}/></div>} 
  {section==='settings'&&<div className="space-y-4">{notifications}<ApprovalSettings headers={headers}/><FriendsList headers={headers}/><TeamMembers headers={headers}/><AgentPolicy headers={headers}/><Panel title="Low-data mode" sub={lowData?'On: the app refreshes every 3 minutes and only loads the page you are on. Tap the refresh button at the top any time for the latest.':'Off: the app refreshes every minute while it is open on screen. Turn this on when you are on mobile data.'}><button onClick={()=>setLowData(v=>!v)} role="switch" aria-checked={lowData} className="mt-4 flex items-center gap-3 text-sm text-gray-300"><span className={`relative h-6 w-11 rounded-full transition-colors ${lowData?'bg-[#efbd63]':'bg-white/15'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition-all ${lowData?'left-[22px]':'left-0.5'}`}/></span>{lowData?'On':'Off'}</button></Panel><PrinterSettings headers={headers}/><AegisBrainStatus headers={headers}/><Panel title="Estate Tea AI Test Mode" sub="Bring the full team online without autonomous work. Agents act only when you directly assign a test task."><div className="mt-5 space-y-3"><div className="flex items-center gap-2 text-xs"><span className={`w-2 h-2 rounded-full ${testMode?'bg-emerald-400':'bg-gray-500'}`}/><span className={testMode?'text-emerald-300':'text-gray-400'}>{testMode?'Test Mode active · assignment only':'Test Mode inactive'}</span></div><input type="password" autoComplete="off" value={testKey} onChange={e=>setTestKey(e.target.value)} onKeyDown={e=>e.key==='Enter'&&activateTestMode()} placeholder="Owner Control Key" className="w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-[#d7a84b]/40"/><div className="flex gap-2"><button onClick={activateTestMode} disabled={testBusy||!testKey.trim()||testMode} className="rounded-2xl bg-gradient-to-r from-[#c9983c] to-[#efc66d] text-black px-5 py-3 text-xs font-medium disabled:opacity-40 flex items-center gap-2"><Play className="w-4 h-4"/>{testBusy?<LoadingDetail label="Working…"/>:'Activate Test Mode'}</button><button onClick={deactivateTestMode} disabled={testBusy||!testKey.trim()||!testMode} className="rounded-2xl border border-red-400/20 bg-red-400/[.06] text-red-300 px-5 py-3 text-xs disabled:opacity-40 flex items-center gap-2"><Square className="w-4 h-4"/>{testBusy?<LoadingDetail label="Working…"/>:'Deactivate'}</button></div><p className="text-[11px] text-gray-600">Your key is used only for this activation request and is not saved in the browser.</p></div></Panel><Panel title="Face ID unlock" sub={faceIDReady?'Face ID sign-in is registered on the owner app.':'Face ID sign-in has not been set up on this device.'}><button onClick={onSetupFaceID} disabled={faceIDBusy||!onSetupFaceID} className="mt-5 rounded-2xl border border-[#d7a84b]/25 bg-[#d7a84b]/10 px-4 py-2.5 text-xs text-[#efbd63] flex gap-2 items-center"><ScanFace className="w-4 h-4"/>{faceIDBusy?<LoadingDetail label="Setting up…"/>:faceIDReady?'Create new Face ID sign-in':'Set up Face ID'}</button></Panel></div>}

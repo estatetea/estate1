@@ -1,7 +1,8 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Home, Truck, BarChart3, Boxes, Receipt, FileText, Mail, LogOut, Loader2, RefreshCw } from 'lucide-react';
+import { Home, Truck, BarChart3, Boxes, Receipt, FileText, Mail, LogOut, Loader2, RefreshCw, Wallet } from 'lucide-react';
+import { AccountsPanel } from './AccountsPanel';
 import { DeliveriesSection } from './delivery/DeliveriesSection';
 import { SUMMARY_BUCKETS, inBucket } from './delivery/DeliverySummary';
 import { SalesSection } from './SalesSection';
@@ -17,7 +18,7 @@ const KEY = 'estate_team_session';
 const LOGO = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
 const TABS = [
   ['today', 'Today', Home], ['deliveries', 'Deliveries', Truck], ['sales', 'Sales', BarChart3], ['inventory', 'Inventory', Boxes],
-  ['invoice', 'Send invoice', Receipt], ['reports', 'Reports', FileText], ['mail', 'Invoice emails', Mail],
+  ['invoice', 'Send invoice', Receipt], ['accounts', 'Accounts', Wallet], ['reports', 'Reports', FileText], ['mail', 'Invoice emails', Mail],
 ];
 const kg = v => `${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`;
 const thisMonth = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 7);
@@ -188,6 +189,7 @@ export default function TeamApp() {
         </div>
       </>}
       {tab === 'invoice' && <ManualInvoice headers={headers} />}
+      {tab === 'accounts' && <AccountsPanel headers={headers} />}
       {tab === 'reports' && <ReportsPanel headers={headers} />}
       {tab === 'mail' && <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6">
         <h2 className="text-xl text-[#efbd63]">Invoice emails</h2>
