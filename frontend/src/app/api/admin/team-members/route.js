@@ -31,7 +31,7 @@ export async function POST(request) {
   if (b.email && !email) return NextResponse.json({ error: "That email doesn't look right" }, { status: 400 });
   if (b.phone && !phone) return NextResponse.json({ error: 'Enter a 10-digit phone number' }, { status: 400 });
   const taken = async (value, except) => value && await col.findOne({ email: value, deleted: { $ne: true }, ...(except ? { member_id: { $ne: except } } : {}) });
-  const sendLink = async (m, kind) => { const token = await createLink(m, kind); return emailLink(m, token, origin, kind); };
+  const sendLink = async (m, kind) => emailLink(m, await createLink(m, kind), origin, kind);
   try {
     if (b.action === 'add') {
       if (name.length < 2) return NextResponse.json({ error: 'Enter their name' }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(request) {
         session_version: 1, devices: [], created_at: new Date() };
       await col.insertOne(doc);
       const sent = await sendLink(doc, 'invite');
-      return NextResponse.json({ ...view(doc), link: sent.link, emailed: sent.sent });
+      return NextResponse.json({ ...view(doc), link: sent.link, code: sent.code, emailed: sent.sent });
     }
     const m = await col.findOne({ member_id: String(b.member_id || ''), deleted: { $ne: true } });
     if (!m) return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
@@ -56,13 +56,13 @@ export async function POST(request) {
     }
     if (b.action === 'send_link') {
       const sent = await sendLink(m, m.pin_hash ? 'device' : 'invite');
-      return NextResponse.json({ ...view(m), link: sent.link, emailed: sent.sent });
+      return NextResponse.json({ ...view(m), link: sent.link, code: sent.code, emailed: sent.sent });
     }
     if (b.action === 'reset_pin') {   // they choose a new PIN from a fresh link; signed out everywhere until then
       await col.updateOne({ _id: m._id }, { $set: { ...bump, pin_hash: null, pin_salt: null } });
       const after = { ...m, ...bump, pin_hash: null };
       const sent = await sendLink(after, 'invite');
-      return NextResponse.json({ ...view(after), link: sent.link, emailed: sent.sent });
+      return NextResponse.json({ ...view(after), link: sent.link, code: sent.code, emailed: sent.sent });
     }
     let set;
     if (b.action === 'signout_phones') set = { ...bump, devices: [] };

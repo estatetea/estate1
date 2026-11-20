@@ -36,6 +36,7 @@ function Card({ title, sub, children }) {
       <div className="flex flex-col items-center text-center">
         <img src={LOGO} alt="Estate Tea" className="h-16 w-16 object-contain" />
         <h1 className="mt-4 text-2xl font-light text-[#D4AF37]">{title}</h1>
+        <span className="mt-2 rounded-full border border-[#D4AF37]/50 px-2.5 py-0.5 text-[10px] tracking-[.2em] text-[#D4AF37]">BETA</span>
         {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
       </div>
       {children}
@@ -51,31 +52,38 @@ const post = async (url, body) => {
   return b;
 };
 
-// "New phone? Get a link": the link goes to their email; opening it on this phone registers it.
-function NewPhone({ onBack }) {
-  const [email, setEmail] = useState(''), [busy, setBusy] = useState(false), [msg, setMsg] = useState(''), [err, setErr] = useState('');
-  const submit = async e => { e.preventDefault(); setBusy(true); setErr('');
+// "New phone? Get a link": a code and a link go to their email. Typing the code here registers THIS app (on an iPhone,
+// the home-screen app doesn't share Safari's storage, so the code is the way in for the installed app).
+function NewPhone({ onBack, onCode }) {
+  const [email, setEmail] = useState(''), [code, setCode] = useState(''), [busy, setBusy] = useState(false), [msg, setMsg] = useState(''), [err, setErr] = useState('');
+  const send = async e => { e.preventDefault(); setBusy(true); setErr('');
     try { setMsg((await post('/api/team/new-phone', { email: email.trim() })).message); } catch (e2) { setErr(e2.message); } finally { setBusy(false); } };
-  return <Card title="New phone" sub="We'll email you a link. Open it on this phone, and after that it's just your PIN.">
+  const useCode = e => { e.preventDefault(); const c = code.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length === 8) onCode(c); else setErr('The code has 8 letters and numbers, like K7QM-2XPA.'); };
+  return <Card title="Sign in on this phone" sub="Your sign-in code comes by email. After this, it's just your PIN.">
     {msg ? <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-sm text-emerald-200">{msg}</p> :
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={send} className="space-y-3">
         <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} type="email" autoCapitalize="none" placeholder="Your email" className={input} />
-        <Err>{err}</Err>
-        <Gold busy={busy} disabled={!email.trim()}>Email me a link</Gold>
+        <Gold busy={busy} disabled={!email.trim()}>Email me a code</Gold>
       </form>}
+    <form onSubmit={useCode} className="space-y-3 border-t border-white/[.07] pt-4">
+      <p className="text-xs text-gray-400">Have a code from the email? Type it here:</p>
+      <input value={code} onChange={e => { setCode(e.target.value.toUpperCase().slice(0, 12)); setErr(''); }} autoCapitalize="characters" autoComplete="one-time-code" placeholder="K7QM-2XPA" className={`${input} text-center font-mono tracking-[.3em]`} />
+      <button disabled={code.replace(/[^A-Za-z0-9]/g, '').length !== 8} className="w-full rounded-xl border border-[#D4AF37]/60 py-3 text-sm text-[#efbd63] disabled:opacity-40">Use this code</button>
+    </form>
+    <Err>{err}</Err>
     {onBack && <button onClick={onBack} className="w-full text-center text-xs text-gray-500">Back</button>}
   </Card>;
 }
 
 // The link from the email: choose a PIN the first time (twice), or confirm your PIN on a new phone.
-function LinkScreen({ token, kind, onDone }) {
+function LinkScreen({ token, kind, onDone, onBack }) {
   const [info, setInfo] = useState(null), [err, setErr] = useState(''), [pin, setPin] = useState(''), [pin2, setPin2] = useState(''), [busy, setBusy] = useState(false);
   useEffect(() => { fetch(`/api/team/link?token=${encodeURIComponent(token)}`, { cache: 'no-store' }).then(r => r.json().then(b => r.ok ? setInfo(b) : setErr(b.error || 'This link has expired.'))).catch(() => setErr("Couldn't open the link. Try again shortly.")); }, [token]);
   const first = (info?.name || '').split(' ')[0];
   const submit = async e => { e.preventDefault(); if (info.needs_pin && pin !== pin2) return setErr("The two PINs don't match."); setBusy(true); setErr('');
     try { const b = await post('/api/team/link', { token, pin }); store.set(DEVICE_KEY, b.device); onDone({ token: b.token, name: b.member?.name || '' }); }
     catch (e2) { setErr(e2.message); setPin(''); setPin2(''); } finally { setBusy(false); } };
-  if (!info) return <Card title="Estate Tea · Team">{err ? <Err>{err}</Err> : <Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-500" />}</Card>;
+  if (!info) return <Card title="Estate Tea · Team">{err ? <><Err>{err}</Err><button onClick={() => onBack?.()} className="w-full text-center text-xs text-gray-500">Back</button></> : <Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-500" />}</Card>;
   return <Card title={`Welcome${first ? `, ${first}` : ''}`} sub={info.needs_pin ? 'Choose your own 6-digit PIN. From now on, your PIN is all you need to sign in.' : 'Type your PIN to sign in on this phone.'}>
     <form onSubmit={submit} className="space-y-4">
       <input value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }} type="password" inputMode="numeric" autoComplete="new-password" placeholder={info.needs_pin ? 'New PIN' : 'Your PIN'} className={pinInput} />
@@ -84,13 +92,14 @@ function LinkScreen({ token, kind, onDone }) {
       <Err>{err}</Err>
       <Gold busy={busy} disabled={pin.length !== 6 || (info.needs_pin && pin2.length !== 6)}>{info.needs_pin ? 'Save my PIN' : 'Sign in'}</Gold>
     </form>
+    {kind !== 'code' && <p className="text-[11px] leading-5 text-gray-500">Want it as an app? On iPhone: Share → <b>Add to Home Screen</b>. Then open the app, tap <b>New phone? Get a link</b> and type the code from the new email. On Android it simply carries on in the app.</p>}
   </Card>;
 }
 
 // Everyday sign-in: just the PIN (on a registered phone). Whoever's PIN it is gets their own account.
-function SignIn({ onDone }) {
+function SignIn({ onDone, onCode }) {
   const [pin, setPin] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState(''), [newPhone, setNewPhone] = useState(!store.get(DEVICE_KEY));
-  if (newPhone) return <NewPhone onBack={store.get(DEVICE_KEY) ? () => setNewPhone(false) : null} />;
+  if (newPhone) return <NewPhone onBack={store.get(DEVICE_KEY) ? () => setNewPhone(false) : null} onCode={onCode} />;
   const submit = async e => { e.preventDefault(); if (busy) return; setBusy(true); setErr('');
     try { const b = await post('/api/team/login', { device: store.get(DEVICE_KEY), pin }); onDone({ token: b.token, name: b.member?.name || '' }); }
     catch (e2) { if (e2.body?.unregistered) { store.set(DEVICE_KEY, null); setNewPhone(true); } setErr(e2.message); setPin(''); }
@@ -164,13 +173,13 @@ export default function TeamApp() {
     if (tab === 'inventory' && !inventory) fetch('/api/admin/inventory', { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setInventory).catch(() => {});
   }, [tab, session?.token]);
   if (session === undefined) return <div className="min-h-[100dvh] bg-[#0A0A0A]" />;
-  if (link) return <LinkScreen token={link.token} kind={link.kind} onDone={signedIn} />;
-  if (!session) return <SignIn onDone={signedIn} />;
+  if (link) return <LinkScreen token={link.token} kind={link.kind} onDone={signedIn} onBack={() => setLink(null)} />;
+  if (!session) return <SignIn onDone={signedIn} onCode={c => setLink({ token: c, kind: 'code' })} />;
   return <div className="min-h-[100dvh] bg-[#0A0A0A] text-white">
     <header className="sticky top-0 z-20 border-b border-white/[.07] bg-[#0A0A0A]/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3"><img src={LOGO} alt="" className="h-8 w-8 object-contain" />
-          <div><p className="text-sm text-[#D4AF37]">Estate Tea · Team</p><p className="text-[11px] text-gray-500">{session.name ? `Signed in as ${session.name}` : ''}</p></div></div>
+          <div><p className="text-sm text-[#D4AF37]">Estate Tea · Team <span className="ml-1 rounded-full border border-[#D4AF37]/50 px-1.5 py-px text-[9px] tracking-[.15em]">BETA</span></p><p className="text-[11px] text-gray-500">{session.name ? `Signed in as ${session.name}` : ''}</p></div></div>
         <button onClick={() => signOut()} className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-gray-300"><LogOut className="h-3.5 w-3.5" />Sign out</button>
       </div>
       <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">

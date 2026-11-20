@@ -10,7 +10,7 @@ const what = a => (WHAT.find(([rx]) => rx.test(a.path)) || [null, `${a.method} $
 export function TeamMembers({ headers }) {
   const [data, setData] = useState({ members: [], activity: [] });
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
-  const [shared, setShared] = useState(null);   // the last link made: { name, link, emailed }
+  const [shared, setShared] = useState(null);   // the last link made: { name, link, code, emailed }
   const [busy, setBusy] = useState(false);
   const auth = headers?.Authorization;
   const load = useCallback(async () => {
@@ -23,7 +23,7 @@ export function TeamMembers({ headers }) {
       const r = await fetch('/api/admin/team-members', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const b = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(b.error || 'Could not save');
-      toast.success(ok); if (b.link) setShared({ name: b.name, link: b.link, emailed: b.emailed }); load(); return true;
+      toast.success(ok); if (b.link) setShared({ name: b.name, link: b.link, code: b.code, emailed: b.emailed }); load(); return true;
     } catch (e) { toast.error(e.message); return false; } finally { setBusy(false); }
   };
   const input = 'w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-[#d7a84b]/40';
@@ -34,7 +34,8 @@ export function TeamMembers({ headers }) {
       <p>{shared.emailed ? `Emailed ${shared.name} their link.` : `The email didn't go out, so share this link with ${shared.name} yourself (only with them):`}</p>
       <div className="mt-2 flex gap-2"><input readOnly value={shared.link} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-gray-400" />
         <button onClick={() => { navigator.clipboard?.writeText(shared.link).then(() => toast.success('Link copied')).catch(() => {}); }} className="shrink-0 rounded-xl border border-white/10 px-3 text-xs text-gray-300">Copy</button></div>
-      <p className="mt-2 text-[10px] text-gray-500">It works once and lasts 7 days.</p>
+      {shared.code && !shared.emailed && <p className="mt-2 text-gray-300">Or they type this code in the app: <b className="font-mono tracking-widest text-[#efbd63]">{shared.code}</b></p>}
+      <p className="mt-2 text-[10px] text-gray-500">The link and code work once and last 7 days.</p>
     </div>}
     <div className="mt-4 divide-y divide-white/[.06] rounded-2xl border border-white/[.07]">
       {data.members.length === 0 && <p className="p-4 text-sm text-gray-500">No team members yet.</p>}

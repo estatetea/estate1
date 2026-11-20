@@ -44,15 +44,22 @@ export async function teamMembers() {
 }
 
 // ---- the one-time link (first phone, or a new phone) -------------------------------------------------------------
+// Each link also has a short code (e.g. K7QM-2XPA) for typing into the app on the home screen: on an iPhone the
+// home-screen app doesn't share Safari's storage, so a link opened in Safari doesn't register the app itself.
+const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const cleanCode = raw => String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 export async function createLink(member, kind = 'invite') {
   const token = crypto.randomBytes(24).toString('base64url');
-  await (await teamMembers()).updateOne({ member_id: member.member_id }, { $set: { link: { hash: sha(token), exp: Date.now() + LINK_TTL_MS, kind } } });
-  return token;
+  const code = Array.from(crypto.randomBytes(8), b => CODE_ABC[b % CODE_ABC.length]).join('');
+  await (await teamMembers()).updateOne({ member_id: member.member_id }, { $set: { link: { hash: sha(token), code_hash: sha('code:' + code), exp: Date.now() + LINK_TTL_MS, kind } } });
+  return { token, code: `${code.slice(0, 4)}-${code.slice(4)}` };
 }
 
 async function memberForLink(token) {
-  if (!/^[A-Za-z0-9_-]{20,80}$/.test(String(token || ''))) return null;
-  const m = await (await teamMembers()).findOne({ 'link.hash': sha(token) });
+  const code = cleanCode(token);
+  const isCode = code.length === 8 && [...code].every(c => CODE_ABC.includes(c));
+  if (!isCode && !/^[A-Za-z0-9_-]{20,80}$/.test(String(token || ''))) return null;
+  const m = await (await teamMembers()).findOne(isCode ? { 'link.code_hash': sha('code:' + code) } : { 'link.hash': sha(token) });
   if (!m || m.active === false || m.deleted || !m.link || m.link.exp < Date.now()) return null;
   return m;
 }
@@ -157,15 +164,15 @@ export async function verifyStaff(request) {
 }
 
 // Email someone their link (through Brew, which sends Estate Tea's emails).
-export async function emailLink(member, token, origin, kind = 'invite') {
+export async function emailLink(member, { token, code }, origin, kind = 'invite') {
   const base = /^https:\/\/(www\.)?estatetea\.in$/.test(origin) ? origin : 'https://estatetea.in';
   const link = `${base}/team?${kind === 'device' ? 'device' : 'invite'}=${token}`;
   const brewUrl = (process.env.BREW_URL || process.env.BREW_API_BASE_URL || 'https://estate-tea-brew.vercel.app').replace(/\/$/, '');
   try {
     const r = await fetch(`${brewUrl}/brew/team-invite-email`, { method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', 'x-internal-service-key': process.env.INTERNAL_SERVICE_KEY || '' },
-      body: JSON.stringify({ to: member.email, name: member.name, link, kind }) });
+      body: JSON.stringify({ to: member.email, name: member.name, link, code, kind }) });
     const b = await r.json().catch(() => ({}));
-    return { link, sent: !!(r.ok && b.sent) };
-  } catch { return { link, sent: false }; }
+    return { link, code, sent: !!(r.ok && b.sent) };
+  } catch { return { link, code, sent: false }; }
 }
