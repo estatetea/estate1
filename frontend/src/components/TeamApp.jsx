@@ -22,42 +22,86 @@ const TABS = [
 const kg = v => `${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`;
 const thisMonth = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 7);
 
+const DEVICE_KEY = 'estate_team_device';
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* */ } } };
 function readSession() {
-  try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); return s?.token ? s : null; } catch { return null; }
+  try { const s = JSON.parse(store.get(KEY) || 'null'); return s?.token ? s : null; } catch { return null; }
 }
-
-function SignIn({ onDone }) {
-  const [id, setId] = useState(''), [pin, setPin] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('');
-  const submit = async e => {
-    e.preventDefault(); if (busy) return;
-    setBusy(true); setErr('');
-    try {
-      const r = await fetch('/api/team/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id.trim(), pin }) });
-      const b = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(b.error || 'Could not sign in');
-      const s = { token: b.token, name: b.member?.name || '' };
-      try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* still signed in for this visit */ }
-      onDone(s);
-    } catch (e2) { setErr(e2.message); setPin(''); } finally { setBusy(false); }
-  };
-  const input = 'w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-base text-white outline-none focus:border-[#D4AF37]/60';
+const input = 'w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-base text-white outline-none focus:border-[#D4AF37]/60';
+const pinInput = `${input} text-center text-2xl tracking-[.6em] placeholder:text-base placeholder:tracking-normal`;
+function Card({ title, sub, children }) {
   return <main className="min-h-[100dvh] bg-[#0A0A0A] px-5 py-10 text-[#F5F5F0] flex items-center justify-center">
-    <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#121212] p-7 space-y-5">
+    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#121212] p-7 space-y-5">
       <div className="flex flex-col items-center text-center">
         <img src={LOGO} alt="Estate Tea" className="h-16 w-16 object-contain" />
-        <h1 className="mt-4 text-2xl font-light text-[#D4AF37]">Estate Tea · Team</h1>
-        <p className="mt-1 text-xs text-gray-500">Orders, deliveries, stock and invoices</p>
+        <h1 className="mt-4 text-2xl font-light text-[#D4AF37]">{title}</h1>
+        {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
       </div>
-      <label className="block"><span className="mb-1.5 block text-xs uppercase tracking-[.16em] text-gray-400">Phone number or email</span>
-        <input value={id} onChange={e => { setId(e.target.value); setErr(''); }} autoComplete="username" inputMode="email" autoCapitalize="none" className={input} /></label>
-      <label className="block"><span className="mb-1.5 block text-xs uppercase tracking-[.16em] text-gray-400">Your 6-digit PIN</span>
-        <input value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }} type="password" inputMode="numeric" autoComplete="current-password" className={`${input} tracking-[.5em]`} /></label>
-      {err && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/5 px-3 py-2 text-sm text-red-200">{err}</p>}
-      <button disabled={busy || !id.trim() || pin.length !== 6} className="flex w-full items-center justify-center rounded-xl bg-[#D4AF37] py-3.5 text-sm font-medium text-black disabled:opacity-50">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign in'}</button>
-      <p className="text-center text-[11px] text-gray-600">Forgot your PIN? Ask the owner to reset it.</p>
-    </form>
+      {children}
+    </div>
   </main>;
+}
+const Err = ({ children }) => children ? <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/5 px-3 py-2 text-sm text-red-200">{children}</p> : null;
+const Gold = ({ busy, disabled, children }) => <button disabled={busy || disabled} className="flex w-full items-center justify-center rounded-xl bg-[#D4AF37] py-3.5 text-sm font-medium text-black disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : children}</button>;
+const post = async (url, body) => {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(b.error || 'Something went wrong'); e.body = b; throw e; }
+  return b;
+};
+
+// "New phone? Get a link": the link goes to their email; opening it on this phone registers it.
+function NewPhone({ onBack }) {
+  const [email, setEmail] = useState(''), [busy, setBusy] = useState(false), [msg, setMsg] = useState(''), [err, setErr] = useState('');
+  const submit = async e => { e.preventDefault(); setBusy(true); setErr('');
+    try { setMsg((await post('/api/team/new-phone', { email: email.trim() })).message); } catch (e2) { setErr(e2.message); } finally { setBusy(false); } };
+  return <Card title="New phone" sub="We'll email you a link. Open it on this phone, and after that it's just your PIN.">
+    {msg ? <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-sm text-emerald-200">{msg}</p> :
+      <form onSubmit={submit} className="space-y-4">
+        <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} type="email" autoCapitalize="none" placeholder="Your email" className={input} />
+        <Err>{err}</Err>
+        <Gold busy={busy} disabled={!email.trim()}>Email me a link</Gold>
+      </form>}
+    {onBack && <button onClick={onBack} className="w-full text-center text-xs text-gray-500">Back</button>}
+  </Card>;
+}
+
+// The link from the email: choose a PIN the first time (twice), or confirm your PIN on a new phone.
+function LinkScreen({ token, kind, onDone }) {
+  const [info, setInfo] = useState(null), [err, setErr] = useState(''), [pin, setPin] = useState(''), [pin2, setPin2] = useState(''), [busy, setBusy] = useState(false);
+  useEffect(() => { fetch(`/api/team/link?token=${encodeURIComponent(token)}`, { cache: 'no-store' }).then(r => r.json().then(b => r.ok ? setInfo(b) : setErr(b.error || 'This link has expired.'))).catch(() => setErr("Couldn't open the link. Try again shortly.")); }, [token]);
+  const first = (info?.name || '').split(' ')[0];
+  const submit = async e => { e.preventDefault(); if (info.needs_pin && pin !== pin2) return setErr("The two PINs don't match."); setBusy(true); setErr('');
+    try { const b = await post('/api/team/link', { token, pin }); store.set(DEVICE_KEY, b.device); onDone({ token: b.token, name: b.member?.name || '' }); }
+    catch (e2) { setErr(e2.message); setPin(''); setPin2(''); } finally { setBusy(false); } };
+  if (!info) return <Card title="Estate Tea · Team">{err ? <Err>{err}</Err> : <Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-500" />}</Card>;
+  return <Card title={`Welcome${first ? `, ${first}` : ''}`} sub={info.needs_pin ? 'Choose your own 6-digit PIN. From now on, your PIN is all you need to sign in.' : 'Type your PIN to sign in on this phone.'}>
+    <form onSubmit={submit} className="space-y-4">
+      <input value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }} type="password" inputMode="numeric" autoComplete="new-password" placeholder={info.needs_pin ? 'New PIN' : 'Your PIN'} className={pinInput} />
+      {info.needs_pin && <input value={pin2} onChange={e => { setPin2(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }} type="password" inputMode="numeric" autoComplete="new-password" placeholder="Same PIN again" className={pinInput} />}
+      {info.needs_pin && <p className="text-[11px] text-gray-500">Not 123456, 000000 or anything easy to guess. Keep it to yourself: it's your own sign-in.</p>}
+      <Err>{err}</Err>
+      <Gold busy={busy} disabled={pin.length !== 6 || (info.needs_pin && pin2.length !== 6)}>{info.needs_pin ? 'Save my PIN' : 'Sign in'}</Gold>
+    </form>
+  </Card>;
+}
+
+// Everyday sign-in: just the PIN (on a registered phone). Whoever's PIN it is gets their own account.
+function SignIn({ onDone }) {
+  const [pin, setPin] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState(''), [newPhone, setNewPhone] = useState(!store.get(DEVICE_KEY));
+  if (newPhone) return <NewPhone onBack={store.get(DEVICE_KEY) ? () => setNewPhone(false) : null} />;
+  const submit = async e => { e.preventDefault(); if (busy) return; setBusy(true); setErr('');
+    try { const b = await post('/api/team/login', { device: store.get(DEVICE_KEY), pin }); onDone({ token: b.token, name: b.member?.name || '' }); }
+    catch (e2) { if (e2.body?.unregistered) { store.set(DEVICE_KEY, null); setNewPhone(true); } setErr(e2.message); setPin(''); }
+    finally { setBusy(false); } };
+  return <Card title="Estate Tea · Team" sub="Orders, deliveries, stock and invoices">
+    <form onSubmit={submit} className="space-y-4">
+      <input value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }} type="password" inputMode="numeric" autoComplete="current-password" autoFocus placeholder="Your PIN" className={pinInput} />
+      <Err>{err}</Err>
+      <Gold busy={busy} disabled={pin.length !== 6}>Sign in</Gold>
+    </form>
+    <div className="flex justify-between text-[11px] text-gray-500"><button onClick={() => setNewPhone(true)}>New phone? Get a link</button><span>Forgot your PIN? Ask the owner.</span></div>
+  </Card>;
 }
 
 function Today({ headers, go }) {
@@ -96,8 +140,14 @@ export default function TeamApp() {
   const [tab, setTab] = useState('today');
   const [sales, setSales] = useState(null), [salesLoading, setSalesLoading] = useState(false);
   const [inventory, setInventory] = useState(null);
-  useEffect(() => { setSession(readSession()); }, []);
-  const signOut = useCallback((why) => { try { localStorage.removeItem(KEY); } catch { /* */ } setSession(null); if (why) toast.error(why); }, []);
+  const [link, setLink] = useState(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search), t = q.get('invite') || q.get('device');
+    if (t) setLink({ token: t, kind: q.get('invite') ? 'invite' : 'device' });
+    setSession(readSession());
+  }, []);
+  const signedIn = s => { store.set(KEY, JSON.stringify(s)); setSession(s); setLink(null); try { window.history.replaceState(null, '', '/team'); } catch { /* */ } };
+  const signOut = useCallback((why) => { store.set(KEY, null); setSession(null); if (why) toast.error(why); }, []);
   const headers = session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` } : {};
   // Still allowed? (The owner can switch someone off or reset their PIN: they're signed out at once.)
   useEffect(() => {
@@ -113,7 +163,8 @@ export default function TeamApp() {
     if (tab === 'inventory' && !inventory) fetch('/api/admin/inventory', { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setInventory).catch(() => {});
   }, [tab, session?.token]);
   if (session === undefined) return <div className="min-h-[100dvh] bg-[#0A0A0A]" />;
-  if (!session) return <SignIn onDone={setSession} />;
+  if (link) return <LinkScreen token={link.token} kind={link.kind} onDone={signedIn} />;
+  if (!session) return <SignIn onDone={signedIn} />;
   return <div className="min-h-[100dvh] bg-[#0A0A0A] text-white">
     <header className="sticky top-0 z-20 border-b border-white/[.07] bg-[#0A0A0A]/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
