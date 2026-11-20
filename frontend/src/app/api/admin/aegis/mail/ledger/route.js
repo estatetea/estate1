@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 
 const INTERNAL_KEY=process.env.AEGIS_ALERT_SECRET?.trim() || process.env.OWNER_CONTROL_KEY?.trim() || process.env.INTERNAL_SERVICE_KEY?.trim() || '';
 const AEGIS_URL=(process.env.AEGIS_URL||'https://estate-tea-aegis.onrender.com').replace(/\/$/,'');
 export async function GET(request){
- if(!verifyAdmin(request))return NextResponse.json({error:'Unauthorized'},{status:401});
+ if(!(await verifyStaff(request)))return NextResponse.json({error:'Unauthorized'},{status:401});
  try{
   const r=await fetch(`${AEGIS_URL}/api/aegis/mail/ledger`,{headers:{'x-internal-service-key':INTERNAL_KEY},cache:'no-store'});
   const payload=await r.json().catch(()=>({}));

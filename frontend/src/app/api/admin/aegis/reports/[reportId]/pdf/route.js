@@ -1,4 +1,4 @@
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { reportPdf } from '@/lib/report-pdf';
 
 export const runtime = 'nodejs';
@@ -8,7 +8,7 @@ const INTERNAL_KEY = process.env.AEGIS_ALERT_SECRET?.trim() || process.env.OWNER
 
 // One Aegis report as a real PDF file (the owner app downloads or shares it; phones can't print the HTML version).
 export async function POST(request, { params }) {
-  if (!verifyAdmin(request)) return new Response('Unauthorized', { status: 401 });
+  if (!(await verifyStaff(request))) return new Response('Unauthorized', { status: 401 });
   const { reportId } = await params;
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(reportId)) return new Response('Invalid report ID', { status: 400 });
   if (!INTERNAL_KEY) return new Response('Report service authentication is not configured', { status: 503 });

@@ -11,7 +11,7 @@ function Tile({ label, value, tone }) {
 
 // Shared live stock for Steward, Brew and Aegis. Every change goes to Steward, so Brew's
 // stock checks and Aegis see it on their next read.
-export function InventorySection({ inventory, headers, onChange }) {
+export function InventorySection({ inventory, headers, onChange, showPacks = true }) {
   const inv = inventory?.inventory || inventory || {};
   const [total, setTotal] = useState('');
   const [editingTotal, setEditingTotal] = useState(false);
@@ -75,7 +75,7 @@ export function InventorySection({ inventory, headers, onChange }) {
       {editingTotal && <button onClick={() => setEditingTotal(false)} className={secondary}>Cancel</button>}
     </div>
     {inv.updated_at && <p className="mt-4 text-[11px] text-gray-600">Last changed {new Date(inv.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</p>}
-    <div className="mt-5"><PackSwitches headers={headers} /></div>
+    {showPacks && <div className="mt-5"><PackSwitches headers={headers} /></div>}
     <div className="mt-5"><CollectionSettings headers={headers} /></div>
   </div>;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 import { stewardHeaders } from '@/lib/enquiries';
 
@@ -13,12 +13,12 @@ async function steward(init) {
 }
 
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   return steward({});
 }
 
 export async function PUT(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { enabled, printer_email } = await request.json().catch(() => ({}));
   return steward({ method: 'PUT', body: JSON.stringify({ enabled: Boolean(enabled), printer_email: String(printer_email || '').slice(0, 254) }) });
 }

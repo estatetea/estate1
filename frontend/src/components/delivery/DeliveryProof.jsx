@@ -66,7 +66,7 @@ export function DeliveryProof({ order, headers, onSaved }) {
     <h3 className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37]/70">Delivery proof</h3>
     {issue.open && <div className="flex gap-3 rounded-xl border border-red-400/30 bg-red-400/[0.06] p-3 text-sm text-red-200" data-testid="delivery-issue">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><p>The customer reported a problem {when(issue.reported_at)}{issue.note ? `: "${issue.note}"` : '.'} Photos are kept until it's sorted. Mark it delivered (with a note) once resolved.</p></div>}
-    {order.delivery_status === 'OUT_FOR_DELIVERY' && <div className="space-y-1">
+    {order.delivery_status === 'OUT_FOR_DELIVERY' && !String(headers?.Authorization || '').startsWith('Bearer team.') && <div className="space-y-1">
       <button type="button" onClick={askReceived} disabled={busy === 'ask'} data-testid="ask-received"
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/50 bg-[#25D366]/10 px-4 py-3 text-sm text-[#7ee2a3] disabled:opacity-50">
         {busy === 'ask' ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}Ask if received</button>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 export const dynamic = 'force-dynamic';
@@ -7,7 +7,7 @@ const OWNER_KEY = () => (process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OW
 
 // "Porter says delivered": Brew then asks the customer whether it arrived; 24 hours with no problem closes it as delivered.
 export async function POST(request, { params }) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { orderId } = await params;
   const { note } = await request.json().catch(() => ({}));
   try {

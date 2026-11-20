@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 const OWNER_KEY = process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '';
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || OWNER_KEY;
 
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/inventory`, { headers: { 'x-internal-service-key': INTERNAL_KEY }, cache: 'no-store' });
     const body = await r.json();
@@ -15,7 +15,7 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!OWNER_KEY) return NextResponse.json({ error: 'Steward owner connection is not configured' }, { status: 503 });
   try {
     const { physical_kg } = await request.json();
@@ -31,7 +31,7 @@ export async function PUT(request) {
 
 // Owner stock changes from the web app: { action: 'receive' | 'remove', quantity_kg, note }.
 export async function POST(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!OWNER_KEY) return NextResponse.json({ error: 'Steward owner connection is not configured' }, { status: 503 });
   try {
     const { action, quantity_kg, note } = await request.json();

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 const OWNER_KEY = (process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '').trim();
@@ -8,7 +8,7 @@ const headers = { 'Content-Type': 'application/json', 'x-internal-service-key': 
 
 // Owner-issued Razorpay invoices: Steward creates the order and Razorpay invoice, Ledger numbers it.
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const r = await fetch(`${STEWARD_URL}/api/steward/manual-invoices`, { headers, cache: 'no-store' });
     return NextResponse.json(await r.json().catch(() => []), { status: r.status, headers: { 'Cache-Control': 'no-store' } });
@@ -16,7 +16,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!OWNER_KEY) return NextResponse.json({ error: 'Steward owner connection is not configured' }, { status: 503 });
   const body = await request.json().catch(() => ({}));
   const quantity = Number(body.quantity);

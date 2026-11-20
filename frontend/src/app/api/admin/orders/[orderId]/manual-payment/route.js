@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 const OWNER_KEY = (process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '').trim();
 
 export async function POST(request, { params }) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!OWNER_KEY) return NextResponse.json({ error: 'Owner control is not configured. Nothing was changed.' }, { status: 503 });
   try {
     const { orderId } = await params;

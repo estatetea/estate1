@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 const INTERNAL_KEY = process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || process.env.INTERNAL_SERVICE_KEY || '';
 
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let localOrders = [];
   try {
     const db = await getDb();

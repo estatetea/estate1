@@ -1,5 +1,5 @@
 import { NextResponse, after } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || process.env.STEWARD_OWNER_CONTROL_KEY || '';
@@ -12,7 +12,7 @@ const PAID = new Set(['PAID', 'FULFILLED', 'DELIVERED', 'PAYMENT_VERIFIED']);
 // that Brew hands over (source "ai_sales"). The local `orders` collection only holds old
 // add-to-cart records, so it is deliberately not counted as sales.
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!INTERNAL_KEY) return NextResponse.json({ error: 'Steward connection is not configured' }, { status: 503 });
   try {
     const headers = { 'x-internal-service-key': INTERNAL_KEY };

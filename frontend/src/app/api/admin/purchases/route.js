@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { LEDGER_URL } from '@/lib/steward';
 
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || process.env.OWNER_CONTROL_KEY || '';
@@ -16,7 +16,7 @@ async function ledger(path, init = {}) {
 
 // Tea purchases recorded for the GST credit: ?defaults=1 for the usual terms, ?month=YYYY-MM for the list.
 export async function GET(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const q = new URL(request.url).searchParams;
   if (q.get('defaults')) return ledger('/purchases/defaults');
   const month = q.get('month') || '';
@@ -25,17 +25,17 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   return ledger('/purchases', { method: 'POST', body: JSON.stringify(await request.json().catch(() => ({}))) });
 }
 
 export async function PUT(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   return ledger('/purchases/defaults', { method: 'PUT', body: JSON.stringify(await request.json().catch(() => ({}))) });
 }
 
 export async function DELETE(request) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const id = new URL(request.url).searchParams.get('id') || '';
   if (!/^PUR-[A-F0-9]{8}$/.test(id)) return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   return ledger(`/purchases/${id}`, { method: 'DELETE' });

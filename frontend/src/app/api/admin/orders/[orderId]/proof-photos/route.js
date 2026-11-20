@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@/lib/admin-auth';
+import { verifyStaff } from '@/lib/team-auth';
 import { STEWARD_URL } from '@/lib/steward';
 
 export const dynamic = 'force-dynamic';
@@ -15,13 +15,13 @@ async function steward(orderId, init) {
 }
 
 export async function GET(request, { params }) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { orderId } = await params;
   try { return await steward(orderId); } catch { return NextResponse.json({ error: 'Steward is not reachable right now' }, { status: 502 }); }
 }
 
 export async function POST(request, { params }) {
-  if (!verifyAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await verifyStaff(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { orderId } = await params;
   const { image, kind } = await request.json().catch(() => ({}));
   if (typeof image !== 'string' || !image.startsWith('data:image/')) return NextResponse.json({ error: 'Please choose a photo' }, { status: 400 });
