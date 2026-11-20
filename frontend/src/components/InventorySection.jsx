@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PackSwitches } from './PackSwitches';
+import { ProductCosts } from './ProductCosts';
 import { CollectionSettings } from './CollectionSettings';
 
 const kg = v => (v == null ? '—' : `${Math.round(Number(v) * 1000) / 1000} kg`);
@@ -51,7 +52,7 @@ export function InventorySection({ inventory, headers, onChange, showPacks = tru
   const secondary = 'rounded-2xl border border-white/15 text-gray-300 px-4 text-xs disabled:opacity-50';
   const low = inv.at_protected_floor || inv.inventory_integrity_ok === false;
 
-  return <div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,.3)]">
+  return <div className="space-y-4"><div className="rounded-[28px] border border-white/[.07] bg-gradient-to-b from-[#111] to-[#090909] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,.3)]">
     <h2 className="text-xl text-[#efbd63]">Inventory</h2>
     <p className="text-xs text-gray-500 mt-1">Shared live stock for Steward, Brew and Aegis. Changes apply everywhere immediately.</p>
     <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -77,5 +78,7 @@ export function InventorySection({ inventory, headers, onChange, showPacks = tru
     {inv.updated_at && <p className="mt-4 text-[11px] text-gray-600">Last changed {new Date(inv.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</p>}
     {showPacks && <div className="mt-5"><PackSwitches headers={headers} /></div>}
     <div className="mt-5"><CollectionSettings headers={headers} /></div>
+  </div>
+  <ProductCosts headers={headers} />
   </div>;
 }

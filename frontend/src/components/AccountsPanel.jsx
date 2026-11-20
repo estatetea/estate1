@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Download, Plus, Trash2, Camera, Check, ChevronLeft, Loader2 } from 'lucide-react';
+import { ProductCosts } from './ProductCosts';
 
 // Accounts and projects (20 Nov): profit per item, monthly profit & loss, expenses with bill photos, who owes what,
 // and projects with budgets and a task board. The same panel in the owner app and the team app.
@@ -42,20 +43,10 @@ function download(name, text) {
 }
 
 // ---- Profit: P&L for the month + profit per item + item costs ----
-function Profit({ api }) {
+function Profit({ api, headers }) {
   const [month, setMonth] = useState(thisMonth()), [p, setP] = useState(null), [costs, setCosts] = useState(null), [editCosts, setEditCosts] = useState(false), [busy, setBusy] = useState(false);
   const load = useCallback(async () => { setP(null); try { const [a, c] = await Promise.all([api(`pnl?month=${month}`), api('costs')]); setP(a); setCosts(c); } catch (e) { toast.error(e.message); } }, [api, month]);
   useEffect(() => { load(); }, [load]);
-  const [draft, setDraft] = useState({});
-  useEffect(() => { if (costs) setDraft({ tea: costs.tea_cost_per_kg ?? '', ...Object.fromEntries(Object.entries(costs.unit_costs || {}).map(([k, v]) => [k, v])) }); }, [costs]);
-  const saveCosts = async () => {
-    setBusy(true);
-    try {
-      const unit = Object.fromEntries(Object.entries(draft).filter(([k, v]) => k !== 'tea' && v !== '' && v != null).map(([k, v]) => [k, Number(v)]));
-      await api('costs', { method: 'PUT', body: JSON.stringify({ tea_cost_per_kg: draft.tea === '' ? null : Number(draft.tea), unit_costs: unit }) });
-      toast.success('Costs saved'); setEditCosts(false); load();
-    } catch (e) { toast.error(e.message); } finally { setBusy(false); }
-  };
   const exportCsv = () => {
     const rows = [[`Estate Tea · Profit & loss · ${monthName(month)}`], [], ['Sales (before GST)', p.sales.total], ['  Items', p.sales.items], ['  Delivery charged', p.sales.delivery],
       ['Cost of goods', p.cost_of_goods], ['Gross profit', p.gross_profit], [], ['Expenses (before GST)', p.expenses.total],
@@ -93,18 +84,8 @@ function Profit({ api }) {
       </Box>
       <Box>
         <div className="flex items-center justify-between"><h3 className="text-lg text-[#efbd63]">Profit per item</h3>
-          <button onClick={() => setEditCosts(v => !v)} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">{editCosts ? 'Close' : 'Item costs'}</button></div>
-        {editCosts && costs && <div className="mt-3 space-y-2 rounded-2xl border border-[#d7a84b]/20 p-4">
-          <p className="text-[11px] text-gray-400">What each item costs you, before GST. Tea per kg is worked out from your tea purchases ({costs.tea.source}: {rs(costs.tea.per_kg)}/kg), or type your own.</p>
-          <label className="block text-xs text-gray-400">Tea cost per kg (leave empty to use purchases)<input value={draft.tea ?? ''} onChange={e => setDraft(d => ({ ...d, tea: e.target.value.replace(/[^\d.]/g, '') }))} inputMode="decimal" className={`${input} mt-1`} /></label>
-          {[...new Set([...(p.items || []).map(r => r.key), '250g', '500g', 'christmas-spirit'])].map(k => {
-            const label = (p.items.find(r => r.key === k) || {}).item || { '250g': 'Tea · 250 g pack', '500g': 'Tea · 500 g pack', 'christmas-spirit': 'Christmas Spirit' }[k] || k;
-            return <label key={k} className="block text-xs text-gray-400">{label}: other cost per unit (pouch, label, bottle…)
-              <input value={draft[k] ?? ''} onChange={e => setDraft(d => ({ ...d, [k]: e.target.value.replace(/[^\d.]/g, '') }))} inputMode="decimal" placeholder="₹ per unit" className={`${input} mt-1`} /></label>;
-          })}
-          <button onClick={saveCosts} disabled={busy} className="w-full rounded-2xl bg-[#d7a84b] py-2.5 text-sm text-black disabled:opacity-50">Save costs</button>
-          <p className="text-[10px] text-gray-600">Tip: count pouches here per pack, or as Packaging expenses, not both.</p>
-        </div>}
+          <button onClick={() => { if (editCosts) load(); setEditCosts(v => !v); }} className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-300">{editCosts ? 'Close' : 'Item costs'}</button></div>
+        {editCosts && <div className="mt-3"><ProductCosts headers={headers} /></div>}
         {p.items.length === 0 ? <p className="mt-3 text-sm text-gray-500">No paid sales this month.</p> :
           <div className="mt-3 divide-y divide-white/[.06]">{p.items.map(r => <div key={r.key} className="py-3">
             <div className="flex justify-between text-sm"><span className="text-white">{r.item}</span><span className={r.profit < 0 ? 'text-red-400' : 'text-emerald-300'}>{rs(r.profit)}</span></div>
@@ -294,7 +275,7 @@ export function AccountsPanel({ headers, initial = 'profit' }) {
   const tabs = useMemo(() => [['profit', 'Profit'], ['expenses', 'Expenses'], ['owed', 'Owed'], ['projects', 'Projects']], []);
   return <div className="space-y-4">
     <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/[.07] p-1">{tabs.map(([id, l]) => <button key={id} onClick={() => setTab(id)} className={chip(tab === id)}>{l}</button>)}</div>
-    {tab === 'profit' && <Profit api={api} />}
+    {tab === 'profit' && <Profit api={api} headers={headers} />}
     {tab === 'expenses' && <Expenses api={api} projects={projects} />}
     {tab === 'owed' && <Owed api={api} />}
     {tab === 'projects' && <Projects api={api} people={people} onProjects={setProjects} />}
