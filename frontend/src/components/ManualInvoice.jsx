@@ -4,9 +4,9 @@ import { WhyInfo } from './WhyInfo';
 
 // Same retail packs and prices as the store and Steward.
 const PACKS = [
-  { id: '250g', label: '250 g', price: 180, kg: 0.25 },
-  { id: '500g', label: '500 g', price: 360, kg: 0.5 },
-  { id: '1kg', label: '1 kg', price: 720, kg: 1 },
+  { id: '250g', label: '250 g', price: 200, kg: 0.25 },
+  { id: '500g', label: '500 g', price: 385, kg: 0.5 },
+  { id: '1kg', label: '1 kg', price: 770, kg: 1 },
   // Christmas items: the price includes GST (split at the item's own rate on the invoice); delivery is added on top.
   { id: 'christmas-spirit', label: 'Christmas Spirit 375 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18 },
   // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.

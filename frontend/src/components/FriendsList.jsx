@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 // The boss's friends: Brew recognises them by the WhatsApp number or email they write from, and their home orders
-// come with the GST absorbed (they pay the shop price: 250 g ₹180, 500 g ₹360) and free delivery.
+// come with the GST absorbed (they pay the shop price: 250 g ₹200, 500 g ₹385) and free delivery.
 export function FriendsList({ headers }) {
   const [rows, setRows] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
@@ -34,7 +34,7 @@ export function FriendsList({ headers }) {
   return <div className="rounded-[24px] border border-white/[.07] bg-white/[.02] p-4 sm:p-5">
     <p className="text-[10px] uppercase tracking-[.2em] text-[#b99043]">Friends of the boss</p>
     <h3 className="mt-1 text-lg text-white">Friend price</h3>
-    <p className="mt-1 text-xs leading-5 text-gray-500">No delivery fee, and the GST is on you: they pay just the shop price (250 g ₹180, 500 g ₹360, all in). Brew recognises them by the WhatsApp number or email address they write from, and tells them they're a friend of the boss the first time.</p>
+    <p className="mt-1 text-xs leading-5 text-gray-500">No delivery fee, and the GST is on you: they pay just the shop price (250 g ₹200, 500 g ₹385, all in). Brew recognises them by the WhatsApp number or email address they write from, and tells them they're a friend of the boss the first time.</p>
     {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
     <form onSubmit={add} className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_1.3fr_auto]">
       <input className={input} placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} maxLength={80} />

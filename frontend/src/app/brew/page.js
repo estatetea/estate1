@@ -8,7 +8,7 @@ import Testimonials from '@/components/Testimonials';
 // Back to the chat with nothing typed for them: the Order / Send a gift / Help & info buttons are already waiting there.
 const WA = 'https://wa.me/919742668951';
 const CHAT = 'https://wa.me/919742668951';   // Close: straight back to the chat, nothing typed
-const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 180 }, { product_id: '500g', weight: '500 g', price: 360 }];   // our only packs (1 kg is two 500 g)
+const FALLBACK = [{ product_id: '250g', weight: '250 g', price: 200 }, { product_id: '500g', weight: '500 g', price: 385 }];   // our only packs (1 kg is two 500 g)
 const LASTS = { '250g': 'about a month', '500g': 'about two months' };
 const grams = w => String(w || '').replace(/grams?/i, 'g').replace(/\s+/g, ' ').trim();
 
@@ -58,7 +58,7 @@ export default function MeetEstateTea() {
               : <span className="text-[#E9CF8A]">₹{Number(p.price).toLocaleString('en-IN')} <span className="text-xs text-gray-500">+ 5% GST</span></span>}
           </div>)}
         </div>
-        <p className="mt-2 text-xs text-gray-400">Need 1 kg? It comes as two 500 g packs (or four 250 g packs), ₹720 + 5% GST.</p>
+        <p className="mt-2 text-xs text-gray-400">Need 1 kg? It comes as two 500 g packs (₹770 + 5% GST), or four 250 g packs (₹800 + 5% GST).</p>
         <p className="mt-2 text-xs text-gray-500">*For a household having about 3 cups a day.</p>
         <p className="mt-3 rounded-xl border border-[#E9CF8A]/25 bg-[#E9CF8A]/[.05] px-4 py-3 text-[#E9CF8A]">New here? Your first order of home packs gets <b>10% off</b> when you order through Brew.</p>
         <p className="mt-3 text-gray-400">For cafés, offices and shops: we share business prices personally. Call or WhatsApp us on <a href="tel:+918197959005" className="text-[#E9CF8A] underline-offset-2 hover:underline">+91 81979 59005</a>, or just ask Brew and he'll pass it on.</p>

@@ -69,7 +69,7 @@ export default function WebsiteBrew({ navigate }) {
         </div>}
         {step === 'prices' && <><p>A little everyday luxury, in the size that suits you.</p>
           <div className="grid grid-cols-2 gap-2">
-            {[['250g','250 g','₹180'],['500g','500 g','₹360']].map(([id,size,price]) => <div key={size} className="rounded-xl border border-white/10 bg-white/[.035] p-3">
+            {[['250g','250 g','₹200'],['500g','500 g','₹385']].map(([id,size,price]) => <div key={size} className="rounded-xl border border-white/10 bg-white/[.035] p-3">
               <p className="text-xs text-gray-400">Estate Tea</p><p className="font-medium">{size}</p><p className="text-lg text-[#D4AF37]">{price}</p>
               {stock && <p className={`mt-1 text-[11px] ${stock[id] === false ? 'text-red-300' : 'text-emerald-300'}`}>{stock[id] === false ? 'Out of stock right now' : 'In stock'}</p>}</div>)}
           </div><p>Would you like to place an order?</p></>}

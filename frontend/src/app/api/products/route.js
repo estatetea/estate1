@@ -3,8 +3,8 @@ import { getDb } from '@/lib/mongodb';
 import { stewardCatalog, carryOverWebsiteSwitches } from '@/lib/pack-availability';
 
 const DEFAULTS = [
-  { product_id: '250g', weight: '250 grams', price: 180, in_stock: true },
-  { product_id: '500g', weight: '500 grams', price: 360, in_stock: true },
+  { product_id: '250g', weight: '250 grams', price: 200, in_stock: true },
+  { product_id: '500g', weight: '500 grams', price: 385, in_stock: true },
 ];
 
 // A pack is sellable only when the owner has it switched on (Steward's switch, shared with Brew and the web app) AND
@@ -16,7 +16,7 @@ export async function GET() {
     stored = await db.collection('products').find({}, { projection: { _id: 0, name: 0 } }).toArray();
     // Christmas items (e.g. Christmas Spirit) are sold through Brew and manual invoices only, never in the website shop.
     stored = stored.filter(p => !['christmas-spirit', 'hamper-noel'].includes(p.product_id));
-    if (stored.length) products = stored.map(product => ({ ...product, price: product.product_id === '250g' ? 180 : product.product_id === '500g' ? 360 : product.price }));
+    if (stored.length) products = stored.map(product => ({ ...product, price: product.product_id === '250g' ? 200 : product.product_id === '500g' ? 385 : product.price }));
   } catch { /* fall back to defaults */ }
   let live = await stewardCatalog();
   if (live && db && stored.some(p => !p.steward_synced)) {
