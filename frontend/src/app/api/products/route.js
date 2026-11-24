@@ -15,7 +15,7 @@ export async function GET() {
     db = await getDb();
     stored = await db.collection('products').find({}, { projection: { _id: 0, name: 0 } }).toArray();
     // Christmas items (e.g. Christmas Spirit) are sold through Brew and manual invoices only, never in the website shop.
-    stored = stored.filter(p => !['christmas-spirit', 'hamper-noel'].includes(p.product_id));
+    stored = stored.filter(p => !['christmas-spirit', 'christmas-cookies', 'plum-cake', 'hamper-noel'].includes(p.product_id));
     if (stored.length) products = stored.map(product => ({ ...product, price: product.product_id === '250g' ? 200 : product.product_id === '500g' ? 385 : product.price }));
   } catch { /* fall back to defaults */ }
   let live = await stewardCatalog();

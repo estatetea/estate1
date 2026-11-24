@@ -9,13 +9,15 @@ const PACKS = [
   { id: '1kg', label: '1 kg', price: 770, kg: 1 },
   // Christmas items: the price includes GST (split at the item's own rate on the invoice); delivery is added on top.
   { id: 'christmas-spirit', label: 'Christmas Spirit 375 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18 },
+  { id: 'christmas-cookies', label: 'Christmas Crumble, 2 pieces', price: 129.8, kg: 0, inclusive: true, gstRate: 0.18 },
+  { id: 'plum-cake', label: 'Christmas Classic, ½ kg', price: 708, kg: 0, inclusive: true, gstRate: 0.18 },
   // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
 const GST_RATE = 0.05;
 const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const OWN_DELIVERY_FEE = 10; // Steward has the final say; this is for the preview
-const rupees = v => `₹${Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const rupees = v => { const n = Math.round(Number(v || 0) * 100) / 100; return `₹${n.toLocaleString('en-IN', n % 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`; };
 
 function statusLabel(row) {
   if (row.status === 'CANCELLED') return ['Cancelled', 'text-gray-500'];
@@ -28,7 +30,7 @@ function statusLabel(row) {
 // Owner sends a Razorpay invoice (email + SMS). It becomes a normal "manual" order with an ET number.
 export function ManualInvoice({ headers }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', delivery_address: '', pincode: '', delivery_method: '', courier_fee: '', customer_type: 'home', business_name: '', gstin: '', gst_enabled: true });
-  // What's on the invoice: any number of lines (tea packs, Christmas Spirit), each with its own quantity.
+  // What's on the invoice: any number of lines (tea packs, Christmas Spirit, Crumble, Classic), each with its own quantity.
   const [lines, setLines] = useState([{ id: '250g', qty: 1 }]);
   // The owner's own amount (the total to charge, GST included); empty = shop prices.
   const [ownAmount, setOwnAmount] = useState('');
@@ -62,12 +64,13 @@ export function ManualInvoice({ headers }) {
   // The same item on two lines counts once, added up.
   const merged = Object.values(lines.reduce((m, l) => { const q = qtyOf(l); m[l.id] = { id: l.id, qty: (m[l.id]?.qty || 0) + q }; return m; }, {}));
   const teaRows = merged.filter(l => !packOf(l.id).inclusive && !packOf(l.id).test);
-  const drinkRow = merged.find(l => packOf(l.id).inclusive);
+  const drinkRows = merged.filter(l => packOf(l.id).inclusive);   // the Christmas items (Spirit, Crumble, Classic)
+  const drinkRow = drinkRows[0];
   const pack = packOf(merged[0]?.id);   // the first item (for the test invoice and older wording)
   const qty = merged[0] ? merged[0].qty : 1;
   const teaTotal = teaRows.reduce((s, l) => s + packOf(l.id).price * l.qty, 0);
   const drinkPack = drinkRow ? packOf(drinkRow.id) : null;
-  const drinkTotal = drinkRow ? drinkPack.price * drinkRow.qty : 0;
+  const drinkTotal = drinkRows.reduce((s, l) => s + packOf(l.id).price * l.qty, 0);
   const testTotal = isTest ? 1 : 0;
   // Free delivery for more than 500 g within 10 km, and more than 750 g beyond (third-party; Estate Tea pays).
   const orderKg = isTest ? 0 : teaRows.reduce((s, l) => s + packOf(l.id).kg * l.qty, 0);
@@ -79,7 +82,7 @@ export function ManualInvoice({ headers }) {
   const deliveryFee = agreed ? 0 : shopDeliveryFee;   // your own amount includes delivery
   const round2 = v => Math.round(v * 100) / 100;
   // GST: tea and its delivery at 5%; Christmas Spirit's price already includes its 18% (delivery goes at 18% when it's the drink alone).
-  const drinkGst = drinkRow && form.gst_enabled ? round2(drinkTotal - drinkTotal / (1 + drinkPack.gstRate)) : 0;
+  const drinkGst = drinkRow && form.gst_enabled ? round2(drinkRows.reduce((s, l) => { const t = packOf(l.id).price * l.qty; return s + t - t / (1 + packOf(l.id).gstRate); }, 0)) : 0;
   const deliveryRate = teaRows.length ? GST_RATE : (drinkPack?.gstRate || GST_RATE);
   const teaGst = form.gst_enabled && !isTest ? round2((teaTotal + deliveryFee) * (teaRows.length || !drinkRow ? GST_RATE : 0) + (!teaRows.length && drinkRow ? deliveryFee * deliveryRate : 0)) : 0;
   const shopTotal = round2(isTest ? testTotal : teaTotal + drinkTotal + deliveryFee + teaGst);
@@ -97,7 +100,7 @@ export function ManualInvoice({ headers }) {
     if (isTest) return { product_id: 'test', quantity: 1, extra_items: [] };
     const tea = teaRows.flatMap(l => l.id === '1kg' && (teaRows.length > 1 || drinkRow) ? [{ id: '500g', qty: l.qty * 2 }] : [l]);
     const teaMerged = Object.values(tea.reduce((m, l) => { m[l.id] = { id: l.id, qty: (m[l.id]?.qty || 0) + l.qty }; return m; }, {}));
-    if (drinkRow) return { product_id: drinkRow.id, quantity: drinkRow.qty, extra_items: teaMerged.map(l => ({ product_id: l.id, quantity: l.qty })) };
+    if (drinkRow) return { product_id: drinkRow.id, quantity: drinkRow.qty, extra_items: [...teaMerged, ...drinkRows.slice(1)].map(l => ({ product_id: l.id, quantity: l.qty })) };
     const [first, ...rest] = teaMerged;
     return { product_id: first.id, quantity: first.qty, extra_items: rest.map(l => ({ product_id: l.id, quantity: l.qty })) };
   };
@@ -310,7 +313,7 @@ export function ManualInvoice({ headers }) {
         : <input value={ownRate} onChange={e => setOwnRate(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" aria-label="Price per kg"
             placeholder="Price per kg of tea, before GST (e.g. 420)" className={`${input} mt-2`} />}
       <p className="mt-1 text-[11px] text-gray-500">{priceMode === 'kg'
-        ? (rateTotal ? `${Math.round(orderKg * 1000) / 1000} kg × ${rupees(Number(ownRate))}${form.gst_enabled ? ' + 5% GST' : ''}${drinkRow ? ` + Christmas Spirit ${rupees(drinkTotal)}` : ''} = ${rupees(rateTotal)}, delivery included. The first-order discount doesn't apply.` : 'Type the rate per kg (before GST) for the tea on this invoice.')
+        ? (rateTotal ? `${Math.round(orderKg * 1000) / 1000} kg × ${rupees(Number(ownRate))}${form.gst_enabled ? ' + 5% GST' : ''}${drinkRow ? ` + Christmas items ${rupees(drinkTotal)}` : ''} = ${rupees(rateTotal)}, delivery included. The first-order discount doesn't apply.` : 'Type the rate per kg (before GST) for the tea on this invoice.')
         : (agreed ? `The customer pays exactly ${rupees(agreed)}${form.gst_enabled ? ', GST worked out inside it' : ''}, delivery included. The first-order discount doesn't apply.` : 'Type the total you want to charge (GST included) to set your own price.')}</p>
     </div>}
     {isCustom ? <div className="mt-3 rounded-2xl border border-white/[.07] p-4 text-xs text-gray-400 space-y-1">
@@ -321,7 +324,7 @@ export function ManualInvoice({ headers }) {
       {merged.map(l => <div key={l.id} className="flex justify-between"><span>{packOf(l.id).label} × {l.qty}{packOf(l.id).inclusive ? ' (GST included)' : ''}</span><span>{agreed ? '' : rupees(packOf(l.id).price * l.qty)}</span></div>)}
       {!agreed && deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
       {!agreed && form.gst_enabled && !isTest && teaGst > 0 && <div className="flex justify-between"><span>GST ({teaRows.length ? `5% on tea${deliveryFee > 0 ? ' and delivery' : ''}` : `${(drinkPack?.gstRate || 0) * 100}% on delivery`})</span><span>{rupees(teaGst)}</span></div>}
-      {!agreed && form.gst_enabled && drinkRow && <div className="flex justify-between text-gray-500"><span>GST inside Christmas Spirit (18%)</span><span>{rupees(drinkGst)}</span></div>}
+      {!agreed && form.gst_enabled && drinkRow && <div className="flex justify-between text-gray-500"><span>GST inside the Christmas items (18%)</span><span>{rupees(drinkGst)}</span></div>}
       {!form.gst_enabled && !isTest && <div className="flex justify-between text-gray-500"><span>GST</span><span>Off</span></div>}
       {agreed > 0 && <div className="flex justify-between text-gray-500"><span>Shop price would be</span><span>{rupees(shopTotal)}</span></div>}
       <div className="flex justify-between text-sm text-white"><span>Total{agreed ? ' (your amount)' : ''}</span><span className="text-[#efbd63]">{rupees(total)}</span></div>

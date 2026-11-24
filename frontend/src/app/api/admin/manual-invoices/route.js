@@ -22,7 +22,7 @@ export async function POST(request) {
   const quantity = Number(body.quantity);
   const email = String(body.email || '').trim();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "That email address doesn't look right. Fix it, or leave it empty." }, { status: 400 });
-  if (!['250g', '500g', '1kg', 'test', 'christmas-spirit', 'custom'].includes(body.product_id)) return NextResponse.json({ error: 'Choose an item' }, { status: 400 });
+  if (!['250g', '500g', '1kg', 'test', 'christmas-spirit', 'christmas-cookies', 'plum-cake', 'custom'].includes(body.product_id)) return NextResponse.json({ error: 'Choose an item' }, { status: 400 });
   // The owner's own item: a title, a quantity and his total (GST 0, 5 or 18% inside it). Never touches stock.
   const custom = body.product_id === 'custom';
   const customTitle = String(body.custom_title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -32,7 +32,7 @@ export async function POST(request) {
   if (custom && !(Number(body.owner_total) > 0)) return NextResponse.json({ error: 'Enter the amount for this item' }, { status: 400 });
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) return NextResponse.json({ error: 'Enter a quantity between 1 and 500' }, { status: 400 });
   // More items on the same invoice (tea packs; with Christmas Spirit or another pack first), and the owner's own total.
-  const extra = Array.isArray(body.extra_items) ? body.extra_items.slice(0, 4).map(i => ({ product_id: String(i?.product_id || ''), quantity: Number(i?.quantity) })) : [];
+  const extra = Array.isArray(body.extra_items) ? body.extra_items.slice(0, 6).map(i => ({ product_id: String(i?.product_id || ''), quantity: Number(i?.quantity) })) : [];
   if (extra.some(i => !['250g', '500g', '1kg'].includes(i.product_id) || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 500))
     return NextResponse.json({ error: 'Extra items can be our 250 g, 500 g or 1 kg tea, 1 to 500 each' }, { status: 400 });
   const ownerTotal = Math.round(Math.max(0, Number(body.owner_total) || 0) * 100) / 100;

@@ -16,7 +16,7 @@ function friendlyError(status, payload) {
   return payload?.detail || 'Something went wrong. Please try again.';
 }
 
-const rupees = n => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const rupees = n => { const v = Math.round(Number(n || 0) * 100) / 100; return `₹${v.toLocaleString('en-IN', v % 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`; };
 const blankAddress = { label: '', name: '', phone: '', address: '', pincode: '' };
 
 // Brew's order page, opened from "More options" on WhatsApp: any mix of 250 g and 500 g packs, and where to send them
@@ -66,9 +66,12 @@ export default function OrderPage() {
   const belowMin = !!data?.business_rate && kg < 2 - 1e-9;
   const gst = data?.friend ? 0 : subtotal * (data?.gst_pct || 0) / 100;
   // Christmas Spirit: any number of bottles, its price already includes GST (the tea's 5% doesn't apply to it).
-  const drink = data?.drink || null;
-  const bottles = drink ? (qty[drink.id] || 0) : 0;
-  const drinkTotal = drink ? bottles * drink.price : 0;
+  // The Christmas collection (24 Nov): Christmas Spirit, Crumble and Classic, each with its own + / -, prices GST included.
+  const coll = data?.collection?.length ? data.collection : (data?.drink ? [{ ...data.drink, unit: 'bottle', units: 'bottles' }] : []);
+  const drink = coll.length ? coll[0] : null;
+  const bottles = coll.reduce((s, c) => s + (qty[c.id] || 0), 0);
+  const drinkTotal = coll.reduce((s, c) => s + (qty[c.id] || 0) * c.price, 0);
+  const finalSale = coll.some(c => c.final_sale && qty[c.id]);
   // 🎁 A gift link: only other people's saved addresses, a new one is always possible (an old one makes room).
   const gift = !!data?.gift;
   const shown = (data?.addresses || []).filter(a => !gift || !a.own);
@@ -79,8 +82,8 @@ export default function OrderPage() {
   const submit = async e => {
     e.preventDefault();
     if (busy) return;
-    if (!count && !bottles) return setError(drink ? 'Please choose at least one pack or bottle.' : 'Please choose at least one pack.');
-    const body = { gift, items: [...packs.filter(p => qty[p.id]).map(p => ({ id: p.id, quantity: qty[p.id] })), ...(bottles ? [{ id: drink.id, quantity: bottles }] : [])] };
+    if (!count && !bottles) return setError(drink ? 'Please choose at least one item.' : 'Please choose at least one pack.');
+    const body = { gift, items: [...packs.filter(p => qty[p.id]).map(p => ({ id: p.id, quantity: qty[p.id] })), ...coll.filter(c => qty[c.id]).map(c => ({ id: c.id, quantity: qty[c.id] }))] };
     if (where === 'new') {
       const a = Object.fromEntries(Object.entries(addr).map(([k, v]) => [k, v.trim()]));
       if (a.address.length < 8) return setError('Please enter the full delivery address.');
@@ -142,7 +145,7 @@ export default function OrderPage() {
                 <p className="text-xs uppercase tracking-[0.24em] text-[#D4AF37]">Estate Tea</p>
                 <h1 className="mt-3 text-3xl font-light tracking-wide sm:text-4xl">{gift ? '🎁 Send a gift' : data.name ? `Your order, ${data.name}` : 'Your order'}</h1>
                 <p className="mx-auto mt-4 max-w-md text-sm font-light leading-6 text-white/65 sm:text-base">
-                  {drink ? 'Premium tea from the Nilgiris, and Christmas Spirit for the season. Choose as many as you like.' : 'Premium black CTC tea powder from the Nilgiris. Choose as many packs as you like.'}
+                  {drink ? 'Premium tea from the Nilgiris, and our Christmas collection for the season. Choose as many as you like.' : 'Premium black CTC tea powder from the Nilgiris. Choose as many packs as you like.'}
                 </p>
               </div>
               <form onSubmit={submit} className="mt-8 space-y-6" noValidate>
@@ -168,29 +171,32 @@ export default function OrderPage() {
                   ))}
                 </div>
 
-                {drink && (
-                  <div className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.04] px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-base">🎄 {drink.label} <span className="text-sm text-white/50">· {drink.size}</span></p>
-                        <p className="mt-0.5 text-sm text-white/55">{drink.about} · {rupees(drink.price)} a bottle, GST included</p>
+                {coll.length > 0 && (
+                  <div className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.04] px-4 py-2">
+                    <p className="pt-2 text-xs uppercase tracking-[0.2em] text-[#D4AF37]/80">🎄 The Christmas collection</p>
+                    {coll.map(c => (
+                      <div key={c.id} className="flex items-center justify-between gap-3 border-b border-white/5 py-3 last:border-0">
+                        <div className="min-w-0">
+                          <p className="text-base">{c.label} <span className="text-sm text-white/50">· {c.size}</span></p>
+                          <p className="mt-0.5 text-sm text-white/55">{c.about} · {rupees(c.price)} a {c.unit || 'piece'}, GST included</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-3">
+                          <button type="button" aria-label={`One less ${c.label}`} onClick={() => step(c.id, -1)} disabled={!qty[c.id]}
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 disabled:opacity-30"><Minus className="h-4 w-4" /></button>
+                          <span className="w-8 text-center text-lg tabular-nums">{qty[c.id] || 0}</span>
+                          <button type="button" aria-label={`One more ${c.label}`} onClick={() => step(c.id, 1)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]"><Plus className="h-4 w-4" /></button>
+                        </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        <button type="button" aria-label="One less bottle" onClick={() => step(drink.id, -1)} disabled={!bottles}
-                          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 disabled:opacity-30"><Minus className="h-4 w-4" /></button>
-                        <span className="w-8 text-center text-lg tabular-nums">{bottles}</span>
-                        <button type="button" aria-label="One more bottle" onClick={() => step(drink.id, 1)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]"><Plus className="h-4 w-4" /></button>
-                      </div>
-                    </div>
-                    {bottles > 0 && <p className="mt-2 text-xs text-amber-200/80">Christmas Spirit is a final sale: once paid, it can’t be cancelled or refunded.</p>}
+                    ))}
+                    {finalSale && <p className="pb-2 text-xs text-amber-200/80">Christmas Spirit is a final sale: once paid, it can’t be cancelled or refunded.</p>}
                   </div>
                 )}
 
                 <div className="rounded-xl border border-white/10 px-4 py-4 text-sm">
                   {(count > 0 || !bottles) && <div className="flex justify-between text-white/70"><span>{count ? `${count} pack${count > 1 ? 's' : ''} · ${kg % 1 ? kg : kg.toFixed(0)} kg` : 'No packs yet'}</span><span>{rupees(subtotal)}</span></div>}
                   {!data.friend && count > 0 && <div className="mt-1 flex justify-between text-white/50"><span>GST on tea ({data.gst_pct}%)</span><span>{rupees(gst)}</span></div>}
-                  {bottles > 0 && <div className="mt-1 flex justify-between text-white/70"><span>{bottles} × Christmas Spirit (GST included)</span><span>{rupees(drinkTotal)}</span></div>}
+                  {coll.filter(c => qty[c.id]).map(c => <div key={c.id} className="mt-1 flex justify-between text-white/70"><span>{qty[c.id]} × {c.label} (GST included)</span><span>{rupees(qty[c.id] * c.price)}</span></div>)}
                   <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-base"><span>Total</span><span className="text-[#D4AF37]">{rupees(subtotal + gst + drinkTotal)}</span></div>
                   <p className="mt-2 text-xs font-light leading-5 text-white/45">
                     {data.business_rate ? `Your price: ${rupees(data.business_rate)} a kg + GST, 2 kg minimum, delivery included.` : <>{data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off ${drink ? 'the tea ' : ''}on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.</>}
@@ -233,7 +239,7 @@ export default function OrderPage() {
                 {error && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm leading-5 text-red-200">{error}</p>}
                 <button type="submit" disabled={busy || (!count && !bottles) || belowMin}
                   className="flex min-h-12 w-full items-center justify-center rounded-lg border border-[#D4AF37] bg-[#D4AF37] px-5 py-3 text-sm font-medium tracking-wide text-[#0A0A0A] transition hover:bg-[#E1C15A] disabled:cursor-not-allowed disabled:opacity-60">
-                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Placing your order…</> : belowMin && count ? 'Choose at least 2 kg' : (count || bottles) ? `Place order · ${rupees(subtotal + gst + drinkTotal)}` : (drink ? 'Choose your packs or bottles' : 'Choose your packs')}
+                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Placing your order…</> : belowMin && count ? 'Choose at least 2 kg' : (count || bottles) ? `Place order · ${rupees(subtotal + gst + drinkTotal)}` : (drink ? 'Choose your items' : 'Choose your packs')}
                 </button>
                 <p className="text-center text-xs font-light leading-5 text-white/40">Your invoice comes to you on WhatsApp, with a secure payment link and a QR code.</p>
               </form>
