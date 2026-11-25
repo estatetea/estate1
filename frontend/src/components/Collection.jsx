@@ -1,5 +1,6 @@
 'use client';
 import { FairyLights, Tree, Holly, festive } from './Festive';
+import { exGst, shownPrice } from '@/lib/brand';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
@@ -100,7 +101,7 @@ export default function Collection({ userInfo, navigate }) {
               {it.description && <p className="mt-2 text-sm leading-relaxed text-gray-400">{it.description}</p>}
               {!shop.free_delivery && it.free_delivery_until && <p className="mt-2 text-xs text-[#f0d58b]">Free delivery until {new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>}
               <div className="mt-auto pt-4 flex items-end justify-between gap-3">
-                <div><p className="text-xl gold-text">{inr(it.price)}</p><p className="text-[11px] text-gray-500">GST included</p></div>
+                <div><p className="text-xl gold-text">{inr(shownPrice(it))}</p><p className="text-[11px] text-gray-500">{exGst(it) ? 'GST excluded' : 'GST included'}</p></div>
                 {it.coming_soon ? <span className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/[.06] px-3 py-2 text-xs text-[#f0d58b]">Coming soon</span>
                   : it.sold_out ? <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400">Sold out</span>
                   : qty(it.product_id) === 0 ? <button onClick={() => setQty(it, 1)} className="rounded-lg bg-[#D4AF37] px-4 py-2 text-sm text-black">Add</button>
@@ -121,12 +122,14 @@ export default function Collection({ userInfo, navigate }) {
       <aside className="lg:col-span-2"><div className="card-surface rounded-2xl p-6 lg:sticky lg:top-24">
         <h2 className="text-xl gold-text mb-5">Your order</h2>
         {!lines.length && <p className="text-sm text-gray-500">Add as many of each as you like.</p>}
-        {lines.map(l => <div key={l.product_id} className="flex justify-between gap-3 text-sm py-2 border-b border-white/10"><span className="text-gray-400">{l.name}{l.size ? `, ${l.size}` : ''} × {l.quantity}</span><span>{inr(l.price * l.quantity)}</span></div>)}
+        {lines.map(l => <div key={l.product_id} className="flex justify-between gap-3 text-sm py-2 border-b border-white/10"><span className="text-gray-400">{l.name}{l.size ? `, ${l.size}` : ''} × {l.quantity}</span><span>{inr(shownPrice(l) * l.quantity)}</span></div>)}
+        {lines.some(exGst) && <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">GST on {lines.filter(exGst).map(l => l.name).join(' and ')} (18%)</span>
+          <span>{inr(Math.round(lines.filter(exGst).reduce((s, l) => s + (l.price - shownPrice(l)) * l.quantity, 0) * 100) / 100)}</span></div>}
         {lines.length > 0 && <>
           <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">Delivery{feeGst ? ' (+ GST)' : ''}</span>
             <span>{freeDelivery ? 'Free' : beyond ? 'Message us' : fee === null ? (pinOk ? 'Checking…' : 'Enter your PIN') : fee === 0 ? 'Free' : inr(fee + feeGst)}</span></div>
           <div className="flex justify-between mt-4 text-xl"><span>Total</span><span className="gold-text">{inr(total)}</span></div>
-          <p className="mt-1 text-xs text-gray-500">GST included.</p>
+          <p className="mt-1 text-xs text-gray-500">Including GST.</p>
           {beyond && <p className="mt-3 text-xs text-amber-200">This address is beyond our own delivery area. Please message us on WhatsApp at +91 97426 68951 and we'll arrange it.</p>}
           {error && <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex gap-2"><AlertTriangle className="w-4 h-4 text-red-400 shrink-0" /><p className="text-xs text-red-300">{error}</p></div>}
           <button onClick={pay} disabled={!valid || paying} className="mt-5 w-full bg-[#D4AF37] disabled:opacity-40 text-black uppercase tracking-[.2em] py-4 rounded-lg flex justify-center gap-3">{paying && <Loader2 className="w-5 h-5 animate-spin" />}{paying ? 'Preparing payment…' : `Pay · ${inr(total)}`}</button>

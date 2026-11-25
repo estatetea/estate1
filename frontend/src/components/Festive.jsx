@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { exGst, shownPrice } from '@/lib/brand';
 import { ArrowRight } from 'lucide-react';
 
 // The Christmas season on the website (the owner, 25 Nov: promote the collection for the next 1.5 months; classy, warm,
@@ -77,7 +78,7 @@ export function ChristmasBanner({ navigate }) {
           <div className="p-2.5 sm:p-4">
             <p className="text-[12px] sm:text-base text-gray-100 leading-tight">{it.name}</p>
             <p className="hidden sm:block mt-0.5 text-xs italic text-gray-500">{WHAT[it.product_id] || it.size}</p>
-            <p className="mt-1 text-[12px] sm:text-sm gold-text">{inr(it.price)}{it.sold_out ? <span className="ml-1.5 text-[10px] text-gray-500 not-italic">· sold out</span> : null}</p>
+            <p className="mt-1 text-[12px] sm:text-sm gold-text">{inr(shownPrice(it))}{exGst(it) ? <span className="ml-1 text-[10px] text-gray-500">+ GST</span> : null}{it.sold_out ? <span className="ml-1.5 text-[10px] text-gray-500 not-italic">· sold out</span> : null}</p>
           </div>
         </button>)}
       </div>
@@ -87,7 +88,7 @@ export function ChristmasBanner({ navigate }) {
           Shop the collection <ArrowRight className="w-4 h-4" /></button>
         <a href="https://wa.me/919742668951?text=Hi%20Brew%21%20Christmas%20Collection" target="_blank" rel="noreferrer"
           className="text-sm text-gray-400 hover:text-[#D4AF37] underline-offset-4 hover:underline">or order on WhatsApp</a>
-        <span className="text-[11px] text-gray-500">Prices include GST · delivery added like our tea</span>
+        <span className="text-[11px] text-gray-500">Christmas Spirit includes GST; Crumble and Classic are GST excluded · delivery added like our tea</span>
       </div>
     </div>
   </section>;
