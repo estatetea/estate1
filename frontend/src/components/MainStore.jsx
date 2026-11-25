@@ -1,3 +1,4 @@
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 import { PolicyFooter } from '@/components/PolicyPage';
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
@@ -7,7 +8,7 @@ import AccountButton from "./AccountButton";
 import { useAccount } from "@/lib/useAccount";
 import BossWelcome from "./BossWelcome";
 import Testimonials from "./Testimonials";
-import { FairyLights, ChristmasBanner, Tree, festive } from "./Festive";
+import { FairyLights, ChristmasBanner, Tree, Holly, festive } from "./Festive";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -208,11 +209,11 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-1.5 sm:gap-3">
             <img 
-              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
+              src={BRAND_LOGO} 
               alt="Estate Tea" 
               className="w-7 h-7 sm:w-12 sm:h-12"
             />
-            <h2 className="hidden sm:block text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
+            <h2 className="hidden sm:flex items-center gap-2 text-xl sm:text-2xl font-light gold-text">Estate Tea{festive() && <Holly className="w-7 h-5" />}</h2>
           </div>
 
           {/* Nav Dropdowns */}
@@ -293,7 +294,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </button>
           </div>
         </div>
-        <FairyLights className="absolute left-0 right-0 -bottom-[15px]" />
+        {festive() && <div className="et-ribbon absolute left-0 right-0 bottom-0" />}
+        <FairyLights className="absolute left-0 right-0 -bottom-[17px]" />
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">

@@ -1,3 +1,4 @@
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 import { useEffect } from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,7 +39,7 @@ const Cart = ({ cart, setCart, userInfo, navigate }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
             <img 
-              src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" 
+              src={BRAND_LOGO} 
               alt="Estate Tea" 
               className="w-10 h-10 sm:w-12 sm:h-12"
             />

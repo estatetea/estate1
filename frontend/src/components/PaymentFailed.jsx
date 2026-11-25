@@ -1,3 +1,4 @@
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 import { XCircle, RefreshCw, ArrowLeft } from "lucide-react";
 
 const PaymentFailed = ({ data, navigate }) => {
@@ -7,7 +8,7 @@ const PaymentFailed = ({ data, navigate }) => {
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       <header className="glass-surface border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
-          <img src="https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png" alt="Estate Tea" className="w-10 h-10 sm:w-12 sm:h-12" />
+          <img src={BRAND_LOGO} alt="Estate Tea" className="w-10 h-10 sm:w-12 sm:h-12" />
           <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
         </div>
       </header>

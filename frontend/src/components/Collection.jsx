@@ -1,5 +1,5 @@
 'use client';
-import { FairyLights, Tree } from './Festive';
+import { FairyLights, Tree, Holly, festive } from './Festive';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
@@ -141,8 +141,8 @@ export default function Collection({ userInfo, navigate }) {
 
 function Shell({ navigate, children }) {
   return <div className="min-h-screen bg-[#0a0a0a] text-white">
-    <header className="glass-surface sticky top-0 z-40 border-b border-white/10 relative"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="text-2xl font-light gold-text">Estate Tea</h2><AccountButton /></div>
-      <FairyLights className="absolute left-0 right-0 -bottom-[15px]" /></header>
+    <header className="glass-surface sticky top-0 z-40 border-b border-white/10 relative"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="flex items-center gap-2 text-2xl font-light gold-text">Estate Tea{festive() && <Holly className="w-7 h-5" />}</h2><AccountButton /></div>
+      {festive() && <div className="et-ribbon absolute left-0 right-0 bottom-0" />}<FairyLights className="absolute left-0 right-0 -bottom-[17px]" /></header>
     <main className="max-w-6xl mx-auto px-4 py-8 relative z-10">
       <button onClick={() => navigate('store')} className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8"><ArrowLeft className="w-5 h-5" />Back to the shop</button>
       {children}

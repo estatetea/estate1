@@ -1,4 +1,6 @@
 'use client';
+import { FairyLights, Holly, festive } from './Festive';
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Home, Truck, BarChart3, Boxes, Receipt, FileText, Mail, LogOut, Loader2, RefreshCw, Wallet } from 'lucide-react';
@@ -15,7 +17,7 @@ import { ReportsPanel } from './AIOpsSwipePanel';
 // The team app (20 Nov): the owner's teammates run orders, deliveries, stock and invoices. No WhatsApp, Brew, Aegis,
 // approvals or settings here (the server refuses those to a team login too).
 const KEY = 'estate_team_session';
-const LOGO = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
+const LOGO = BRAND_LOGO;
 const TABS = [
   ['today', 'Today', Home], ['deliveries', 'Deliveries', Truck], ['sales', 'Sales', BarChart3], ['inventory', 'Inventory', Boxes],
   ['invoice', 'Send invoice', Receipt], ['accounts', 'Accounts', Wallet], ['reports', 'Reports', FileText], ['mail', 'Invoice emails', Mail],
@@ -179,12 +181,13 @@ export default function TeamApp() {
   if (link) return <LinkScreen token={link.token} kind={link.kind} onDone={signedIn} onBack={() => setLink(null)} />;
   if (!session) return <SignIn onDone={signedIn} onCode={c => setLink({ token: c, kind: 'code' })} />;
   return <div className="min-h-[100dvh] bg-[#0A0A0A] text-white">
-    <header className="sticky top-0 z-20 border-b border-white/[.07] bg-[#0A0A0A]/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-white/[.07] bg-[#0A0A0A]/95 backdrop-blur relative">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3"><img src={LOGO} alt="" className="h-8 w-8 object-contain" />
-          <div><p className="text-sm text-[#D4AF37]">Estate Tea · Team <span className="ml-1 rounded-full border border-[#D4AF37]/50 px-1.5 py-px text-[9px] tracking-[.15em]">BETA</span></p><p className="text-[11px] text-gray-500">{session.name ? `Signed in as ${session.name}` : ''}</p></div></div>
+          <div><p className="text-sm text-[#D4AF37]">Estate Tea · Team {festive() && <Holly className="inline-block align-middle w-5 h-4 -mt-0.5" />} <span className="ml-1 rounded-full border border-[#D4AF37]/50 px-1.5 py-px text-[9px] tracking-[.15em]">BETA</span></p><p className="text-[11px] text-gray-500">{session.name ? `Signed in as ${session.name}` : ''}</p></div></div>
         <button onClick={() => signOut()} className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-gray-300"><LogOut className="h-3.5 w-3.5" />Sign out</button>
       </div>
+      {festive() && <><div className="et-ribbon" /><FairyLights className="absolute left-0 right-0 -bottom-[17px]" /></>}
       <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">
         {TABS.map(([id, label, I]) => <button key={id} onClick={() => setTab(id)}
           className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm ${tab === id ? 'bg-[#D4AF37]/15 text-[#efbd63]' : 'text-gray-400'}`}><I className="h-4 w-4" />{label}</button>)}

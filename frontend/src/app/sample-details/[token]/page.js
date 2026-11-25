@@ -1,10 +1,11 @@
 'use client';
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Check, Loader2 } from 'lucide-react';
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
+const LOGO_URL = BRAND_LOGO;
 
 // After the form is sent, the page takes them straight back to Brew's WhatsApp chat (as the order form does).
 const BREW_CHAT_URL = 'https://wa.me/919742668951';

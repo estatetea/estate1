@@ -1,4 +1,5 @@
 'use client';
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import Testimonials from '@/components/Testimonials';
@@ -37,7 +38,7 @@ export default function MeetEstateTea() {
       </div></header>
     <main className="max-w-2xl mx-auto px-4 pb-8 space-y-5 text-[15px] leading-7">
       <div className="pt-10 pb-6 text-center">
-        <img src="/estate-tea-icon-192.png" alt="" className="mx-auto h-20 w-20 rounded-full opacity-95" />
+        <img src={BRAND_LOGO} alt="" className="mx-auto h-24 w-24 object-contain" />
         <p className="mt-6 text-[11px] uppercase tracking-[.35em] text-[#E9CF8A]/80">Meet Estate Tea</p>
         <h1 className="mt-4 text-[34px] sm:text-[42px] font-light leading-[1.15]">Premium tea powder,<br/><span className="italic text-[#E9CF8A]">at an everyday price.</span></h1>
         <div className="mx-auto mt-6 flex items-center justify-center gap-3"><span className="h-px w-10 bg-[#E9CF8A]/40"></span><span className="h-1.5 w-1.5 rotate-45 bg-[#E9CF8A]/70"></span><span className="h-px w-10 bg-[#E9CF8A]/40"></span></div>

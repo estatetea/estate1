@@ -9,15 +9,15 @@ export const SEASON_END = '2027-01-06';
 export const festive = () => { try { return new Date() <= new Date(SEASON_END + 'T23:59:59+05:30'); } catch { return false; } };
 
 // A few slow, soft snowflakes drifting down the page. Never in the way (no clicks), and none for people who turn motion off.
-export function Snowfall({ count = 26 }) {
+export function Snowfall({ count = 60 }) {
   const [flakes, setFlakes] = useState([]);
   useEffect(() => {
     if (!festive()) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const n = window.innerWidth < 640 ? Math.round(count * 0.6) : count;
     setFlakes(Array.from({ length: n }, (_, i) => ({
-      i, left: Math.random() * 100, size: 2 + Math.random() * 3.5, dur: 14 + Math.random() * 16, delay: -Math.random() * 30,
-      drift: (Math.random() * 40 - 20).toFixed(0), op: (0.25 + Math.random() * 0.45).toFixed(2),
+      i, left: Math.random() * 100, size: 2.5 + Math.random() * 4.5, dur: 11 + Math.random() * 14, delay: -Math.random() * 30,
+      drift: (Math.random() * 60 - 30).toFixed(0), op: (0.45 + Math.random() * 0.5).toFixed(2),
     })));
   }, [count]);
   if (!flakes.length) return null;
@@ -63,7 +63,7 @@ export function ChristmasBanner({ navigate }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[.4em] text-[#D4AF37]">Now open · until Christmas</p>
-          <h2 className="mt-2 font-light text-3xl sm:text-5xl text-[#f5ead5]">The Christmas <em className="not-italic gold-text">Collection</em></h2>
+          <h2 className="mt-2 font-light text-3xl sm:text-5xl text-[#f5ead5]">The Christmas <em className="not-italic gold-text">Collection</em> <Holly className="inline-block align-middle w-8 h-6 sm:w-11 sm:h-8 -mt-1" /></h2>
           <p className="mt-2 max-w-md text-sm text-gray-400">Made in small batches for the season. Order as many as you like, delivered in 3 to 5 days.</p>
         </div>
         <Tree className="hidden sm:block w-14 h-[70px] shrink-0 mt-1" />
@@ -105,11 +105,19 @@ export function ChristmasRibbon() {
 
 // Snow on every customer page of the website (the welcome, the shop, the collection, the order and tracking pages), never
 // on the owner's and team's apps. Placed once in the root layout.
-const NO_SNOW = ['/ai', '/team', '/admin', '/owner-invoice'];
 export function SeasonalSnow() {
   const path = usePathname() || '/';
-  const [hash, setHash] = useState('');
-  useEffect(() => { const f = () => setHash(window.location.hash || ''); f(); window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f); }, []);
-  if (NO_SNOW.some(p => path === p || path.startsWith(p + '/')) || /^#(admin|ai)\b/.test(hash)) return null;
-  return <Snowfall />;
+  if (!festive()) return null;
+  const app = path.startsWith('/ai') || path.startsWith('/team');   // the busy owner and team apps: a little lighter
+  return <><div aria-hidden="true" className="et-glow pointer-events-none fixed inset-0 z-[44]" /><Snowfall count={app ? 36 : 60} /></>;
+}
+
+// A sprig of holly: two green leaves and red berries.
+export function Holly({ className = 'w-6 h-5' }) {
+  return <svg viewBox="0 0 34 26" className={className} aria-hidden="true">
+    <path d="M16 15C11 13 7 15 3 12c2-1 2-3 1-5 3 1 5 0 6-2 1 3 3 4 6 4-1 2 0 4 0 6z" fill="#1f7a46" stroke="#2f9a5c" strokeWidth=".6" />
+    <path d="M18 15c5-2 9 0 13-3-2-1-2-3-1-5-3 1-5 0-6-2-1 3-3 4-6 4 1 2 0 4 0 6z" fill="#18663a" stroke="#2f9a5c" strokeWidth=".6" />
+    <circle cx="15.2" cy="17.2" r="2.6" fill="#c8202f" /><circle cx="19.6" cy="17.6" r="2.4" fill="#b01a28" /><circle cx="17.4" cy="20.8" r="2.4" fill="#d42b36" />
+    <circle cx="14.4" cy="16.4" r=".7" fill="#ff8f8f" opacity=".8" />
+  </svg>;
 }

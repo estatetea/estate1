@@ -1,4 +1,5 @@
 'use client';
+import { LOGO as BRAND_LOGO } from '@/lib/brand';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -7,7 +8,7 @@ import { Check, Loader2, Minus, Plus } from 'lucide-react';
 // The owner's "any mix" page for an invoice he gave an amount for ("send Pearl a new invoice of 380 rupees" -> Choose a
 // pack -> Choose items): any number of each item, then ONE invoice at his amount with all of them (WhatsApp's lists only
 // take one choice). Brew sends the invoice to the customer and tells him in WhatsApp.
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_c66468c3-ee7d-4745-ae1d-81e215b8ce47/artifacts/slk4bloz_Untitled%20%284%29.png';
+const LOGO_URL = BRAND_LOGO;
 const MAX_EACH = 50;
 const rupees = n => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
