@@ -294,8 +294,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </button>
           </div>
         </div>
-        {festive() && <div className="et-ribbon absolute left-0 right-0 bottom-0" />}
-        <FairyLights className="absolute left-0 right-0 -bottom-[17px]" />
+        {festive() && <div className="et-ribbon" />}
+        <FairyLights />
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">

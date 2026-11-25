@@ -187,7 +187,7 @@ export default function TeamApp() {
           <div><p className="text-sm text-[#D4AF37]">Estate Tea · Team {festive() && <Holly className="inline-block align-middle w-5 h-4 -mt-0.5" />} <span className="ml-1 rounded-full border border-[#D4AF37]/50 px-1.5 py-px text-[9px] tracking-[.15em]">BETA</span></p><p className="text-[11px] text-gray-500">{session.name ? `Signed in as ${session.name}` : ''}</p></div></div>
         <button onClick={() => signOut()} className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-gray-300"><LogOut className="h-3.5 w-3.5" />Sign out</button>
       </div>
-      {festive() && <><div className="et-ribbon" /><FairyLights className="absolute left-0 right-0 -bottom-[17px]" /></>}
+      {festive() && <><div className="et-ribbon" /><FairyLights /></>}
       <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">
         {TABS.map(([id, label, I]) => <button key={id} onClick={() => setTab(id)}
           className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm ${tab === id ? 'bg-[#D4AF37]/15 text-[#efbd63]' : 'text-gray-400'}`}><I className="h-4 w-4" />{label}</button>)}

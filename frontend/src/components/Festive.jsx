@@ -109,7 +109,7 @@ export function SeasonalSnow() {
   const path = usePathname() || '/';
   if (!festive()) return null;
   const app = path.startsWith('/ai') || path.startsWith('/team');   // the busy owner and team apps: a little lighter
-  return <><div aria-hidden="true" className="et-glow pointer-events-none fixed inset-0 z-[44]" /><Snowfall count={app ? 36 : 60} /></>;
+  return <><div aria-hidden="true" className="et-glow pointer-events-none fixed inset-0 z-[44]" /><Stars /><Snowfall count={app ? 36 : 60} /></>;
 }
 
 // A sprig of holly: two green leaves and red berries.
@@ -120,4 +120,16 @@ export function Holly({ className = 'w-6 h-5' }) {
     <circle cx="15.2" cy="17.2" r="2.6" fill="#c8202f" /><circle cx="19.6" cy="17.6" r="2.4" fill="#b01a28" /><circle cx="17.4" cy="20.8" r="2.4" fill="#d42b36" />
     <circle cx="14.4" cy="16.4" r=".7" fill="#ff8f8f" opacity=".8" />
   </svg>;
+}
+
+// A few soft, twinkling stars in the background (fixed places, so they don't jump around).
+const STARS = [[6, 14, 9], [18, 32, 6], [29, 9, 7], [44, 22, 5], [57, 12, 8], [71, 28, 6], [83, 8, 9], [93, 24, 6],
+               [11, 58, 6], [36, 66, 5], [64, 54, 7], [88, 62, 6], [22, 86, 7], [50, 90, 5], [77, 84, 8]];
+export function Stars() {
+  if (!festive()) return null;
+  return <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[43] overflow-hidden">
+    {STARS.map(([x, y, s], i) => <svg key={i} viewBox="0 0 20 20" className="et-twinkle-star absolute" style={{ left: `${x}%`, top: `${y}%`, width: s * 2, height: s * 2, animationDelay: `${(i * 0.9) % 6}s`, animationDuration: `${4 + (i % 4)}s` }}>
+      <path d="M10 0 C10.8 7.2 12.8 9.2 20 10 C12.8 10.8 10.8 12.8 10 20 C9.2 12.8 7.2 10.8 0 10 C7.2 9.2 9.2 7.2 10 0Z" fill="#f6dd9a" />
+    </svg>)}
+  </div>;
 }

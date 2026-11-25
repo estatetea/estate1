@@ -162,3 +162,8 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
   radial-gradient(55vw 45vh at 100% 100%,rgba(22,120,62,.17),transparent 70%),radial-gradient(45vw 40vh at 0% 100%,rgba(22,110,58,.12),transparent 70%)}
 /* a red-and-green ribbon line under the festive headers */
 .et-ribbon{height:2px;background:linear-gradient(90deg,#8f1424,#c8202f 20%,#d4af37 50%,#1f7a46 80%,#145c33)}
+
+/* twinkling background stars */
+.et-twinkle-star{opacity:.18;filter:drop-shadow(0 0 4px rgba(246,221,154,.8));animation:et-star-twinkle 5s ease-in-out infinite}
+@keyframes et-star-twinkle{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:.6;transform:scale(1.05)}}
+@media (prefers-reduced-motion: reduce){.et-twinkle-star{animation:none;opacity:.3}}
