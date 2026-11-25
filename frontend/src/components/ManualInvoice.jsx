@@ -9,8 +9,8 @@ const PACKS = [
   { id: '1kg', label: '1 kg', price: 770, kg: 1 },
   // Christmas items: the price includes GST (split at the item's own rate on the invoice); delivery is added on top.
   { id: 'christmas-spirit', label: 'Christmas Spirit 375 ml', price: 190, kg: 0, inclusive: true, gstRate: 0.18 },
-  { id: 'christmas-cookies', label: 'Christmas Crumble, 2 pieces', price: 129.8, kg: 0, inclusive: true, gstRate: 0.18 },
-  { id: 'plum-cake', label: 'Christmas Classic, ½ kg', price: 708, kg: 0, inclusive: true, gstRate: 0.18 },
+  { id: 'christmas-cookies', label: 'Christmas Crumble, 2 pieces', price: 115.5, kg: 0, inclusive: true, gstRate: 0.05 },
+  { id: 'plum-cake', label: 'Christmas Classic, ½ kg', price: 630, kg: 0, inclusive: true, gstRate: 0.05 },
   // Temporary: a ₹1 owner test that runs the whole flow without counting as a sale.
   { id: 'test', label: 'Test (₹1, no GST)', price: 1, kg: 0, test: true },
 ];
@@ -324,7 +324,7 @@ export function ManualInvoice({ headers }) {
       {merged.map(l => <div key={l.id} className="flex justify-between"><span>{packOf(l.id).label} × {l.qty}{packOf(l.id).inclusive ? ' (GST included)' : ''}</span><span>{agreed ? '' : rupees(packOf(l.id).price * l.qty)}</span></div>)}
       {!agreed && deliveryFee > 0 && <div className="flex justify-between"><span>Delivery ({form.delivery_method === 'own_delivery' ? 'Estate Tea' : 'third-party service'})</span><span>{rupees(deliveryFee)}</span></div>}
       {!agreed && form.gst_enabled && !isTest && teaGst > 0 && <div className="flex justify-between"><span>GST ({teaRows.length ? `5% on tea${deliveryFee > 0 ? ' and delivery' : ''}` : `${(drinkPack?.gstRate || 0) * 100}% on delivery`})</span><span>{rupees(teaGst)}</span></div>}
-      {!agreed && form.gst_enabled && drinkRow && <div className="flex justify-between text-gray-500"><span>GST inside the Christmas items (18%)</span><span>{rupees(drinkGst)}</span></div>}
+      {!agreed && form.gst_enabled && drinkRow && <div className="flex justify-between text-gray-500"><span>GST inside the Christmas items</span><span>{rupees(drinkGst)}</span></div>}
       {!form.gst_enabled && !isTest && <div className="flex justify-between text-gray-500"><span>GST</span><span>Off</span></div>}
       {agreed > 0 && <div className="flex justify-between text-gray-500"><span>Shop price would be</span><span>{rupees(shopTotal)}</span></div>}
       <div className="flex justify-between text-sm text-white"><span>Total{agreed ? ' (your amount)' : ''}</span><span className="text-[#efbd63]">{rupees(total)}</span></div>

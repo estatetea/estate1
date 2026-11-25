@@ -1,5 +1,5 @@
 'use client';
-import { exGst, shownPrice } from '@/lib/brand';
+import { exGst, shownPrice, gstRate } from '@/lib/brand';
 import { LOGO as BRAND_LOGO } from '@/lib/brand';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -199,7 +199,7 @@ export default function OrderPage() {
                   {(count > 0 || !bottles) && <div className="flex justify-between text-white/70"><span>{count ? `${count} pack${count > 1 ? 's' : ''} · ${kg % 1 ? kg : kg.toFixed(0)} kg` : 'No packs yet'}</span><span>{rupees(subtotal)}</span></div>}
                   {!data.friend && count > 0 && <div className="mt-1 flex justify-between text-white/50"><span>GST on tea ({data.gst_pct}%)</span><span>{rupees(gst)}</span></div>}
                   {coll.filter(c => qty[c.id]).map(c => <div key={c.id} className="mt-1 flex justify-between text-white/70"><span>{qty[c.id]} × {c.label}{exGst(c) ? '' : ' (GST included)'}</span><span>{rupees(qty[c.id] * shownPrice(c))}</span></div>)}
-                  {coll.some(c => qty[c.id] && exGst(c)) && <div className="mt-1 flex justify-between text-white/50"><span>GST on {coll.filter(c => qty[c.id] && exGst(c)).map(c => c.label).join(' and ')} (18%)</span><span>{rupees(coll.filter(c => qty[c.id] && exGst(c)).reduce((t, c) => t + qty[c.id] * (c.price - shownPrice(c)), 0))}</span></div>}
+                  {coll.some(c => qty[c.id] && exGst(c)) && <div className="mt-1 flex justify-between text-white/50"><span>GST on {coll.filter(c => qty[c.id] && exGst(c)).map(c => c.label).join(' and ')} ({Math.round(gstRate(coll.find(c => qty[c.id] && exGst(c))) * 100)}%)</span><span>{rupees(coll.filter(c => qty[c.id] && exGst(c)).reduce((t, c) => t + qty[c.id] * (c.price - shownPrice(c)), 0))}</span></div>}
                   <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-base"><span>Total</span><span className="text-[#D4AF37]">{rupees(subtotal + gst + drinkTotal)}</span></div>
                   <p className="mt-2 text-xs font-light leading-5 text-white/45">
                     {data.business_rate ? `Your price: ${rupees(data.business_rate)} a kg + GST, 2 kg minimum, delivery included.` : <>{data.welcome_pct ? `Your ${data.welcome_pct}% first-order discount comes off ${drink ? 'the tea ' : ''}on the invoice. ` : ''}Delivery (if any) is added on the invoice, worked out from the address.</>}

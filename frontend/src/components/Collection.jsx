@@ -1,6 +1,6 @@
 'use client';
 import { FairyLights, Tree, Holly, festive } from './Festive';
-import { exGst, shownPrice } from '@/lib/brand';
+import { exGst, shownPrice, gstRate } from '@/lib/brand';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
@@ -47,7 +47,8 @@ export default function Collection({ userInfo, navigate }) {
   // Free delivery: the whole collection's offer, or every item in the cart has its own (e.g. Christmas Spirit until 16 Nov).
   const freeDelivery = shop.free_delivery || (lines.length > 0 && lines.every(l => l.free_delivery_until));
   const fee = freeDelivery ? 0 : (!pinOk || !dq || !dq.found || !dq.local) ? null : Number(dq.own_delivery_fee) || 0;
-  const feeGst = fee ? Math.round(fee * 0.18 * 100) / 100 : 0;
+  const feeRate = lines.length ? Math.max(...lines.map(gstRate)) : 0.18;   // delivery at the highest rate in the cart, as Steward charges it
+  const feeGst = fee ? Math.round(fee * feeRate * 100) / 100 : 0;
   const total = goods + (fee || 0) + feeGst;
   const valid = lines.length > 0 && detailsComplete(details) && pinOk && !beyond && (freeDelivery || fee !== null);
 
@@ -123,7 +124,7 @@ export default function Collection({ userInfo, navigate }) {
         <h2 className="text-xl gold-text mb-5">Your order</h2>
         {!lines.length && <p className="text-sm text-gray-500">Add as many of each as you like.</p>}
         {lines.map(l => <div key={l.product_id} className="flex justify-between gap-3 text-sm py-2 border-b border-white/10"><span className="text-gray-400">{l.name}{l.size ? `, ${l.size}` : ''} × {l.quantity}</span><span>{inr(shownPrice(l) * l.quantity)}</span></div>)}
-        {lines.some(exGst) && <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">GST on {lines.filter(exGst).map(l => l.name).join(' and ')} (18%)</span>
+        {lines.some(exGst) && <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">GST on {lines.filter(exGst).map(l => l.name).join(' and ')} ({Math.round(gstRate(lines.filter(exGst)[0]) * 100)}%)</span>
           <span>{inr(Math.round(lines.filter(exGst).reduce((s, l) => s + (l.price - shownPrice(l)) * l.quantity, 0) * 100) / 100)}</span></div>}
         {lines.length > 0 && <>
           <div className="flex justify-between text-sm py-2 border-b border-white/10"><span className="text-gray-400">Delivery{feeGst ? ' (+ GST)' : ''}</span>

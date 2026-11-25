@@ -10,4 +10,5 @@ export const LOGO = isChristmas() ? LOGO_XMAS : LOGO_DEFAULT;
 // its GST-inclusive price. The amount charged is the same either way: GST is added on the order.
 export const EX_GST_ITEMS = new Set(['christmas-cookies', 'plum-cake']);
 export const exGst = it => EX_GST_ITEMS.has(it?.product_id || it?.id);
-export const shownPrice = it => exGst(it) ? Math.round(Number(it.price) / (1 + Number(it.gst_rate || 0.18)) * 100) / 100 : Number(it.price);
+export const gstRate = it => Number(it?.gst_rate ?? (EX_GST_ITEMS.has(it?.product_id || it?.id) ? 0.05 : 0.18));   // cake and cookies 5% (HSN 1905), the drink 18%
+export const shownPrice = it => exGst(it) ? Math.round(Number(it.price) / (1 + gstRate(it)) * 100) / 100 : Number(it.price);
