@@ -41,7 +41,7 @@ const Cart = ({ cart, setCart, userInfo, navigate }) => {
             <img 
               src={BRAND_LOGO} 
               alt="Estate Tea" 
-              className="w-10 h-10 sm:w-12 sm:h-12"
+              className="w-12 h-10 sm:w-16 sm:h-12 object-contain"
             />
             <div>
               <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>

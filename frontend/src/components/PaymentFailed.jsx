@@ -8,7 +8,7 @@ const PaymentFailed = ({ data, navigate }) => {
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       <header className="glass-surface border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
-          <img src={BRAND_LOGO} alt="Estate Tea" className="w-10 h-10 sm:w-12 sm:h-12" />
+          <img src={BRAND_LOGO} alt="Estate Tea" className="w-12 h-10 sm:w-16 sm:h-12 object-contain" />
           <h2 className="text-xl sm:text-2xl font-light gold-text">Estate Tea</h2>
         </div>
       </header>

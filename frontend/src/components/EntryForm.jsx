@@ -174,7 +174,7 @@ const EntryForm = ({ onSubmit }) => {
             <img
               src={LOGO_URL}
               alt="Estate Tea Logo"
-              className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 logo-sharp"
+              className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 object-contain logo-sharp"
               style={{
                 opacity: phase === "logo" && logoVisible ? 1 : 0,
                 transition: 'opacity 1.5s ease-in-out',
@@ -227,7 +227,7 @@ const EntryForm = ({ onSubmit }) => {
             }}
           >
             <div className="flex flex-col items-center mb-6 sm:mb-12">
-              <img src={LOGO_URL} alt="Estate Tea Logo" className="w-16 h-16 sm:w-24 sm:h-24 mb-3 sm:mb-6 logo-sharp" />
+              <img src={LOGO_URL} alt="Estate Tea Logo" className="w-20 h-16 sm:w-32 sm:h-24 mb-3 sm:mb-6 object-contain logo-sharp" />
               <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-[#D4AF37] drop-shadow-[0_0_12px_rgba(212,175,55,0.3)]">Welcome</h2>
               <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gray-300 mt-2 sm:mt-4 text-center">Premium Tea Experience</p>
             </div>

@@ -211,7 +211,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             <img 
               src={BRAND_LOGO} 
               alt="Estate Tea" 
-              className="w-7 h-7 sm:w-12 sm:h-12"
+              className="w-9 h-7 sm:w-16 sm:h-12 object-contain"
             />
             <h2 className="hidden sm:flex items-center gap-2 text-xl sm:text-2xl font-light gold-text">Estate Tea{festive() && <Holly className="w-7 h-5" />}</h2>
           </div>
