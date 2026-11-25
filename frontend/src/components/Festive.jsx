@@ -76,8 +76,8 @@ export function ChristmasBanner({ navigate }) {
             {it.image ? <img src={it.image} alt={it.label} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" /> : null}
           </div>
           <div className="p-2.5 sm:p-4">
-            <p className="text-[12px] sm:text-base text-gray-100 leading-tight">{it.name}</p>
-            <p className="et-what mt-1 text-[12px] leading-snug sm:text-[17px] italic">{WHAT[it.product_id] || it.size}</p>
+            <p className="et-what text-[14px] sm:text-[21px] leading-tight">{it.name}</p>
+            <p className="mt-0.5 text-[11px] sm:text-sm italic text-gray-400 leading-snug">{WHAT[it.product_id] || it.size}</p>
             <p className="mt-1 text-[12px] sm:text-sm gold-text">{inr(shownPrice(it))}{exGst(it) ? <span className="ml-1 text-[10px] text-gray-500">+ GST</span> : null}{it.sold_out ? <span className="ml-1.5 text-[10px] text-gray-500 not-italic">· sold out</span> : null}</p>
           </div>
         </button>)}
