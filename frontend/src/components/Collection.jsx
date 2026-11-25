@@ -86,8 +86,10 @@ export default function Collection({ userInfo, navigate }) {
       <section className="lg:col-span-3 space-y-6">
         <div className="grid sm:grid-cols-2 gap-5">
           {items.map(it => <div key={it.product_id} className="card-surface rounded-2xl border border-[#D4AF37]/15 overflow-hidden flex flex-col">
-            <div className="h-64 sm:h-72 bg-gradient-to-b from-[#16120a] to-[#0a0a0a] flex items-center justify-center p-6 overflow-hidden">
-              {it.image ? <img src={it.image} alt={it.label} loading="lazy" className="h-full w-auto max-w-full object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,.6)]" />
+            <div className={`h-64 sm:h-72 bg-gradient-to-b from-[#16120a] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${/\.jpe?g$/i.test(it.image || '') ? '' : 'p-6'}`}>
+              {it.image ? (/\.jpe?g$/i.test(it.image)
+                ? <img src={it.image} alt={it.label} loading="lazy" className="h-full w-full object-cover" />   // a product photo fills the card (24 Nov)
+                : <img src={it.image} alt={it.label} loading="lazy" className="h-full w-auto max-w-full object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,.6)]" />)
                 : <ShoppingBag className="w-12 h-12 text-[#D4AF37]/40" />}
             </div>
             <div className="p-5 flex-1 flex flex-col">
