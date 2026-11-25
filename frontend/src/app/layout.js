@@ -1,4 +1,5 @@
 import './globals.css';
+import { SeasonalSnow } from '@/components/Festive';
 
 export const metadata = {
   title: 'Estate Tea — Premium Tea from Nilgiris',
@@ -26,7 +27,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>{children}<SeasonalSnow /></body>
     </html>
   );
 }

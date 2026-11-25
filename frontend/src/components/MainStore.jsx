@@ -7,7 +7,7 @@ import AccountButton from "./AccountButton";
 import { useAccount } from "@/lib/useAccount";
 import BossWelcome from "./BossWelcome";
 import Testimonials from "./Testimonials";
-import { Snowfall, FairyLights, ChristmasBanner, Tree, festive } from "./Festive";
+import { FairyLights, ChristmasBanner, Tree, festive } from "./Festive";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -196,8 +196,6 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/70 via-[#0a0a0a]/60 to-[#0a0a0a]/90" />
       </div>
-
-      <Snowfall />
 
       {/* Page exit transition */}
       <div

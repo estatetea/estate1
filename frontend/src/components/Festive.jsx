@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 
 // The Christmas season on the website (the owner, 25 Nov: promote the collection for the next 1.5 months; classy, warm,
@@ -20,7 +21,7 @@ export function Snowfall({ count = 26 }) {
     })));
   }, [count]);
   if (!flakes.length) return null;
-  return <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[5] overflow-hidden">
+  return <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[45] overflow-hidden">
     {flakes.map(f => <span key={f.i} className="et-flake" style={{ left: `${f.left}%`, width: f.size, height: f.size, opacity: f.op,
       animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s`, '--drift': `${f.drift}px` }} />)}
   </div>;
@@ -100,4 +101,15 @@ export function ChristmasRibbon() {
     <Tree className="w-4 h-5 shrink-0" /><span>Our <b className="font-normal text-[#f5ead5]">Christmas Collection</b> is here</span>
     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
   </a>;
+}
+
+// Snow on every customer page of the website (the welcome, the shop, the collection, the order and tracking pages), never
+// on the owner's and team's apps. Placed once in the root layout.
+const NO_SNOW = ['/ai', '/team', '/admin', '/owner-invoice'];
+export function SeasonalSnow() {
+  const path = usePathname() || '/';
+  const [hash, setHash] = useState('');
+  useEffect(() => { const f = () => setHash(window.location.hash || ''); f(); window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f); }, []);
+  if (NO_SNOW.some(p => path === p || path.startsWith(p + '/')) || /^#(admin|ai)\b/.test(hash)) return null;
+  return <Snowfall />;
 }

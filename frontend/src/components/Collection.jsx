@@ -1,5 +1,5 @@
 'use client';
-import { Snowfall, FairyLights, Tree } from './Festive';
+import { FairyLights, Tree } from './Festive';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
@@ -141,7 +141,6 @@ export default function Collection({ userInfo, navigate }) {
 
 function Shell({ navigate, children }) {
   return <div className="min-h-screen bg-[#0a0a0a] text-white">
-    <Snowfall count={22} />
     <header className="glass-surface sticky top-0 z-40 border-b border-white/10 relative"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="text-2xl font-light gold-text">Estate Tea</h2><AccountButton /></div>
       <FairyLights className="absolute left-0 right-0 -bottom-[15px]" /></header>
     <main className="max-w-6xl mx-auto px-4 py-8 relative z-10">
