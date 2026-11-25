@@ -7,6 +7,7 @@ import AccountButton from "./AccountButton";
 import { useAccount } from "@/lib/useAccount";
 import BossWelcome from "./BossWelcome";
 import Testimonials from "./Testimonials";
+import { Snowfall, FairyLights, ChristmasBanner, Tree, festive } from "./Festive";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -17,7 +18,6 @@ import {
 const API = '/api';
 
 const SLIDE_IMAGES = [
-  "/images/estate-noel-box.jpg",   // the Estate NÖEL Collection (Christmas hampers)
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/p3gkmb59_WhatsApp%20Image%202026-05-12%20at%2011.03.38%20AM.jpeg",
   "https://customer-assets.emergentagent.com/job_tea-estate-store/artifacts/aq9g7zq6_estate%207.jpg.jpeg",
   "/images/estate-250g-alt.jpg",
@@ -197,6 +197,8 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/70 via-[#0a0a0a]/60 to-[#0a0a0a]/90" />
       </div>
 
+      <Snowfall />
+
       {/* Page exit transition */}
       <div
         className="fixed inset-0 z-[100] bg-[#0a0a0a] pointer-events-none transition-opacity duration-500"
@@ -217,6 +219,9 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
 
           {/* Nav Dropdowns */}
           <nav className="flex items-center gap-0" data-testid="nav-dropdowns">
+            {festive() && <button onClick={() => navigate('collection')} data-testid="nav-christmas"
+              className="flex items-center gap-1 px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-sm text-[#f0d58b] hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation">
+              <Tree className="w-3 h-4 sm:w-3.5 sm:h-[18px]" />Christmas</button>}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-0.5 px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-sm text-gray-300 hover:text-[#D4AF37] hover:bg-white/5 transition-colors touch-manipulation" data-testid="categories-dropdown">
@@ -290,6 +295,7 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
             </button>
           </div>
         </div>
+        <FairyLights className="absolute left-0 right-0 -bottom-[15px]" />
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-12 relative z-10">
@@ -297,6 +303,9 @@ const MainStore = ({ userInfo, weatherData, cart, setCart, navigate }) => {
         {bossHere && <BossWelcome navigate={navigate} />}
 
         <section id="discover-tea" aria-label="Discover Estate Tea" className="scroll-mt-24">
+        {/* The Christmas Collection, first thing in the shop (25 Nov to 6 Jan) */}
+        <ChristmasBanner navigate={navigate} />
+
         {/* Image Slideshow */}
         <div className="mb-8 sm:mb-12">
           <ImageSlideshow />

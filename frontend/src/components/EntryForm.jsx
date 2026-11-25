@@ -1,3 +1,4 @@
+import { ChristmasRibbon, Snowfall } from "./Festive";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "./ui/input";
 import WhatsAppSignIn from "./WhatsAppSignIn";
@@ -225,6 +226,7 @@ const EntryForm = ({ onSubmit }) => {
               transition: 'opacity 0.8s ease, transform 0.8s ease',
             }}
           >
+            <ChristmasRibbon />
             <div className="flex flex-col items-center mb-6 sm:mb-12">
               <img src={LOGO_URL} alt="Estate Tea Logo" className="w-16 h-16 sm:w-24 sm:h-24 mb-3 sm:mb-6 logo-sharp" />
               <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-[#D4AF37] drop-shadow-[0_0_12px_rgba(212,175,55,0.3)]">Welcome</h2>

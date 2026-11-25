@@ -1,4 +1,5 @@
 'use client';
+import { Snowfall, FairyLights, Tree } from './Festive';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, AlertTriangle, Eye, Minus, Plus, ShoppingBag } from 'lucide-react';
 import CustomerDeliveryFields, { composeAddress, detailsComplete } from './CustomerDeliveryFields';
@@ -78,8 +79,9 @@ export default function Collection({ userInfo, navigate }) {
   return <Shell navigate={navigate}>
     {shop.preview && <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[.07] px-4 py-3 text-sm text-amber-200">
       <Eye className="w-4 h-4 mt-0.5 shrink-0" /><span><b>Preview, not public yet.</b> Only you can see this page. Customers still see "coming soon" until you switch the collection to public in the web app.</span></div>}
+    <div className="flex items-end justify-between gap-4"><div>
     <p className="text-[11px] uppercase tracking-[.35em] text-[#D4AF37]">{c.slug === 'christmas' ? 'Christmas' : 'Collection'}</p>
-    <h1 className="mt-3 text-3xl sm:text-4xl font-light">{c.name}</h1>
+    <h1 className="mt-3 text-3xl sm:text-4xl font-light">{c.name}</h1></div>{c.slug === 'christmas' && <Tree className="w-10 h-12 sm:w-12 sm:h-[60px] shrink-0" />}</div>
     {c.tagline && <p className="mt-2 text-gray-400">{c.tagline}</p>}
     {shop.free_delivery && <p className="mt-4 inline-block rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[.07] px-3 py-1 text-xs text-[#f0d58b]">Free delivery in Bangalore for a limited time</p>}
     <div className="mt-8 grid lg:grid-cols-5 gap-8">
@@ -139,8 +141,10 @@ export default function Collection({ userInfo, navigate }) {
 
 function Shell({ navigate, children }) {
   return <div className="min-h-screen bg-[#0a0a0a] text-white">
-    <header className="glass-surface sticky top-0 z-40 border-b border-white/10"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="text-2xl font-light gold-text">Estate Tea</h2><AccountButton /></div></header>
-    <main className="max-w-6xl mx-auto px-4 py-8">
+    <Snowfall count={22} />
+    <header className="glass-surface sticky top-0 z-40 border-b border-white/10 relative"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"><h2 className="text-2xl font-light gold-text">Estate Tea</h2><AccountButton /></div>
+      <FairyLights className="absolute left-0 right-0 -bottom-[15px]" /></header>
+    <main className="max-w-6xl mx-auto px-4 py-8 relative z-10">
       <button onClick={() => navigate('store')} className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8"><ArrowLeft className="w-5 h-5" />Back to the shop</button>
       {children}
     </main>
