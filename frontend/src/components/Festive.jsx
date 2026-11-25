@@ -77,7 +77,7 @@ export function ChristmasBanner({ navigate }) {
           </div>
           <div className="p-2.5 sm:p-4">
             <p className="text-[12px] sm:text-base text-gray-100 leading-tight">{it.name}</p>
-            <p className="hidden sm:block mt-0.5 text-xs italic text-gray-500">{WHAT[it.product_id] || it.size}</p>
+            <p className="et-what mt-1 text-[12px] leading-snug sm:text-[17px] italic">{WHAT[it.product_id] || it.size}</p>
             <p className="mt-1 text-[12px] sm:text-sm gold-text">{inr(shownPrice(it))}{exGst(it) ? <span className="ml-1 text-[10px] text-gray-500">+ GST</span> : null}{it.sold_out ? <span className="ml-1.5 text-[10px] text-gray-500 not-italic">· sold out</span> : null}</p>
           </div>
         </button>)}
