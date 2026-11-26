@@ -171,3 +171,8 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Cormorant Garamond', serif; }
 /* The Christmas item names in the collection card, with a soft warm glow (as on the poster's free-delivery line) */
 .et-what{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:#fffaf0;letter-spacing:.01em;
   text-shadow:0 0 .35em rgba(255,244,214,.6),0 0 .9em rgba(255,214,140,.35),0 0 1.6em rgba(255,196,110,.18)}
+
+/* the welcome screen's hanging baubles sway gently */
+.et-bauble{transform-origin:50% 0;animation:et-sway 5s ease-in-out infinite}
+@keyframes et-sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@media (prefers-reduced-motion: reduce){.et-bauble{animation:none}}

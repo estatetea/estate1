@@ -65,7 +65,7 @@ export function ChristmasBanner({ navigate }) {
         <div>
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[.4em] text-[#D4AF37]">Now open · until Christmas</p>
           <h2 className="mt-2 font-light text-3xl sm:text-5xl text-[#f5ead5]">The Christmas <em className="not-italic gold-text">Collection</em> <Holly className="inline-block align-middle w-8 h-6 sm:w-11 sm:h-8 -mt-1" /></h2>
-          <p className="mt-2 max-w-md text-sm text-gray-400">Made in small batches for the season. Order as many as you like, delivered in 1 to 3 days.</p>
+          <p className="mt-2 max-w-md text-sm text-gray-400">Made in small batches for the season. Order as many as you like, delivered in 0 to 2 days. Orders after 6:30 pm are made fresh the next morning.</p>
         </div>
         <Tree className="hidden sm:block w-14 h-[70px] shrink-0 mt-1" />
       </div>
