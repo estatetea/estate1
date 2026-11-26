@@ -31,6 +31,7 @@ function ItemForm({ start, onSave, onCancel, busy }) {
       <input className={box} value={f.size} onChange={e => set('size', e.target.value)} placeholder="Size, e.g. 500 g" />
       <input className={box} value={f.price} onChange={e => set('price', e.target.value)} inputMode="decimal" placeholder="Price ₹ (GST incl.)" />
       <select className={box} value={f.gst_rate} onChange={e => set('gst_rate', e.target.value)}>{[0, 5, 12, 18, 28].map(g => <option key={g} value={g}>GST {g}%</option>)}</select>
+      {Number(f.price) > 0 && <p className="text-[11px] text-gray-500 -mt-1">= ₹{Math.round(Number(f.price) / (1 + Number(f.gst_rate) / 100) * 100) / 100} before GST + {Number(f.gst_rate)}% GST. Cakes and cookies are 5%.</p>}
       <input className={box} value={f.uncounted ? '' : f.quantity} disabled={f.uncounted} onChange={e => set('quantity', e.target.value)} inputMode="numeric" placeholder="How many available" />
       <label className="flex items-center gap-2 text-xs text-gray-400"><input type="checkbox" checked={f.uncounted} onChange={e => set('uncounted', e.target.checked)} />Not counted yet (no limit)</label>
     </div>
@@ -111,7 +112,7 @@ export function CollectionSettings({ headers }) {
       <div className="mt-3 divide-y divide-white/[.05] border-t border-white/[.06]">
         {(data.items || []).map(it => <div key={it.product_id} className="py-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0"><p className="text-[15px] text-gray-100">{it.name}{it.size ? `, ${it.size}` : ''} · ₹{it.price}</p>
+            <div className="min-w-0"><p className="text-[15px] text-gray-100">{it.name}{it.size ? `, ${it.size}` : ''} · ₹{it.price}<span className="text-xs text-gray-500"> (₹{Math.round(it.price / (1 + (it.gst_rate ?? 0.18)) * 100) / 100} + {Math.round((it.gst_rate ?? 0.18) * 100)}% GST)</span></p>
               <p className={`text-[11px] ${!it.active ? 'text-gray-500' : it.available > 0 ? 'text-emerald-400' : 'text-amber-300'}`}>
                 {!it.active ? 'Switched off' : it.coming_soon ? 'Coming soon: shown on the website, not orderable yet' : !it.counted ? 'On sale · not counted yet (no limit)' : it.available > 0 ? `On sale · ${it.available} left` : 'Sold out'}
                 {it.held > 0 ? ` · ${it.held} held by unpaid orders` : ''}{it.free_delivery_until && it.free_delivery_until >= new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10) ? ` · free delivery until ${new Date(it.free_delivery_until + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}{it.sold > 0 ? ` · ${it.sold} sold` : ''}</p></div>
