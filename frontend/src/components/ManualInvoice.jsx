@@ -289,7 +289,7 @@ export function ManualInvoice({ headers }) {
         {lines.map((l, idx) => <div key={idx} className="grid grid-cols-[1fr_5.5rem_2.5rem] gap-2">
           <select value={l.id} onChange={e => setLines(ls => e.target.value === 'test' ? [{ id: 'test', qty: 1 }] : ls.map((x, k) => k === idx ? { ...x, id: e.target.value } : x).filter(x => x.id !== 'test'))}
             aria-label={`Item ${idx + 1}`} className={input}>
-            {PACKS.map(p => <option key={p.id} value={p.id} className="bg-[#111]">{p.label} · {rupees(p.price)}{p.inclusive ? ' incl. GST' : ''}</option>)}
+            {PACKS.map(p => <option key={p.id} value={p.id} className="bg-[#111]">{p.label} · {p.inclusive && p.gstRate < 0.18 ? `${rupees(Math.round(p.price / (1 + p.gstRate) * 100) / 100)} + ${p.gstRate * 100}% GST` : `${rupees(p.price)}${p.inclusive ? ' incl. GST' : ''}`}</option>)}
           </select>
           <input value={isTest ? 1 : l.qty} disabled={isTest} onChange={e => setLines(ls => ls.map((x, k) => k === idx ? { ...x, qty: e.target.value } : x))}
             type="number" min="1" max="500" inputMode="numeric" aria-label={`How many of item ${idx + 1}`} className={input} />
