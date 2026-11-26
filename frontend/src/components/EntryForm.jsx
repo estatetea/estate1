@@ -20,6 +20,9 @@ const EntryForm = ({ onSubmit }) => {
   const [formVisible, setFormVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null);
+  // Leaving for the welcome: the form fades into the same dark as the welcome screen first, so there's no jump.
+  const [leaving, setLeaving] = useState(false);
+  const leave = data => { if (leaving) return; setLeaving(true); setTimeout(() => onSubmit(data), 600); };
   const locationAttempted = useRef(false);
   const videoRef = useRef(null);
   const transitioned = useRef(false);
@@ -117,7 +120,7 @@ const EntryForm = ({ onSubmit }) => {
       toast.error("Please enter your name");
       return;
     }
-    onSubmit({
+    leave({
       name: name.trim(),
       place: detectedLocation ? detectedLocation.name : null,
       latitude: detectedLocation ? detectedLocation.latitude : null,
@@ -131,6 +134,7 @@ const EntryForm = ({ onSubmit }) => {
 
   return (
     <div className="overflow-hidden h-screen h-[100dvh] bg-[#0C0B0A]" data-testid="entry-wrapper">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[60] bg-[#0a0a0a]" style={{ opacity: leaving ? 1 : 0, transition: 'opacity .6s ease-in-out' }} />
       {/* Elevator container — 2 stacked sections */}
       <div
         style={{
@@ -269,7 +273,7 @@ const EntryForm = ({ onSubmit }) => {
             </form>
             <div className="mt-5 border-t border-white/10 pt-5">
               <p className="mb-3 text-center text-xs text-gray-400">Ordered with us before? Sign in and your details are ready at checkout.</p>
-              <WhatsAppSignIn onDone={p => onSubmit({ name: (p?.name || p?.whatsapp_name || "").split(" ")[0] || "there", place: detectedLocation ? detectedLocation.name : null,
+              <WhatsAppSignIn onDone={p => leave({ name: (p?.name || p?.whatsapp_name || "").split(" ")[0] || "there", place: detectedLocation ? detectedLocation.name : null,
                 latitude: detectedLocation ? detectedLocation.latitude : null, longitude: detectedLocation ? detectedLocation.longitude : null, signedIn: true })} />
             </div>
           </div>

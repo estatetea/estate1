@@ -24,19 +24,24 @@ function Baubles() {
 
 const WelcomeScreen = ({ userName, onComplete }) => {
   const [opacity, setOpacity] = useState(0);
+  const [deco, setDeco] = useState(0);      // the Christmas decorations fade in with the welcome
+  const [screen, setScreen] = useState(1);  // the whole screen fades away at the end, revealing the shop beneath
   const xmas = festive();
 
   useEffect(() => {
     // Fade in - slower and smoother
-    const fadeIn = setTimeout(() => setOpacity(1), 200);
+    window.scrollTo(0, 0);
+    const decoIn = setTimeout(() => setDeco(1), 50);
+    const fadeIn = setTimeout(() => setOpacity(1), 250);
 
     // Keep visible for 2.5 seconds after fade in completes
-    const startFadeOut = setTimeout(() => setOpacity(0), 2700);
+    const startFadeOut = setTimeout(() => setScreen(0), 2800);
 
     // Complete transition and move to store
-    const complete = setTimeout(() => onComplete(), 3800);
+    const complete = setTimeout(() => onComplete(), 3900);
 
     return () => {
+      clearTimeout(decoIn);
       clearTimeout(fadeIn);
       clearTimeout(startFadeOut);
       clearTimeout(complete);
@@ -44,15 +49,16 @@ const WelcomeScreen = ({ userName, onComplete }) => {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center z-50 overflow-hidden">
-      {xmas && <>
+    <div className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center z-50 overflow-hidden"
+      style={{ opacity: screen, transition: 'opacity 1.1s ease-in-out', pointerEvents: screen ? 'auto' : 'none' }}>
+      {xmas && <div aria-hidden="true" className="absolute inset-0" style={{ opacity: deco, transition: 'opacity 1s ease-out' }}>
         {/* The same Christmas as the rest of the site: the red and green glow, stars, snow, lights, and baubles above the welcome */}
         <div aria-hidden="true" className="et-glow pointer-events-none absolute inset-0" />
         <Stars />
         <Snowfall />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[47]"><FairyLights /></div>
         <Baubles />
-      </>}
+      </div>}
       <div
         className="relative z-[46] text-center px-6"
         style={{

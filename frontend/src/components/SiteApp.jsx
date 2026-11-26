@@ -95,7 +95,6 @@ export default function App({ start }) {
   if (page === 'admin') return <><Toaster position="top-center" richColors /><AdminDashboard navigate={navigate} /></>;
   if (page === 'ai') return <><Toaster position="top-center" richColors /><AIOpsDashboard navigate={navigate} /></>;
   if (page === 'collection-preview') return <><Toaster position="top-center" richColors /><Collection userInfo={userInfo} navigate={p => navigate(p === 'store' ? 'home' : p)} /></>;
-  if (showWelcome && userInfo) return <><Toaster position="top-center" richColors /><WelcomeScreen userName={userInfo.name} onComplete={handleWelcomeComplete} /></>;
   if (!userInfo && checkingAccount) return <div className="min-h-screen bg-[#0C0B0A]" />;
   if (!userInfo && !['payment-success', 'payment-failed', 'collection', 'hampers'].includes(page)) return <><Toaster position="top-center" richColors /><EntryForm onSubmit={handleEntrySubmit} /></>;
 
@@ -109,5 +108,7 @@ export default function App({ start }) {
     case 'payment-failed': content = <PaymentFailed data={pageData} navigate={navigate} />; break;
     default: content = <MainStore userInfo={userInfo} weatherData={weatherData} cart={cart} setCart={setCart} navigate={navigate} />;
   }
-  return <><Toaster position="top-center" richColors />{content}{(page === 'store' || page === 'home') && (boss ? <BossAegis /> : <WebsiteBrew navigate={navigate} />)}</>;
+  // The welcome sits over the shop, which is already loading underneath; when it fades away the shop is simply there.
+  return <><Toaster position="top-center" richColors />{content}{(page === 'store' || page === 'home') && !showWelcome && (boss ? <BossAegis /> : <WebsiteBrew navigate={navigate} />)}
+    {showWelcome && userInfo && <WelcomeScreen userName={userInfo.name} onComplete={handleWelcomeComplete} />}</>;
 }
